@@ -80,15 +80,15 @@ research/notes.md
                 -> final masters (4K H.265 + 1080p H.264 + 1:1 social cut)
 ```
 
-## Troubleshooting — LaTeX / `preview.sty` not found (deep-dive only)
+## Troubleshooting — LaTeX / `preview.sty` (optional)
 
-Scenes that call `equation()` or `MathTex` delegate to your system `latex`. A minimal MiKTeX/TeX Live install often omits the **`preview`** package. If Manim prints `LaTeX Error: File 'preview.sty' not found`:
+Shipped deep-dive scenes use **`text_equation()`** or plain `Text` for formulas so **`make deepdive` runs without a LaTeX install.** If you add new scenes and call `equation()` / `MathTex`, Manim needs system `latex` plus the **`preview`** package:
 
-- **MiKTeX:** open MiKTeX Console → Packages → search `preview` → install.
+- **MiKTeX:** MiKTeX Console → Packages → install `preview`.
 - **TeX Live / MacTeX:** `sudo tlmgr install preview`
-- **Hint:** `make setup-latex` prints these commands in case you forget.
+- **`make setup-latex`** prints these commands.
 
-The **teaser** avoids this for the hot path: scene 2 uses `Text("O(n²)")` instead of `MathTex`. **`make deepdive`** still expects LaTeX until those scenes are refactored. As an escape hatch, `vid/theme.py` exposes `text_equation(plain_text)` which renders a plain `Text` instead of `MathTex` — use it in any scene that needs to render on a machine without LaTeX.
+The teaser hot path still uses `Text("O(n²)")` in scene 2. Prefer `text_equation(...)` from `vid/theme.py` for portable renders.
 
 ## License
 
@@ -103,3 +103,4 @@ MIT — see [LICENSE](LICENSE). The companion starter repo also ships under MIT 
 - LinkedIn (deep-dive embed)
 - Personal blog (companion post mirroring the deep-dive, with all source links)
 - GitHub (`companion/subq-quickstart` repo referenced from the demo)
+- **Operational docs:** [research/PAPER_CHECKLIST.md](research/PAPER_CHECKLIST.md), [scripts/runbook_shoot_day.md](scripts/runbook_shoot_day.md), [scripts/runbook_edit_and_ship.md](scripts/runbook_edit_and_ship.md); X-thread PNGs via `make stills` + [`scripts/export_x_thread_stills.sh`](scripts/export_x_thread_stills.sh)

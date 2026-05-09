@@ -7,8 +7,8 @@ from vid.theme import (
     apply_dark_theme,
     body,
     caption,
-    equation,
     heading,
+    text_equation,
     SUBQ_FG,
     SUBQ_MUTED,
     SUBQ_BLUE,
@@ -50,7 +50,7 @@ class Scene03ScalingLaws(Scene):
         line = axes.plot(lambda x: 5.0 - 0.45 * x, x_range=[0.3, 7.8], color=SUBQ_YELLOW, stroke_width=4)
         self.play(Create(line), run_time=PACE_SLOW)
 
-        eq = equation(r"L(N) = \left(\frac{N_c}{N}\right)^{0.076}", color=SUBQ_FG).scale(0.9)
+        eq = text_equation("L(N) = (N_c / N)^0.076", color=SUBQ_FG).scale(0.9)
         eq.to_edge(RIGHT, buff=0.7).shift(UP * 1.5)
         self.play(Write(eq), run_time=PACE_NORMAL)
         self.wait(1.0)

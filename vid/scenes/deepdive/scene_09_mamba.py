@@ -7,7 +7,6 @@ from vid.theme import (
     apply_dark_theme,
     body,
     caption,
-    equation,
     SUBQ_FG,
     SUBQ_MUTED,
     SUBQ_BLUE,
@@ -50,10 +49,16 @@ class Scene09Mamba(Scene):
                 run_time=0.4,
             )
 
-        eq = equation(r"h_t = A h_{t-1} + B x_t \quad ; \quad y_t = C h_t", color=SUBQ_FG).scale(0.7)
-        eq.to_edge(DOWN, buff=0.6)
-        self.play(Write(eq), run_time=PACE_SLOW)
+        eq = (
+            VGroup(
+                body("h_t = A · h_{t−1} + B · x_t", color=SUBQ_FG).scale(0.72),
+                body("y_t = C · h_t", color=SUBQ_FG).scale(0.72),
+            )
+            .arrange(DOWN, aligned_edge=LEFT, buff=0.1)
+            .to_edge(DOWN, buff=0.55)
+        )
+        self.play(LaggedStart(Write(eq[0]), Write(eq[1]), lag_ratio=0.35), run_time=PACE_SLOW)
 
-        complexity = body("O(n)  vs  attention's O(n^2)", color=SUBQ_GREEN).scale(0.7).next_to(eq, UP, buff=0.3)
+        complexity = body("O(n)  vs  attention's O(n²)", color=SUBQ_GREEN).scale(0.7).next_to(eq, UP, buff=0.25)
         self.play(FadeIn(complexity), run_time=PACE_NORMAL)
         self.wait(1.5)

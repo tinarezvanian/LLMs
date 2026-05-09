@@ -19,6 +19,10 @@ cd subq-quickstart
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
+# Optional: verify repo walking + haystack size without the SDK (no API key)
+python examples/codebase-qa/load_repo.py /path/to/git/repo --dry-run
+python benchmarks/needle_in_haystack.py --dry-run --tokens 500000
+
 # get a SubQ API key from https://subq.ai
 export SUBQ_API_KEY=sk-...
 

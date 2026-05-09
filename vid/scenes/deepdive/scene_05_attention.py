@@ -15,7 +15,7 @@ from vid.theme import (
     apply_dark_theme,
     body,
     caption,
-    equation,
+    text_equation,
     SUBQ_FG,
     SUBQ_MUTED,
     SUBQ_BLUE,
@@ -45,9 +45,8 @@ class Scene05Attention(Scene):
         self.play(FadeIn(q), FadeIn(k), FadeIn(v), run_time=PACE_NORMAL)
         self.wait(0.3)
 
-        # Canonical attention equation, shown briefly while Q/K/V are still on screen.
-        # Requires LaTeX preview.sty; swap for text_equation() if rendering without LaTeX.
-        eq_full = equation(r"A = \mathrm{softmax}\!\left(\frac{Q K^{\!\top}}{\sqrt{d}}\right) V").scale(0.8)
+        # LaTeX-free: matches vid/theme.text_equation — renders without preview.sty.
+        eq_full = text_equation("A = softmax((Q·Kᵀ) / √d) · V", color=SUBQ_FG).scale(0.72)
         eq_full.to_edge(DOWN, buff=0.8)
         self.play(Write(eq_full), run_time=PACE_SLOW)
         self.wait(0.5)
@@ -68,7 +67,7 @@ class Scene05Attention(Scene):
                 anims.append(grid.highlight_cell(i, j, color=SUBQ_YELLOW, opacity=0.6))
         self.play(LaggedStart(*anims, lag_ratio=0.04), run_time=PACE_SLOW)
 
-        eq = equation(r"O(n^2 \cdot d)", color=SUBQ_FG).scale(1.1).to_edge(DOWN, buff=0.7)
+        eq = text_equation("O(n² · d)", color=SUBQ_FG).scale(1.1).to_edge(DOWN, buff=0.7)
         self.play(Write(eq), run_time=PACE_NORMAL)
 
         callout = body("at n=1M  ->  10^12 cells per head per layer", color=SUBQ_MUTED).scale(0.6)

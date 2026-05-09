@@ -6,6 +6,7 @@ SubQ's long-context retention claims with your own eyes.
 
 Usage:
     python needle_in_haystack.py --tokens 500000 --depths 0.0 0.25 0.5 0.75 1.0 --trials 3
+    python needle_in_haystack.py --dry-run --tokens 500000   # no SDK / API key required
 """
 
 from __future__ import annotations
@@ -20,12 +21,6 @@ from dataclasses import dataclass
 import typer
 from rich.console import Console
 from rich.table import Table
-
-try:
-    from subq import SubQ
-except ImportError:
-    print("Install the SubQ SDK first: pip install subq", file=sys.stderr)
-    sys.exit(1)
 
 app = typer.Typer(add_completion=False)
 console = Console()
@@ -84,17 +79,32 @@ def main(
     trials: int = typer.Option(3, "--trials", "-t"),
     model: str = typer.Option("subq-1m-preview", "--model", "-m"),
     out: str = typer.Option("results.json", "--out", "-o"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Build haystack only; no pip package or API required."),
 ):
+    haystack = build_haystack(tokens)
+    console.print(
+        f"[cyan]haystack[/] {len(haystack):,} chars (~{len(haystack) // 4:,} tokens)"
+    )
+
+    if dry_run:
+        console.print(
+            "[yellow]dry-run[/]: skipping SubQ API calls. Install `subq` and set "
+            "SUBQ_API_KEY for a full benchmark."
+        )
+        raise typer.Exit(0)
+
     api_key = os.environ.get("SUBQ_API_KEY")
     if not api_key:
         console.print("[red]SUBQ_API_KEY is not set. Get a key from https://subq.ai[/]")
         raise typer.Exit(1)
 
+    try:
+        from subq import SubQ
+    except ImportError:
+        print("Install the SubQ SDK first: pip install subq", file=sys.stderr)
+        raise typer.Exit(1)
+
     client = SubQ(api_key=api_key)
-    haystack = build_haystack(tokens)
-    console.print(
-        f"[cyan]haystack[/] {len(haystack):,} chars (~{len(haystack) // 4:,} tokens)"
-    )
 
     results: list[Trial] = []
     for depth in depths:

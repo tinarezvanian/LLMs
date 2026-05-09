@@ -3,6 +3,7 @@
 Usage:
     python load_repo.py /path/to/repo
     python load_repo.py /path/to/repo --question "Where do we set the HTTP timeout?"
+    python load_repo.py /path/to/repo --dry-run   # measure chars loaded; no API / SDK required
 
 This is the script the deep-dive video runs live. The whole point: no chunking,
 no RAG, no retrieval pipeline. Dump the whole repo, ask the question, get the answer.
@@ -18,14 +19,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-# NOTE: This assumes the official SubQ Python SDK is installed and exposes a
-# minimal client. The real package surface may evolve; if so, swap to whatever
-# the docs at https://docs.subq.ai/python say at the time of running.
-try:
-    from subq import SubQ
-except ImportError:
-    print("Install the SubQ SDK first: pip install subq", file=sys.stderr)
-    sys.exit(1)
+# Lazy-import SubQ only after dry-run path — lets contributors smoke-test repo walking without SDK.
 
 EXCLUDED_SUFFIXES = {".lock", ".png", ".jpg", ".jpeg", ".gif", ".pdf", ".bin"}
 MAX_FILE_BYTES = 256 * 1024  # skip individual files larger than 256KB
@@ -77,15 +71,30 @@ def main(
         help="The question to ask about the repo.",
     ),
     model: str = typer.Option("subq-1m-preview", "--model", "-m"),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Load and measure repo text only; do not call the API.",
+    ),
 ):
     api_key = os.environ.get("SUBQ_API_KEY")
-    if not api_key:
+    if not dry_run and not api_key:
         console.print("[red]SUBQ_API_KEY is not set. Get a key from https://subq.ai[/]")
         raise typer.Exit(1)
 
     console.print(f"[cyan]Walking[/] {repo}")
     body = collect_repo_text(repo)
     console.print(f"[cyan]Loaded[/] {len(body):,} chars (~{len(body) // 4:,} tokens)")
+
+    if dry_run:
+        console.print("[yellow]dry-run[/]: skipping API call. Install `subq` for live queries.")
+        raise typer.Exit(0)
+
+    try:
+        from subq import SubQ
+    except ImportError:
+        print("Install the SubQ SDK first: pip install subq", file=sys.stderr)
+        raise typer.Exit(1)
 
     client = SubQ(api_key=api_key)
     response = client.responses.create(

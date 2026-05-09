@@ -16,7 +16,7 @@ Full deep-dive at the end of this thread.
 
 ---
 
-**2/9**  [IMG: scaling_laws_kaplan_plot.png]
+**2/9**  [IMG: 02_scaling_laws_kaplan.png]
 
 Quick recap. In 2020 OpenAI showed that LLM loss falls as a smooth power law in scale. A straight line on a log-log plot.
 
@@ -24,7 +24,7 @@ That straight line is the entire pitch deck for every frontier lab from 2020 to 
 
 ---
 
-**3/9**  [IMG: chinchilla_isoflops_valley.png]
+**3/9**  [IMG: 03_pivot_context_length.png]
 
 In 2022 DeepMind corrected the recipe: parameters and tokens should scale together, not separately. ~20 tokens per parameter at compute-optimal.
 
@@ -34,7 +34,7 @@ But notice what scaling laws are silent on: context length.
 
 ---
 
-**4/9**  [IMG: attention_grid_n_squared.png]
+**4/9**  [IMG: 04_attention_grid.png]
 
 Here's why context length is the silent killer.
 
@@ -44,7 +44,7 @@ The compute isn't even the worst part.
 
 ---
 
-**5/9**  [IMG: kv_cache_overflow_h100.png]
+**5/9**  [IMG: 05_kv_cache_overflow.png]
 
 The KV cache. For a typical 7B model, ~524 KB per token.
 
@@ -56,7 +56,7 @@ Sliding window, MQA, paged KV, FlashAttention — every "long context transforme
 
 ---
 
-**6/9**  [IMG: post_transformer_tree.png]
+**6/9**  [IMG: 06_post_transformer_tree.png]
 
 Meanwhile, a parallel research thread (Mamba, Hyena, RWKV, SAMBA) has been quietly cooking O(n) and O(n log n) alternatives for years.
 
@@ -64,7 +64,7 @@ The frontier labs know. Anthropic, DeepMind, Meta — they all have post-transfo
 
 ---
 
-**7/9**  [IMG: subq_benchmark_callouts.png]
+**7/9**  [IMG: 07_subq_benchmark_callouts.png]
 
 @subqai is the first to ship.
 
@@ -93,7 +93,7 @@ If they don't — we'll find out together.
 ---
 
 ## Posting checklist
-- [ ] Render Manim stills as 1080x1080 PNGs from each scene's last frame
+- [ ] From repo root: `make stills` then `bash scripts/export_x_thread_stills.sh` → PNGs in `assets/x_thread_stills/` (crop to **1080×1080** in Resolve or ffmpeg if needed)
 - [ ] Compress teaser to <20MB for X video size limit
 - [ ] Set deep-dive YouTube link in tweet 8
 - [ ] Tag SubQ team handles only after confirming the right ones (placeholders above)

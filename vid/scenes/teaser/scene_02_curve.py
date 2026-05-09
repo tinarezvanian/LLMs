@@ -1,8 +1,9 @@
 """Teaser scene 2 — the curve bends. Linear becomes quadratic. n^2 floats up."""
 
 from manim import *
+from manim.utils.rate_functions import smooth, there_and_back
 
-from vid.theme import apply_dark_theme, body, SUBQ_BLUE, SUBQ_RED, SUBQ_MUTED, PACE_NORMAL, PACE_SLOW
+from vid.theme import apply_dark_theme, body, SUBQ_BLUE, SUBQ_RED, SUBQ_MUTED, PACE_FAST, PACE_NORMAL, PACE_SLOW
 from vid.lib.mobjects import ScalingCurve
 
 
@@ -19,6 +20,13 @@ class Scene02Curve(Scene):
         n2 = Text("O(n²)", font_size=72, color=SUBQ_RED, weight=BOLD).next_to(quadratic, UP, buff=0.4)
 
         self.add(linear, label_linear)
-        self.play(Transform(linear, quadratic), Transform(label_linear, label_actual), run_time=PACE_SLOW)
-        self.play(FadeIn(n2, shift=UP * 0.3), run_time=PACE_NORMAL)
+        # Micro anticipation: breathe the linear curve once before the bend.
+        self.play(linear.animate.scale(1.04), label_linear.animate.shift(UP * 0.06), run_time=PACE_FAST, rate_func=there_and_back)
+        self.play(
+            Transform(linear, quadratic),
+            Transform(label_linear, label_actual),
+            run_time=PACE_SLOW,
+            rate_func=smooth,
+        )
+        self.play(FadeIn(n2, shift=UP * 0.3), run_time=PACE_NORMAL, rate_func=smooth)
         self.wait(1.0)

@@ -6,7 +6,7 @@ from vid.theme import (
     apply_dark_theme,
     body,
     caption,
-    equation,
+    text_equation,
     SUBQ_FG,
     SUBQ_MUTED,
     SUBQ_RED,
@@ -20,10 +20,10 @@ class Scene06KVWall(Scene):
     def construct(self):
         apply_dark_theme(self)
 
-        eq = equation(
-            r"\text{KV cache} \;=\; 2 \cdot L \cdot H \cdot d_{head} \cdot n \cdot \text{sizeof(fp16)}",
+        eq = text_equation(
+            "KV cache = 2 · L · H · d_head · n · sizeof(fp16)",
             color=SUBQ_FG,
-        ).scale(0.8).to_edge(UP, buff=0.6)
+        ).scale(0.55).to_edge(UP, buff=0.6)
         self.play(Write(eq), run_time=PACE_NORMAL)
 
         concrete = caption(

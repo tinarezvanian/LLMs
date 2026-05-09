@@ -1,6 +1,7 @@
 """Teaser scene 1 — cold open: a clean linear curve, "what we wish AI cost"."""
 
 from manim import *
+from manim.utils.rate_functions import ease_in_out_sine
 
 from vid.theme import apply_dark_theme, body, SUBQ_BLUE, SUBQ_MUTED, PACE_NORMAL
 from vid.lib.mobjects import ScalingCurve
@@ -14,6 +15,6 @@ class Scene01Open(Scene):
         label = body("what we wish AI cost", color=SUBQ_MUTED)
         label.next_to(curve, DOWN, buff=0.3)
 
-        self.play(Create(curve), run_time=PACE_NORMAL * 2)
-        self.play(FadeIn(label, shift=UP * 0.2), run_time=PACE_NORMAL)
+        self.play(Create(curve), run_time=PACE_NORMAL * 2, rate_func=ease_in_out_sine)
+        self.play(FadeIn(label, shift=UP * 0.2), run_time=PACE_NORMAL, rate_func=ease_in_out_sine)
         self.wait(1.0)

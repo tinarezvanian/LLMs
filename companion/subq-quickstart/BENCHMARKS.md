@@ -4,7 +4,8 @@ Reproducible long-context tests against [SubQ 1M-Preview](https://subq.ai). Run 
 
 ## Methodology
 
-- **needle-in-a-haystack** — `python benchmarks/needle_in_haystack.py --tokens 500000 --trials 5`
+- **needle-in-a-haystack** — `python benchmarks/needle_in_haystack.py --tokens 500000 --trials 5`  
+  Use `--dry-run` to verify haystack size without the `subq` package or `SUBQ_API_KEY`.
   - Synthetic English filler text padded to N tokens
   - Single-sentence "needle" (a unique passcode) inserted at depths {0.0, 0.25, 0.5, 0.75, 1.0}
   - Model is asked to retrieve the passcode

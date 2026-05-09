@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Rename Manim last-frame PNGs into tweet-sized filenames for the X thread.
-# Prerequisites: run `make stills` from repo root (needs micromamba env).
+# Prerequisites: run `QUALITY=-qh make stills` from repo root (needs micromamba env)
+# so PNG resolution matches production (-qh). Default `make stills` uses QUALITY=-qm.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/edit/renders/stills/images"

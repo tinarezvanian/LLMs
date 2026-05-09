@@ -55,14 +55,15 @@ make check
 
 ```bash
 make teaser              # all 6 teaser scenes at default QUALITY=-qm (720p30)
-make deepdive            # all deep-dive Manim scenes (needs LaTeX, see Troubleshooting)
+make deepdive            # all deep-dive Manim scenes (shipped scenes use text_equation — no LaTeX)
 make all                 # both
-make stills              # export PNG frames for the X thread
+make stills              # PNG last frames for X thread (uses QUALITY; default -qm)
 make help                # list every target
 make clean               # remove edit/renders and __pycache__
 QUALITY=-ql make teaser  # 480p15  — fast smoke render
-QUALITY=-qh make all     # 1080p60 — production
+QUALITY=-qh make all     # 1080p60 — production picture lock
 QUALITY=-qk make all     # 2160p60 — archive master
+QUALITY=-qh make stills  # HD stills matching production (`assets/x_thread_stills/` via scripts/export_x_thread_stills.sh)
 ```
 
 Rendered MP4s land in `edit/renders/{teaser,deepdive}/videos/<scene_name>/<resolution>/<SceneName>.mp4` where `<resolution>` is `480p15` / `720p30` / `1080p60` / `2160p60` depending on `QUALITY`. They get assembled in DaVinci Resolve against the voiceover and on-camera tracks.

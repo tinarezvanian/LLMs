@@ -108,14 +108,14 @@ Day 4 of the 10-day sprint. Reasoning: launches plant flags. Even a 75-second pu
 
 ## How to continue the work
 
-Current state: **`make setup` + `make check` work; `QUALITY=-ql make teaser` and `QUALITY=-ql make deepdive` pass without LaTeX** (formulas use `text_equation` where needed). Renders land in `edit/renders/` (gitignored).
+Current state: **`make setup` + `make check` work; `-ql` smoke and `-qh` production renders for teaser + deep-dive Manim scenes both pass without LaTeX** (formulas use `text_equation` where needed). MP4s land in `edit/renders/` (gitignored). **`QUALITY=-qh make stills`** + [`scripts/export_x_thread_stills.sh`](scripts/export_x_thread_stills.sh) refreshes `assets/x_thread_stills/` at production resolution.
 
 Next steps, in order:
 
-1. Optional **production pass**: `QUALITY=-qh make teaser` / `make deepdive`. If you add new LaTeX-heavy scenes and hit `preview.sty not found`, run `make setup-latex` or use `text_equation(...)`.
-2. Lock VO + edit per [`scripts/runbook_edit_and_ship.md`](scripts/runbook_edit_and_ship.md); export **16:9, 1:1, and 9:16** (see [DESIGN.md §3, §7](DESIGN.md)).
-3. `make stills` then `bash scripts/export_x_thread_stills.sh` for X-thread PNGs → `assets/x_thread_stills/`.
-4. Shoot day ([`scripts/runbook_shoot_day.md`](scripts/runbook_shoot_day.md)): camera + SubQ Code capture + final VO.
+1. **TASK 4.3** — Tina watches `-qh` teaser clips against [scripts/teaser.md](scripts/teaser.md) pacing (human).
+2. Optional **4K archive**: `QUALITY=-qk make teaser` / `make deepdive` once picture is locked.
+3. Lock VO + edit per [`scripts/runbook_edit_and_ship.md`](scripts/runbook_edit_and_ship.md); export **16:9, 1:1, and 9:16** (see [DESIGN.md §3, §7](DESIGN.md)).
+4. Shoot day ([`scripts/runbook_shoot_day.md`](scripts/runbook_shoot_day.md)): camera + SubQ Code capture + final VO — needs SubQ beta for live demo.
 5. Primary-source reading for interviews: [`research/PAPER_CHECKLIST.md`](research/PAPER_CHECKLIST.md).
 
 See [`TASKS.md`](TASKS.md) for the live backlog with acceptance criteria.

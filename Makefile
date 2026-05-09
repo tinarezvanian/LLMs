@@ -43,7 +43,7 @@ help:
 	@echo "  check       - smoke-test that manim + ffmpeg work"
 	@echo "  teaser      - render all teaser scenes (override QUALITY=-qh for HD)"
 	@echo "  deepdive    - render all deep-dive scenes (needs LaTeX 'preview')"
-	@echo "  stills      - export final PNG frame of every scene (for X thread)"
+	@echo "  stills      - export final PNG frame of every scene (override QUALITY=-qh for HD)"
 	@echo "  all         - render teaser + deepdive"
 	@echo "  clean       - remove edit/renders and __pycache__"
 
@@ -82,8 +82,8 @@ stills:
 	@mkdir -p $(STILLS_DIR)
 	@set -e; for entry in $(TEASER_SCENES) $(DEEPDIVE_SCENES); do \
 	  file=$${entry%%:*}; klass=$${entry##*:}; \
-	  echo "==> still $$file::$$klass"; \
-	  $(ACTIVATE) && manim -s --format png --media_dir $(STILLS_DIR) $$file $$klass; \
+	  echo "==> still $$file::$$klass ($(QUALITY))"; \
+	  $(ACTIVATE) && manim $(QUALITY) -s --format png --media_dir $(STILLS_DIR) $$file $$klass; \
 	done
 	@echo "==> stills written under $(STILLS_DIR)/images/"
 

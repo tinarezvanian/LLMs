@@ -81,7 +81,7 @@ If `python -c "import typer"` fails inside the env, run `pip install "typer>=0.1
 | 06 | [vid/scenes/teaser/scene_06_cta.py](vid/scenes/teaser/scene_06_cta.py) | Wordmark + CTA + sheen |
 
 - [x] **TASK 4.1** Smoke render: `QUALITY=-ql make teaser` exits 0; 6 MP4s under `edit/renders/teaser/videos/scene_*/480p15/`.
-- [ ] **TASK 4.2** Production render: `QUALITY=-qh make teaser`. **Done when** 6 MP4s exist under `edit/renders/teaser/videos/scene_*/1080p60/` and look readable on a phone (≥ iPhone 12 size).
+- [x] **TASK 4.2** Production render: `QUALITY=-qh make teaser`. **Done when** 6 MP4s exist under `edit/renders/teaser/videos/scene_*/1080p60/` and look readable on a phone (≥ iPhone 12 size). *(Automated 2026-05-09 — verify on device.)*
 - [ ] **TASK 4.3** Watch each `-qh` render and fix any scene whose VO timing in [scripts/teaser.md](scripts/teaser.md) doesn't fit the animation. **Done when** every `[ANIM:]` cue lands in the right place when read at 124 wpm.
 
 ### Deep-dive (11 Manim + 2 `SKIP_RENDER` placeholders)
@@ -104,8 +104,8 @@ If `python -c "import typer"` fails inside the env, run `pip install "typer>=0.1
 | 14 | [vid/scenes/deepdive/scene_14_close.py](vid/scenes/deepdive/scene_14_close.py) | End card |
 
 - [x] **TASK 4.4** Smoke render: `QUALITY=-ql make deepdive` exits 0; 12 MP4s under `edit/renders/deepdive/videos/scene_*/480p15/`. (Scenes 02 + 13 do not render — that's expected.)
-- [ ] **TASK 4.5** Production render: `QUALITY=-qh make deepdive`. **Done when** 12 MP4s exist at 1080p60.
-- [ ] **TASK 4.6** Decide per scene whether `text_equation()` (no LaTeX) is acceptable or whether to install LaTeX `preview` and switch back to `equation()` for prettier math. Prefer `text_equation` unless the equation has fractions or radicals that need real typesetting.
+- [x] **TASK 4.5** Production render: `QUALITY=-qh make deepdive`. **Done when** 12 MP4s exist at 1080p60. *(Automated 2026-05-09 — verify on device.)*
+- [x] **TASK 4.6** **Decision (locked):** keep **`text_equation()`** (JetBrains Mono Unicode) for all shipped formula beats — portable, no TeX install. Optional upgrade path: install LaTeX `preview` (`make setup-latex`) and swap specific lines to `equation()` only if a scene needs true fractions/stacked radicals; none of the current scenes require it.
 
 ---
 
@@ -142,12 +142,12 @@ Runbook: [scripts/runbook_edit_and_ship.md](scripts/runbook_edit_and_ship.md). D
 
 - [x] [companion/subq-quickstart/README.md](companion/subq-quickstart/README.md), [examples/codebase-qa/load_repo.py](companion/subq-quickstart/examples/codebase-qa/load_repo.py), [examples/long-doc-summarizer/summarize_pdf.py](companion/subq-quickstart/examples/long-doc-summarizer/summarize_pdf.py), [benchmarks/needle_in_haystack.py](companion/subq-quickstart/benchmarks/needle_in_haystack.py), [BENCHMARKS.md](companion/subq-quickstart/BENCHMARKS.md), [PUBLISH.md](companion/subq-quickstart/PUBLISH.md), [LICENSE](companion/subq-quickstart/LICENSE).
 - [x] [companion/blog/post.md](companion/blog/post.md), [companion/social/x_thread.md](companion/social/x_thread.md), [companion/cover_letter.md](companion/cover_letter.md).
-- [x] **TASK 7.1** Generate X-thread stills:
+- [x] **TASK 7.1** Generate X-thread stills (use **`-qh`** so PNGs match production resolution):
   ```bash
-  make stills
+  QUALITY=-qh make stills
   bash scripts/export_x_thread_stills.sh
   ```
-  **Done when** `assets/x_thread_stills/02_*…07_*.png` all exist (currently shipped in repo).
+  **Done when** `assets/x_thread_stills/02_*…07_*.png` all exist (regenerated 2026-05-09 at 1080p60).
 - [!] **TASK 7.2** Run real benchmarks against SubQ. Requires `SUBQ_API_KEY`. Blocked on TASK 5.1.
   ```bash
   cd companion/subq-quickstart/benchmarks

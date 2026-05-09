@@ -216,3 +216,40 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- SubQ video project additions ---
+
+# Re-include source library directories that the generic `lib/` rule above hides.
+!vid/lib/
+!vid/lib/**
+
+# Project-local toolchains and large binaries (kept out of git, set up via README).
+.venv/
+.micromamba/
+bin/ffmpeg
+bin/micromamba
+bin/uv
+bin/uvx
+
+# Rendered media — re-rendered on demand; final masters live in edit/ and are tracked separately if needed.
+edit/renders/
+
+# Recorded media (use Git LFS if you want these tracked; default is to keep them local).
+audio/*.wav
+audio/*.flac
+audio/*.aiff
+video/*.mov
+video/*.mp4
+video/*.mxf
+demo/*.mov
+demo/*.mp4
+
+# Manim caches and temporary outputs
+media/
+texcache/
+.tex_cache/
+
+# DaVinci Resolve project caches
+edit/*.drp.bk
+edit/CacheClip/
+

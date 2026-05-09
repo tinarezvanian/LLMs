@@ -1,0 +1,14 @@
+name: subq
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - manim
+  - manim-voiceover
+  - ffmpeg
+  - numpy
+  - pip
+  - pip:
+      - openai
+      - python-dotenv
+      - tiktoken

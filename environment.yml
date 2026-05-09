@@ -4,11 +4,11 @@ channels:
 dependencies:
   - python=3.12
   - manim
-  - manim-voiceover
   - ffmpeg
   - numpy
   - pip
   - pip:
+      # Optional voiceover plugin — install after env exists: pip install manim-voiceover
       - openai
       - python-dotenv
       - tiktoken

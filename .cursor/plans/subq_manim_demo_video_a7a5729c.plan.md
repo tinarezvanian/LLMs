@@ -12,10 +12,10 @@ todos:
     content: "Phase 3: vid/ Manim package, audio/, video/, edit/, demo/, companion/, theme.py, lib/mobjects.py, Makefile, environment.yml. All scene stubs in place."
     status: completed
   - id: env_install
-    content: "Install Manim CE + manim-voiceover via micromamba. Blocked: brew is misconfigured, conda solve hangs on full spec. Lean install (just manim) recommended next."
-    status: in_progress
+    content: "micromamba env subq: conda-forge python=3.12 + manim + ffmpeg (lean solve). make setup / make check OK; Manim 0.20.1."
+    status: completed
   - id: teaser_anim
-    content: "Phase 4a: 6 teaser scenes scaffolded with first-pass animations. Polish + render once env install works."
+    content: "Phase 4a: 6 teaser scenes smoke-rendered at -ql; scene_02 uses Text(O(n²)) for no-LaTeX portability. Next: polish + -qh production renders."
     status: in_progress
   - id: deepdive_anim
     content: "Phase 4b: 14 deep-dive scenes scaffolded with first-pass animations (12 Manim + 2 placeholder for camera/screen). Polish + render once env install works."
@@ -40,25 +40,19 @@ isProject: false
 
 ## Status (snapshot)
 
-**Last updated:** Day 1 of sprint, ~1 working session. Repo + drafts are in place. Local Manim render env still needs install (blocked on macOS brew). All written content (research notes, scripts, scene code, companion repo, blog, X thread, cover letter) is drafted and committable.
+**Last updated:** 2026-05-09. Lean micromamba env works (`make setup`, `make check`). Teaser smoke-render at `QUALITY=-ql` passes all 6 scenes. Deep-dive `make deepdive` requires system LaTeX with `preview` package for `MathTex`/`equation()` — see README troubleshooting.
 
 What's done:
-- Plan + research + scripts + repo scaffold + 20 scene files + theme + reusable mobjects + Makefile + companion deliverables (starter repo + blog + X thread + cover letter)
-- ffmpeg static binary in `bin/`, micromamba in `bin/`, uv-managed Python 3.12 venv in `.venv/` (the venv install of pip-manim failed because pycairo needs system cairo — see AGENTS.md)
+- Handoff docs: AGENTS.md, DESIGN.md, TASKS.md
+- Lean Makefile `setup` (manim + ffmpeg only); `set -e` on render loops
+- Teaser scene 2: `Text("O(n²)")` instead of MathTex (portable without LaTeX preview package)
 
-What's blocked:
-- Manim install: micromamba conda-forge solve hung at 18+ min when given `python=3.12 manim manim-voiceover`. Recommended path: `make setup` (now defined as just `manim` without `manim-voiceover`), then `pip install manim-voiceover` inside the env after.
+What's next:
+- Install LaTeX `preview` (or refactor deep-dive equations to Text)
+- Polish teaser → render `-qh`, VO + edit
+- Deep-dive renders + shoot day
 
-What's next, in priority order:
-1. Get Manim rendering — either retry lean conda solve or use Docker/Linux env
-2. Smoke render: `make teaser` (verify all 6 scenes compile and render)
-3. Polish teaser scene-by-scene against [scripts/teaser.md](scripts/teaser.md)
-4. Publish teaser as flag-planting moment (Day 4 in original sprint)
-5. Polish deep-dive scenes
-6. Shoot day (camera + SubQ Code screen capture + VO)
-7. Edit + ship
-
-See [AGENTS.md](../../AGENTS.md) for full handoff context (decisions, gotchas, file map), [DESIGN.md](../../DESIGN.md) for visual + narrative principles, and [TASKS.md](../../TASKS.md) for the live actionable backlog.
+See [AGENTS.md](../AGENTS.md) for full handoff context (decisions, gotchas, file map), [DESIGN.md](../DESIGN.md) for visual + narrative principles, and [TASKS.md](../TASKS.md) for the live actionable backlog.
 
 ---
 

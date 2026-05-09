@@ -90,24 +90,26 @@ Day 4 of the 10-day sprint. Reasoning: launches plant flags. Even a 75-second pu
 ## Gotchas (in priority order)
 
 1. **`pip install manim` fails on macOS without system cairo.** This is the #1 trap. Use the conda-forge env as documented; do not try to fix pip-manim by installing system cairo unless you really know what you're doing.
-2. **The conda solve for `manim + manim-voiceover` together hangs (~18+ min).** The `manim-voiceover` package pulls in heavy TTS deps that explode the dependency graph. Install just `manim` from conda-forge, then `pip install manim-voiceover` inside the env.
-3. **Don't rename `vid/` back to `manim/`.** See decision 2 above.
-4. **`.gitignore` line 17 (`lib/`) would hide `vid/lib/`.** The negation `!vid/lib/` keeps it visible. Don't remove the negation.
-5. **`make` targets use micromamba via `MAMBA_ROOT_PREFIX="$ROOT/.micromamba"`.** Never run `micromamba activate subq` outside that env var or you'll target the user's global micromamba (if any).
-6. **Manim CE versions move fast.** As of writing the env targets `manim` (latest from conda-forge, ~0.18+). If a future scene file uses an API that shifts, pin in `environment.yml`.
-7. **The SubQ Python SDK (`subq` package) is a placeholder.** As of writing, the production package surface isn't documented yet. The starter-repo example scripts assume `from subq import SubQ` with a `client.responses.create(...)` shape, which mirrors the OpenAI SDK convention. Update once docs exist at https://docs.subq.ai.
-8. **Tina doesn't yet have SubQ beta access.** The live demo at the end of the deep-dive depends on it. If access is denied by Day 8 of the sprint, the demo becomes a "what I'd build the day I get access" mock-up — still valuable but weaker. Apply for the waitlist immediately.
+2. **The conda solve for `manim + manim-voiceover` together hangs (~18+ min).** The `manim-voiceover` package pulls in heavy TTS deps that explode the dependency graph. `make setup` installs only `manim` + `ffmpeg` from conda-forge; add `pip install manim-voiceover` afterward if you need voiceover automation.
+3. **`MathTex` / `equation()` require system LaTeX with the `preview` package.** If Manim errors with `preview.sty not found`, install it (MiKTeX: install package `preview`; TeX Live: `tlmgr install preview`). Teaser scene 2 deliberately uses `Text("O(n²)")` so `make teaser` works without LaTeX; `make deepdive` still needs LaTeX until those scenes are refactored.
+4. **Don't rename `vid/` back to `manim/`.** See decision 2 above.
+5. **`.gitignore` line 17 (`lib/`) would hide `vid/lib/`.** The negation `!vid/lib/` keeps it visible. Don't remove the negation.
+6. **`make` targets use micromamba via `MAMBA_ROOT_PREFIX="$ROOT/.micromamba".** Never run `micromamba activate subq` outside that env var or you'll target the user's global micromamba (if any).
+7. **Manim CE versions move fast.** As of writing the env targets `manim` (latest from conda-forge, ~0.18+). If a future scene file uses an API that shifts, pin in `environment.yml`.
+8. **The SubQ Python SDK (`subq` package) is a placeholder.** As of writing, the production package surface isn't documented yet. The starter-repo example scripts assume `from subq import SubQ` with a `client.responses.create(...)` shape, which mirrors the OpenAI SDK convention. Update once docs exist at https://docs.subq.ai.
+9. **Tina doesn't yet have SubQ beta access.** The live demo at the end of the deep-dive depends on it. If access is denied by Day 8 of the sprint, the demo becomes a "what I'd build the day I get access" mock-up — still valuable but weaker. Apply for the waitlist immediately.
 
 ## How to continue the work
 
-The current state is "scripts + scaffolding done, env install pending." The most likely next session picks up here:
+Current state: **`make setup` + `make check` work; teaser smoke-render at `-ql` passes for all 6 scenes.** Renders land in `edit/renders/` (gitignored).
 
-1. Run `make setup` (with the lean install fix described above).
-2. Run `make check` to confirm Manim and ffmpeg both work.
-3. Run `make teaser QUALITY=-ql` for a quick low-quality smoke test that all 6 scenes render without errors.
-4. Polish each teaser scene against [`scripts/teaser.md`](scripts/teaser.md). Each scene file has a docstring linking back to the script section it implements.
-5. Render the teaser at `QUALITY=-qh` (1080p), assemble in DaVinci against the VO recording.
-6. Move on to the deep-dive scenes one at a time.
+Next steps, in order:
+
+1. **Install LaTeX `preview` package** on your machine if `make deepdive` fails with `preview.sty not found` (see README troubleshooting). Alternatively refactor deep-dive `equation()` calls to plain text (large effort).
+2. Polish each teaser scene against [`scripts/teaser.md`](scripts/teaser.md), then re-render at `QUALITY=-qh` (1080p).
+3. Assemble teaser VO + music in DaVinci (or ffmpeg concat); export 16:9 and 1:1 cuts.
+4. Run `make deepdive` once LaTeX works; fix scenes one at a time if needed.
+5. Shoot day (camera + SubQ Code capture + final VO).
 
 See [`TASKS.md`](TASKS.md) for the live backlog with acceptance criteria.
 

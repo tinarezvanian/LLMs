@@ -15,7 +15,8 @@ class Scene02Curve(Scene):
 
         label_linear = body("what we wish AI cost", color=SUBQ_MUTED).next_to(linear, DOWN, buff=0.3)
         label_actual = body("what attention actually costs", color=SUBQ_RED).next_to(quadratic, DOWN, buff=0.3)
-        n2 = MathTex("O(n^2)", font_size=72, color=SUBQ_RED).next_to(quadratic, UP, buff=0.4)
+        # Text, not MathTex: avoids a full LaTeX install with preview.sty (MiKTeX/TeX Live).
+        n2 = Text("O(n²)", font_size=72, color=SUBQ_RED, weight=BOLD).next_to(quadratic, UP, buff=0.4)
 
         self.add(linear, label_linear)
         self.play(Transform(linear, quadratic), Transform(label_linear, label_actual), run_time=PACE_SLOW)

@@ -37,22 +37,20 @@ Conventions:
 - [x] **ffmpeg (static binary)** → bin/ffmpeg
 - [x] **micromamba (static binary)** → bin/micromamba
 
-- [!] **Manim env install** — BLOCKED
-  - Last attempt: `micromamba create -n subq -c conda-forge python=3.12 manim manim-voiceover ffmpeg` hung in the SAT solver for 18+ min and was killed.
-  - **Recommended fix:** install just `manim` (no `manim-voiceover`) from conda-forge first, then `pip install manim-voiceover` inside the activated env. The `manim-voiceover` deps explode the dep graph.
+- [x] **Manim env install** → lean solve: `micromamba create -y -n subq -c conda-forge python=3.12 manim ffmpeg` (see [Makefile](Makefile) `setup` target). **Do not** put `manim-voiceover` in the same conda solve (hangs 20+ min).
   - Acceptance: `make check` prints a manim version string and an ffmpeg version string with no errors.
 
-- [ ] **Smoke render**
-  - Once env is working: `make teaser QUALITY=-ql` should render all 6 teaser scenes to MP4 without errors.
-  - Acceptance: 6 MP4 files appear under `edit/renders/teaser/...`. They might be ugly; that's fine. They just need to render.
+- [x] **Teaser smoke render**
+  - Ran: `QUALITY=-ql make teaser` — all 6 scenes produce final MP4s under `edit/renders/teaser/videos/*/480p15/*.mp4` (gitignored).
+  - Scene 02 uses `Text("O(n²)")` instead of `MathTex` so teaser does not require a full LaTeX `preview` package. Deep-dive scenes still need LaTeX for `equation()` — see [README.md](README.md#troubleshooting).
 
 ## Phase 4 — Animation
 
 ### Teaser (6 scenes)
-All scaffolded with first-pass animations. Polish pass needed once env works.
+First-pass animations rendered (`QUALITY=-ql`). Polish pass still needed for production (`-qh` / `-qk`).
 
 - [~] [scene_01_open](vid/scenes/teaser/scene_01_open.py) — linear curve fade-in. Polish: micro-easing on the curve creation.
-- [~] [scene_02_curve](vid/scenes/teaser/scene_02_curve.py) — linear morphs to quadratic. Polish: stronger anticipation before the bend.
+- [~] [scene_02_curve](vid/scenes/teaser/scene_02_curve.py) — linear morphs to quadratic; `O(n²)` label is `Text` (no LaTeX). Polish: stronger anticipation before the bend.
 - [~] [scene_03_wall](vid/scenes/teaser/scene_03_wall.py) — KV bar fills 100k → 500k → 1M, overflows H100. Polish: numbers count up rather than snap.
 - [~] [scene_04_break](vid/scenes/teaser/scene_04_break.py) — red curve cracks, green linear replaces. Polish: literal "crack" particle effect on the break frame.
 - [~] [scene_05_payoff](vid/scenes/teaser/scene_05_payoff.py) — repo + PDF + video flow into single prompt. Polish: better icon glyphs.

@@ -43,10 +43,16 @@ help:
 	@echo "  all       - render everything"
 	@echo "  clean     - remove rendered media (keeps source)"
 
+# Lean install: conda-forge `manim` + `ffmpeg` only. Installing `manim-voiceover`
+# from conda in the same solve pulls a huge TTS dep tree and can hang for 20+ min.
+# After `make setup`, optional: `micromamba activate subq && pip install manim-voiceover`
 setup:
 	@if [ ! -x "$(MM)" ]; then echo "micromamba missing at $(MM); see README"; exit 1; fi
-	@$(ACTIVATE) && python -c "import manim; print('manim', manim.__version__)" \
-	  || ($(MM) create -y -n subq -c conda-forge python=3.12 manim manim-voiceover ffmpeg)
+	@if [ ! -d "$(ENV)" ]; then \
+	  export MAMBA_ROOT_PREFIX="$(ROOT)/.micromamba" && \
+	  $(MM) create -y -n subq -c conda-forge python=3.12 manim ffmpeg; \
+	fi
+	@$(ACTIVATE) && python -c "import manim; print('manim', manim.__version__)"
 
 check:
 	@$(ACTIVATE) && which python && python -c "import manim; print('manim', manim.__version__)"
@@ -54,7 +60,7 @@ check:
 
 teaser:
 	@mkdir -p $(OUT_DIR)/teaser
-	@for entry in $(TEASER_SCENES); do \
+	@set -e; for entry in $(TEASER_SCENES); do \
 	  file=$${entry%%:*}; klass=$${entry##*:}; \
 	  echo "==> rendering $$file::$$klass"; \
 	  $(ACTIVATE) && manim $(QUALITY) --media_dir $(OUT_DIR)/teaser $$file $$klass; \
@@ -62,7 +68,7 @@ teaser:
 
 deepdive:
 	@mkdir -p $(OUT_DIR)/deepdive
-	@for entry in $(DEEPDIVE_SCENES); do \
+	@set -e; for entry in $(DEEPDIVE_SCENES); do \
 	  file=$${entry%%:*}; klass=$${entry##*:}; \
 	  echo "==> rendering $$file::$$klass"; \
 	  $(ACTIVATE) && manim $(QUALITY) --media_dir $(OUT_DIR)/deepdive $$file $$klass; \

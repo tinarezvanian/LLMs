@@ -37,8 +37,14 @@ The project uses micromamba + conda-forge for the C-library dependencies (cairo,
 
 ```bash
 curl -Ls https://micro.mamba.pm/api/micromamba/osx-64/latest | tar -xvj bin/micromamba
-make setup
+mkdir -p bin && curl -L -o bin/ffmpeg.zip "https://evermeet.cx/ffmpeg/getrelease/zip" \
+  && (cd bin && unzip -o ffmpeg.zip && rm ffmpeg.zip)
+
+make setup    # creates .micromamba/envs/subq with conda-forge manim + ffmpeg (lean solve)
 make check
+
+# Optional: voiceover automation (heavy deps — install only if needed)
+# micromamba run -n subq -r .micromamba pip install manim-voiceover
 ```
 
 `make check` should print the installed Manim version and ffmpeg version.
@@ -67,6 +73,19 @@ research/notes.md
             -> edit/               (DaVinci Resolve assembly)
                 -> final masters (4K H.265 + 1080p H.264 + 1:1 social cut)
 ```
+
+## Troubleshooting
+
+### LaTeX / `preview.sty` not found (deep-dive only)
+
+Scenes that call `equation()` or `MathTex` delegate to your system `latex`. A minimal MiKTeX/TeX Live install often omits the **`preview`** package. If Manim prints `LaTeX Error: File 'preview.sty' not found`:
+
+- **MiKTeX:** open MiKTeX Console → Packages → search `preview` → install.
+- **TeX Live / MacTeX:** `sudo tlmgr install preview`
+
+The **teaser** avoids this for the hot path: scene 2 uses `Text("O(n²)")` instead of `MathTex`. **`make deepdive`** still expects LaTeX until those scenes are refactored.
+
+---
 
 ## Distribution
 

@@ -3,7 +3,7 @@
 from manim import *
 from manim.utils.rate_functions import smooth, there_and_back
 
-from vid.theme import apply_dark_theme, body, SUBQ_BLUE, SUBQ_RED, SUBQ_MUTED, PACE_FAST, PACE_NORMAL, PACE_SLOW
+from vid.theme import apply_dark_theme, body, FONT_MONO, SUBQ_BLUE, SUBQ_RED, SUBQ_MUTED, PACE_FAST, PACE_NORMAL, PACE_SLOW
 from vid.lib.mobjects import ScalingCurve
 
 
@@ -17,7 +17,8 @@ class Scene02Curve(Scene):
         label_linear = body("what we wish AI cost", color=SUBQ_MUTED).next_to(linear, DOWN, buff=0.3)
         label_actual = body("what attention actually costs", color=SUBQ_RED).next_to(quadratic, DOWN, buff=0.3)
         # Text, not MathTex: avoids a full LaTeX install with preview.sty (MiKTeX/TeX Live).
-        n2 = Text("O(n²)", font_size=72, color=SUBQ_RED, weight=BOLD).next_to(quadratic, UP, buff=0.4)
+        # Mono font keeps the parens + n + ² visually balanced.
+        n2 = Text("O(n²)", font=FONT_MONO, font_size=72, color=SUBQ_RED, weight=BOLD).next_to(quadratic, UP, buff=0.4)
 
         self.add(linear, label_linear)
         # Micro anticipation: breathe the linear curve once before the bend.

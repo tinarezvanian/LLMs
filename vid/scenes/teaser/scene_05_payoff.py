@@ -3,12 +3,12 @@
 from manim import *
 from manim.utils.rate_functions import smooth
 
-from vid.theme import apply_dark_theme, body, SUBQ_FG, SUBQ_GREEN, SUBQ_MUTED, SUBQ_YELLOW, PACE_NORMAL, PACE_SLOW
+from vid.theme import apply_dark_theme, body, FONT_MONO, SUBQ_FG, SUBQ_GREEN, SUBQ_MUTED, SUBQ_YELLOW, PACE_NORMAL, PACE_SLOW
 
 
 def _icon_code(color: str) -> VGroup:
-    bracket_l = Text("{", font_size=44, color=color, weight=BOLD)
-    bracket_r = Text("}", font_size=44, color=color, weight=BOLD)
+    bracket_l = Text("{", font=FONT_MONO, font_size=44, color=color, weight=BOLD)
+    bracket_r = Text("}", font=FONT_MONO, font_size=44, color=color, weight=BOLD)
     mid = body("code", color=color).scale(0.45)
     g = VGroup(bracket_l, mid, bracket_r).arrange(RIGHT, buff=0.05)
     box = SurroundingRectangle(g, color=SUBQ_FG, buff=0.12, corner_radius=0.1, stroke_width=2)

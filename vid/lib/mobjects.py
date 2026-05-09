@@ -19,6 +19,9 @@ from vid.theme import (
     BAD,
     NEUTRAL,
     ACCENT,
+    FONT_SANS,
+    FONT_SANS_DISPLAY,
+    FONT_MONO,
 )
 
 
@@ -27,8 +30,8 @@ class SubQWordmark(VGroup):
 
     def __init__(self, scale: float = 1.0, **kwargs):
         super().__init__(**kwargs)
-        sub = Text("Sub", font_size=72, color=SUBQ_FG, weight=BOLD)
-        q = Text("Q", font_size=72, color=SUBQ_GREEN, weight=BOLD)
+        sub = Text("Sub", font=FONT_SANS_DISPLAY, font_size=72, color=SUBQ_FG, weight=BOLD)
+        q = Text("Q", font=FONT_SANS_DISPLAY, font_size=72, color=SUBQ_GREEN, weight=BOLD)
         q.next_to(sub, RIGHT, buff=0.05)
         self.add(sub, q)
         self.scale(scale)
@@ -59,7 +62,7 @@ class AttentionGrid(VGroup):
         return self.cells[(i, j)].animate.set_fill(color, opacity=opacity)
 
     def cell_count_label(self) -> Text:
-        return Text(f"n^2 = {self.n * self.n}", font_size=32, color=SUBQ_MUTED)
+        return Text(f"n² = {self.n * self.n}", font=FONT_MONO, font_size=32, color=SUBQ_MUTED)
 
 
 class ScalingCurve(VGroup):
@@ -108,7 +111,7 @@ class GPUOutline(VGroup):
     def __init__(self, label: str = "H100  80 GB", **kwargs):
         super().__init__(**kwargs)
         body = RoundedRectangle(corner_radius=0.15, height=2.0, width=4.5, stroke_color=SUBQ_FG, stroke_width=3)
-        cap = Text(label, font_size=22, color=SUBQ_FG)
+        cap = Text(label, font=FONT_MONO, font_size=22, color=SUBQ_FG)
         cap.move_to(body.get_center())
         self.add(body, cap)
 
@@ -124,7 +127,7 @@ class KVCacheBar(VGroup):
         outline = Rectangle(height=0.6, width=4.5, stroke_color=SUBQ_FG, stroke_width=2)
         fill = Rectangle(height=0.55, width=4.45 * min(fraction, 1.0), stroke_width=0, fill_color=color, fill_opacity=0.85)
         fill.align_to(outline, LEFT)
-        cap = Text(f"{label}", font_size=20, color=SUBQ_MUTED)
+        cap = Text(f"{label}", font=FONT_SANS, font_size=20, color=SUBQ_MUTED)
         cap.next_to(outline, UP, buff=0.15)
         self.add(outline, fill, cap)
         self._outline = outline
@@ -153,7 +156,7 @@ class PostTransformerTree(VGroup):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        root = Text("subquadratic sequence models", font_size=28, color=SUBQ_FG, weight=BOLD)
+        root = Text("subquadratic sequence models", font=FONT_SANS_DISPLAY, font_size=28, color=SUBQ_FG, weight=BOLD)
         self.root = root
 
         branches_text = [
@@ -168,7 +171,7 @@ class PostTransformerTree(VGroup):
         spacing = 2.6
         for i, (text, color) in enumerate(branches_text):
             x = (i - (n - 1) / 2.0) * spacing
-            node = Text(text, font_size=20, color=color, weight=BOLD)
+            node = Text(text, font=FONT_SANS, font_size=20, color=color, weight=BOLD)
             node.move_to(np.array([x, -2.0, 0]))
             line = Line(root.get_bottom(), node.get_top(), stroke_color=SUBQ_MUTED, stroke_width=2)
             self.branches.append((node, line))

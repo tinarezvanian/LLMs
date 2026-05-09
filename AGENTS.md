@@ -37,7 +37,9 @@ companion/
   blog/post.md                 written companion to the deep-dive (MDX-ready)
   social/x_thread.md           9-tweet launch thread
   cover_letter.md              cover note for the SubQ application
-assets/branding/               SubQ wordmark sources, custom fonts, palette swatches (.gitkeep'd)
+assets/branding/               SubQ wordmark sources, palette swatches (.gitkeep'd)
+  fonts/Inter/                 Inter v4 (rsms/inter, SIL OFL) — Regular/Medium/SemiBold/Bold + Inter Display
+  fonts/JetBrainsMono/         JetBrains Mono v2.304 (jb/JetBrainsMono, SIL OFL) — Regular/Medium/Bold
 audio/  video/  demo/  edit/   pipeline dirs (.gitkeep'd) — large media gitignored: VO recordings, on-cam footage, screen capture, DaVinci project
 bin/                           project-local binaries (ffmpeg, micromamba); large files gitignored
 .venv/  .micromamba/           gitignored Python toolchains
@@ -102,6 +104,7 @@ Day 4 of the 10-day sprint. Reasoning: launches plant flags. Even a 75-second pu
 8. **The SubQ Python SDK (`subq` package) is a placeholder.** As of writing, the production package surface isn't documented yet. The starter-repo example scripts assume `from subq import SubQ` with a `client.responses.create(...)` shape, which mirrors the OpenAI SDK convention. **`pip install -r requirements.txt` will fail on this line until SubQ ships the package** — that's expected; the failure is the prompt to update the import once docs exist at https://docs.subq.ai.
 9. **Tina doesn't yet have SubQ beta access.** The live demo at the end of the deep-dive depends on it. If access is denied by Day 8 of the sprint, the demo becomes a "what I'd build the day I get access" mock-up — still valuable but weaker. Apply for the waitlist immediately.
 10. **Three deep-dive scene files were intentionally deleted on 2026-05-09.** `scene_04_chinchilla.py`, `scene_05_attention_grid.py`, `scene_07_flash_attention.py` were duplicates of canonical scenes 04/05/07; their better bits were folded in. Don't restore them from git history without re-reading TASKS.md "Reconcile duplicate scene files".
+11. **Don't call bare `Text("foo")` in scene code.** It bypasses Inter / JetBrains Mono and lands as system sans, which reads inconsistent next to helper-rendered text. Always go through `body()` / `caption()` / `mono()` / `title()` / `heading()` / `text_equation()` from `vid/theme.py` (or pass `font=FONT_SANS` / `FONT_SANS_DISPLAY` / `FONT_MONO` explicitly). The fonts are auto-registered with Pango at theme import; ship a missing TTF and that single label silently falls back — diff scene PNGs against a known-good frame to catch this.
 
 ## How to continue the work
 

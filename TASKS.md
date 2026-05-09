@@ -1,90 +1,188 @@
-# TASKS.md
+# TASKS.md — explicit step-by-step backlog
 
-> Live actionable backlog. The plan in `.cursor/plans/` is strategy; this file is the next physical step.
-
-Conventions:
-- `[x]` complete  ·  `[~]` in progress / needs human  ·  `[ ]` pending  ·  `[!]` blocked on external access
+> **Audience:** any LLM picking this up cold. Each task lists exact files, exact commands, and a one-line "done when" check.
+> Strategy lives in [.cursor/plans/](.cursor/plans/). Style rules in [DESIGN.md](DESIGN.md). Architecture decisions in [AGENTS.md](AGENTS.md).
+>
+> Status keys: `[x]` done · `[~]` partial / human-only follow-up · `[ ]` not started · `[!]` blocked on external
 
 ---
 
-## Phase 1 — Research
+## How to run anything in this repo (do this first)
 
-- [x] **Research notes drafted** → [research/notes.md](research/notes.md)
-- [~] **Read primary papers** — checklist with arXiv IDs → [research/PAPER_CHECKLIST.md](research/PAPER_CHECKLIST.md)
-  - Acceptance: Tina can sketch Kaplan loss, attention QKV→n², and one post-transformer family on a whiteboard without notes.
+The whole pipeline runs inside the `subq` micromamba env at `.micromamba/envs/subq/`.
+
+```bash
+cd /Users/ed/Developer/LLMs                     # repo root
+export MAMBA_ROOT_PREFIX="$PWD/.micromamba"
+eval "$(./bin/micromamba shell hook --shell bash)"
+micromamba activate subq
+export PATH="$PWD/bin:$PATH"
+export PYTHONPATH="$PWD:$PYTHONPATH"
+
+make help                                       # list every Make target
+```
+
+If `python -c "import typer"` fails inside the env, run `pip install "typer>=0.12" "rich>=13.7"` once (older envs predate the addition to `environment.yml`).
+
+---
+
+## Phase 1 — Research (human only)
+
+- [x] **Aggregate notes** → [research/notes.md](research/notes.md). All cited primary sources.
+- [~] **TASK 1.1** Read every P0 paper in [research/PAPER_CHECKLIST.md](research/PAPER_CHECKLIST.md).
+  - **Doer:** Tina (human). LLMs cannot complete this.
+  - **Done when:** Tina can sketch on a whiteboard (a) Kaplan power law, (b) attention QKV → n×n grid, (c) one post-transformer family of her choice, without notes.
+
+---
 
 ## Phase 2 — Scripts
 
-- [x] **Teaser script** → [scripts/teaser.md](scripts/teaser.md)
-- [x] **Deep-dive script** → [scripts/deepdive.md](scripts/deepdive.md)
-- [~] **Scratch VO recording** — see [audio/scratch/README.md](audio/scratch/README.md)
-  - Acceptance: scratch tracks in `audio/scratch/` (gitignored); scripts edited for pacing.
+- [x] [scripts/teaser.md](scripts/teaser.md) (~155 words, all `[ANIM]` cues present).
+- [x] [scripts/deepdive.md](scripts/deepdive.md) (~1700 words with `[ON-CAM]` / `[ANIM]` / `[SCREEN]` cues).
+- [~] **TASK 2.1** Record scratch VO; save under `audio/scratch/teaser.m4a` and `audio/scratch/deepdive.m4a` per [audio/scratch/README.md](audio/scratch/README.md).
+  - **Done when:** both files exist and match script word counts within ±10%.
+
+---
 
 ## Phase 3 — Production tooling
 
-- [x] **Repo scaffold**, **theme**, **mobjects**, **Makefile**, **environment.yml**
-- [x] **Lean micromamba env** — `make setup` / `make check`
-- [x] **Teaser + deep-dive smoke renders** at `QUALITY=-ql` (all Makefile-listed scenes)
-- [x] **LaTeX-free deep-dive** — formulas use `text_equation()` / `Text` in scenes 3, 5, 6, 9 so CI machines without TeX can run `make deepdive`.
+- [x] Manim env: `make setup` → `make check` prints `manim 0.20.x` + an `ffmpeg` line.
+- [x] **Typography:** Inter + JetBrains Mono shipped in [`assets/branding/fonts/`](assets/branding/fonts) and auto-registered by `vid/theme.py`. See [DESIGN.md §1 Typography](DESIGN.md).
+- [x] All current scenes smoke-render at `QUALITY=-ql`.
+
+### TASK 3.1 — If a render is missing a font (text suddenly looks like Helvetica/DejaVu)
+
+1. Check the TTFs are present: `ls assets/branding/fonts/Inter assets/branding/fonts/JetBrainsMono` — each should list 4–6 TTFs.
+2. If missing, re-run the download:
+   ```bash
+   curl -sSL -o /tmp/Inter-4.0.zip https://github.com/rsms/inter/releases/download/v4.0/Inter-4.0.zip
+   unzip -q -o /tmp/Inter-4.0.zip -d /tmp/Inter-4.0
+   cp /tmp/Inter-4.0/extras/ttf/Inter-{Regular,Medium,SemiBold,Bold}.ttf assets/branding/fonts/Inter/
+   cp /tmp/Inter-4.0/extras/ttf/InterDisplay-{SemiBold,Bold}.ttf assets/branding/fonts/Inter/
+   curl -sSL -o /tmp/JBM.zip https://download.jetbrains.com/fonts/JetBrainsMono-2.304.zip
+   unzip -q -o /tmp/JBM.zip -d /tmp/JBM
+   cp /tmp/JBM/fonts/ttf/JetBrainsMono-{Regular,Medium,Bold}.ttf assets/branding/fonts/JetBrainsMono/
+   ```
+3. Re-render the affected scene. If still wrong, the scene file likely calls `Text("...")` directly — replace with `body(...)` / `caption(...)` / `mono(...)` / `text_equation(...)` from `vid.theme` (see Gotcha 11 in [AGENTS.md](AGENTS.md)).
+
+---
 
 ## Phase 4 — Animation
 
 ### Teaser (6 scenes)
 
-Polish pass applied in code (easing, KV bar count-up, crack shards, payoff icons, CTA sheen). Production renders: `QUALITY=-qh make teaser`.
+| Scene | File | What it does |
+| ----- | ---- | ------------ |
+| 01 | [vid/scenes/teaser/scene_01_open.py](vid/scenes/teaser/scene_01_open.py) | Linear cold-open curve |
+| 02 | [vid/scenes/teaser/scene_02_curve.py](vid/scenes/teaser/scene_02_curve.py) | Linear → quadratic + `O(n²)` |
+| 03 | [vid/scenes/teaser/scene_03_wall.py](vid/scenes/teaser/scene_03_wall.py) | KV bar count-up to 524 GB |
+| 04 | [vid/scenes/teaser/scene_04_break.py](vid/scenes/teaser/scene_04_break.py) | Curve cracks → linear green |
+| 05 | [vid/scenes/teaser/scene_05_payoff.py](vid/scenes/teaser/scene_05_payoff.py) | code/doc/film chips → one prompt |
+| 06 | [vid/scenes/teaser/scene_06_cta.py](vid/scenes/teaser/scene_06_cta.py) | Wordmark + CTA + sheen |
 
-- [x] **scene_01–06** — smoke OK at `-ql`; polish in source
-- [~] **Final `-qh` / `-qk` masters** — run when locking picture
+- [x] **TASK 4.1** Smoke render: `QUALITY=-ql make teaser` exits 0; 6 MP4s under `edit/renders/teaser/videos/scene_*/480p15/`.
+- [ ] **TASK 4.2** Production render: `QUALITY=-qh make teaser`. **Done when** 6 MP4s exist under `edit/renders/teaser/videos/scene_*/1080p60/` and look readable on a phone (≥ iPhone 12 size).
+- [ ] **TASK 4.3** Watch each `-qh` render and fix any scene whose VO timing in [scripts/teaser.md](scripts/teaser.md) doesn't fit the animation. **Done when** every `[ANIM:]` cue lands in the right place when read at 124 wpm.
 
-### Deep-dive (11 Manim scenes + 2 `SKIP_RENDER` placeholders)
+### Deep-dive (11 Manim + 2 `SKIP_RENDER` placeholders)
 
-Scene 2 (on-cam) and 13 (screen demo) are placeholders — real footage on shoot day.
+| Scene | File | Notes |
+| ----- | ---- | ----- |
+| 01 | [vid/scenes/deepdive/scene_01_cold_open.py](vid/scenes/deepdive/scene_01_cold_open.py) | Title after screen-cap intro |
+| 02 | [vid/scenes/deepdive/scene_02_oncam_hook.py](vid/scenes/deepdive/scene_02_oncam_hook.py) | `SKIP_RENDER` — on-cam |
+| 03 | [vid/scenes/deepdive/scene_03_scaling_laws.py](vid/scenes/deepdive/scene_03_scaling_laws.py) | Kaplan plot + Chinchilla |
+| 04 | [vid/scenes/deepdive/scene_04_pivot.py](vid/scenes/deepdive/scene_04_pivot.py) | Pivot to context-length axis |
+| 05 | [vid/scenes/deepdive/scene_05_attention.py](vid/scenes/deepdive/scene_05_attention.py) | Q/K/V → n×n grid |
+| 06 | [vid/scenes/deepdive/scene_06_kv_wall.py](vid/scenes/deepdive/scene_06_kv_wall.py) | KV cache equation + 524 GB |
+| 07 | [vid/scenes/deepdive/scene_07_flashattention.py](vid/scenes/deepdive/scene_07_flashattention.py) | Three curves (attn / FA / linear) |
+| 08 | [vid/scenes/deepdive/scene_08_landscape.py](vid/scenes/deepdive/scene_08_landscape.py) | Post-transformer tree |
+| 09 | [vid/scenes/deepdive/scene_09_mamba.py](vid/scenes/deepdive/scene_09_mamba.py) | Rolling state intuition |
+| 10 | [vid/scenes/deepdive/scene_10_subq_position.py](vid/scenes/deepdive/scene_10_subq_position.py) | SubQ branch on tree |
+| 11 | [vid/scenes/deepdive/scene_11_benchmarks.py](vid/scenes/deepdive/scene_11_benchmarks.py) | Sourced benchmark callouts |
+| 12 | [vid/scenes/deepdive/scene_12_demo_intro.py](vid/scenes/deepdive/scene_12_demo_intro.py) | Title before demo |
+| 13 | [vid/scenes/deepdive/scene_13_demo_capture.py](vid/scenes/deepdive/scene_13_demo_capture.py) | `SKIP_RENDER` — screen capture |
+| 14 | [vid/scenes/deepdive/scene_14_close.py](vid/scenes/deepdive/scene_14_close.py) | End card |
 
-- [x] **All numbered Manim scenes** — `QUALITY=-ql make deepdive` passes (2026-05-09)
-- [~] **Production `-qh` pass** — optional before final upload
-
-## Phase 5 — Shoot day
-
-Runbook: [scripts/runbook_shoot_day.md](scripts/runbook_shoot_day.md)
-
-- [ ] SubQ beta / API key
-- [ ] Camera + audio setup
-- [ ] On-camera takes → `video/`
-- [ ] VO → `audio/final/`
-- [ ] SubQ Code capture → `demo/`
-
-## Phase 6 — Edit + ship
-
-Runbook: [scripts/runbook_edit_and_ship.md](scripts/runbook_edit_and_ship.md)
-
-- [ ] DaVinci assembly, color, mix, captions
-- [ ] Delivery masters (16:9, 1:1, 9:16 per [DESIGN.md](DESIGN.md))
-
-## Phase 7 — Companion deliverables
-
-- [x] Starter repo, blog draft, X thread draft, cover letter
-- [ ] **Live benchmarks** — fill [companion/subq-quickstart/BENCHMARKS.md](companion/subq-quickstart/BENCHMARKS.md) after API access  
-  - Smoke without SDK: `python benchmarks/needle_in_haystack.py --dry-run --tokens 500000`
-- [ ] **Publish `subq-quickstart`** — [companion/subq-quickstart/PUBLISH.md](companion/subq-quickstart/PUBLISH.md)
-- [x] **X-thread stills** — `make stills` → `bash scripts/export_x_thread_stills.sh` → `assets/x_thread_stills/*.png` (default render frame; square-crop to 1080×1080 in Resolve or ffmpeg if needed for X)
-- [ ] **Schedule X thread** (~9am PT)
-
-## Phase 8 — Submit
-
-- [ ] Confirm handles / links in [companion/cover_letter.md](companion/cover_letter.md)
-- [ ] Submit application
+- [x] **TASK 4.4** Smoke render: `QUALITY=-ql make deepdive` exits 0; 12 MP4s under `edit/renders/deepdive/videos/scene_*/480p15/`. (Scenes 02 + 13 do not render — that's expected.)
+- [ ] **TASK 4.5** Production render: `QUALITY=-qh make deepdive`. **Done when** 12 MP4s exist at 1080p60.
+- [ ] **TASK 4.6** Decide per scene whether `text_equation()` (no LaTeX) is acceptable or whether to install LaTeX `preview` and switch back to `equation()` for prettier math. Prefer `text_equation` unless the equation has fractions or radicals that need real typesetting.
 
 ---
 
-## Reconcile duplicate scene files — DONE 2026-05-09
+## Phase 5 — Shoot day
 
-See git history: alternates for scenes 04/05/07 merged into canonical files and deleted.
+Runbook: [scripts/runbook_shoot_day.md](scripts/runbook_shoot_day.md). All tasks are human-only.
+
+- [!] **TASK 5.1** Apply for SubQ beta at [subq.ai](https://subq.ai). Blocks tasks 5.5, 7.2.
+- [ ] **TASK 5.2** Capture on-cam intro → `video/oncam_intro.mov` (3+ takes, 4K24, 50mm).
+- [ ] **TASK 5.3** Capture on-cam outro → `video/oncam_outro.mov` (3+ takes).
+- [ ] **TASK 5.4** Record final VO (deep-dive script) → `audio/final/deepdive_vo.wav`.
+- [!] **TASK 5.5** Record SubQ Code demo (OBS, 1440p, no secrets visible) → `demo/subq_code_session.mov` (3+ takes).
+  - Blocked on TASK 5.1.
+
+---
+
+## Phase 6 — Edit + ship
+
+Runbook: [scripts/runbook_edit_and_ship.md](scripts/runbook_edit_and_ship.md). DaVinci Resolve.
+
+- [ ] **TASK 6.1** Build VO spine timeline; lay Manim renders to picture; sync on-cam takes.
+- [ ] **TASK 6.2** Color (warm grade on on-cam only; do not regrade Manim).
+- [ ] **TASK 6.3** Sound mix: dialog -18 LUFS, music bed -22 LUFS under VO.
+- [ ] **TASK 6.4** Captions: Whisper-large transcribe → hand-fix `α`, `√`, `n²`, `FlashAttention`, `RULER`, `SSA`, model names per [DESIGN.md §6](DESIGN.md).
+- [ ] **TASK 6.5** Render delivery masters per [DESIGN.md §3](DESIGN.md):
+  - 4K H.265 archive (16:9, deep-dive)
+  - 1080p H.264 (16:9, YouTube)
+  - 1080×1080 teaser (X / Instagram)
+  - 1080×1920 teaser (Shorts / Reels / TikTok) — **CTA text in upper third**, see safe-area table
+
+---
+
+## Phase 7 — Companion deliverables
+
+- [x] [companion/subq-quickstart/README.md](companion/subq-quickstart/README.md), [examples/codebase-qa/load_repo.py](companion/subq-quickstart/examples/codebase-qa/load_repo.py), [examples/long-doc-summarizer/summarize_pdf.py](companion/subq-quickstart/examples/long-doc-summarizer/summarize_pdf.py), [benchmarks/needle_in_haystack.py](companion/subq-quickstart/benchmarks/needle_in_haystack.py), [BENCHMARKS.md](companion/subq-quickstart/BENCHMARKS.md), [PUBLISH.md](companion/subq-quickstart/PUBLISH.md), [LICENSE](companion/subq-quickstart/LICENSE).
+- [x] [companion/blog/post.md](companion/blog/post.md), [companion/social/x_thread.md](companion/social/x_thread.md), [companion/cover_letter.md](companion/cover_letter.md).
+- [x] **TASK 7.1** Generate X-thread stills:
+  ```bash
+  make stills
+  bash scripts/export_x_thread_stills.sh
+  ```
+  **Done when** `assets/x_thread_stills/02_*…07_*.png` all exist (currently shipped in repo).
+- [!] **TASK 7.2** Run real benchmarks against SubQ. Requires `SUBQ_API_KEY`. Blocked on TASK 5.1.
+  ```bash
+  cd companion/subq-quickstart/benchmarks
+  python needle_in_haystack.py --tokens 500000 --trials 5
+  ```
+  **Done when** [BENCHMARKS.md](companion/subq-quickstart/BENCHMARKS.md) has at least the 128k / 500k / 1M rows filled in (or honestly marked as "model returned X — see results.json").
+- [ ] **TASK 7.3** Publish `subq-quickstart` as its own GitHub repo per [companion/subq-quickstart/PUBLISH.md](companion/subq-quickstart/PUBLISH.md). **Done when** `https://github.com/tinarezvanian/subq-quickstart` resolves and READMEs match.
+- [ ] **TASK 7.4** Schedule X thread for ~9am PT using your scheduler of choice (Typefully, Hypefury, native X scheduler).
+
+---
+
+## Phase 8 — Submit
+
+- [ ] **TASK 8.1** In [companion/cover_letter.md](companion/cover_letter.md): replace every `[link]`, `[email]`, `[phone]`, `[github]`, `[twitter]` placeholder with verified live values.
+- [ ] **TASK 8.2** In [companion/social/x_thread.md](companion/social/x_thread.md): replace `@SubQ_AI @JustinDangel @AlexWhedon` with the real verified handles for SubQ founders.
+- [ ] **TASK 8.3** Submit application via SubQ careers page with the cover letter + 4 links (teaser YT, deep-dive YT, blog, `subq-quickstart` repo).
+
+---
 
 ## Done definition (whole sprint)
 
-- [ ] Teaser on YouTube + embedded in X tweet 1
-- [ ] Deep-dive on YouTube
-- [ ] Blog live
+- [ ] Teaser uploaded to YouTube + embedded in X tweet 1
+- [ ] Deep-dive uploaded to YouTube
+- [ ] Blog post live
 - [ ] X thread posted
-- [ ] `subq-quickstart` public with ≥1 real benchmark row
+- [ ] `subq-quickstart` public on GitHub with ≥1 real benchmark row
 - [ ] Application submitted
+
+---
+
+## Already-decided things (do not re-litigate)
+
+- Local Manim package directory is **`vid/`**, never `manim/` (PyPI collision; AGENTS Decision 2).
+- Conda env is **lean** — no `manim-voiceover` in `environment.yml` (solver hangs; AGENTS Gotcha 2).
+- Three deep-dive scenes (`scene_04_chinchilla.py`, `scene_05_attention_grid.py`, `scene_07_flash_attention.py`) were **deleted on 2026-05-09**; their useful bits live in the canonical 04/05/07 files. Don't restore them.
+- All on-screen formulas use `text_equation()` (Unicode `Text`) rather than `equation()` (LaTeX) so deep-dive renders without TeX. Switch back to `equation()` only after `make setup-latex`.
+- All on-screen text goes through the helpers in `vid/theme.py` (`body`, `caption`, `mono`, `title`, `heading`, `text_equation`); bare `Text("...")` is banned (Gotcha 11).
+- Aspect ratio set: **16:9 + 1:1 + 9:16**. See [DESIGN.md §3, §7](DESIGN.md).

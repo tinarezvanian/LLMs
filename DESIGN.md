@@ -21,14 +21,27 @@ The semantic meaning matters: green = the thing we're rooting for, red = the wal
 
 ### Typography
 
-Manim's default sans-serif. Sizes pinned in `theme.py`:
+Two families, both shipped in-repo at [`assets/branding/fonts/`](assets/branding/fonts) (SIL OFL). Registered with Pango on import via `vid/theme.py::_activate_repo_fonts()` so renders work on a fresh checkout with no system font install.
 
-- Title: 56pt
-- Heading: 40pt
-- Body: 32pt
-- Caption: 24pt
-- Equation: 44pt (MathTex)
-- Footnote: 18pt italic muted (for source attributions)
+| family             | use                                                       | source             |
+| ------------------ | --------------------------------------------------------- | ------------------ |
+| **Inter**          | body, captions, footnotes, branch labels                  | rsms/inter v4      |
+| **Inter Display**  | titles, headings, SubQ wordmark                            | rsms/inter v4      |
+| **JetBrains Mono** | equations (`text_equation()`), code, KV / GPU labels, n²   | jb/JetBrainsMono v2.304 |
+
+Sizes pinned in `theme.py`:
+
+- Title: 56pt (Inter Display Bold)
+- Heading: 40pt (Inter Display Bold)
+- Body: 32pt (Inter Regular)
+- Caption: 24pt (Inter Regular muted)
+- Equation: 44pt (JetBrains Mono Bold via `text_equation`; or `MathTex` if LaTeX is installed)
+- Mono / code: 32pt (JetBrains Mono Regular via `mono()` helper)
+- Footnote: 18pt italic muted (Inter Italic)
+
+**Why these two:** Inter has tabular numerals and excellent screen rendering at every weight (used by Vercel, Notion, Linear); JetBrains Mono ligatures + slashed zero make `O(n²)`, `1M`, `H100  80 GB` read unambiguously on a phone. Both ship as SIL OFL so we can redistribute the TTFs without per-machine installs.
+
+**Don't** call `Text("foo")` without specifying `font=` — you'll get system sans and the type will pop visibly inconsistent against scenes that use the helpers. Use `body()` / `caption()` / `mono()` / `text_equation()` / `title()` / `heading()` from `vid/theme.py`.
 
 ### Pacing constants
 

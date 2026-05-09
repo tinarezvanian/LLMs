@@ -15,11 +15,14 @@ todos:
     content: "micromamba env subq: conda-forge python=3.12 + manim + ffmpeg (lean solve). make setup / make check OK; Manim 0.20.1."
     status: completed
   - id: teaser_anim
-    content: "Phase 4a: 6 teaser scenes smoke-rendered at -ql; scene_02 uses Text(O(n²)) for no-LaTeX portability. Next: polish + -qh production renders."
+    content: "Phase 4a: 6 teaser scenes polished + smoke-rendered at -ql with Inter / JetBrains Mono fonts. Next: -qh production renders + final VO sync."
     status: in_progress
   - id: deepdive_anim
-    content: "Phase 4b: 14 deep-dive scenes scaffolded with first-pass animations (12 Manim + 2 placeholder for camera/screen). Polish + render once env install works."
+    content: "Phase 4b: 11 Manim deep-dive scenes + 2 SKIP_RENDER placeholders, all rendering with text_equation (no LaTeX) + Inter / JetBrains Mono. Next: -qh pass + scene-level polish."
     status: in_progress
+  - id: typography
+    content: "Phase 4c: Inter (rsms/inter v4) + JetBrains Mono (jb v2.304) shipped under assets/branding/fonts/, registered in vid/theme.py. body/heading/title/caption/mono/text_equation helpers route through them. Bare Text() banned (gotcha #11)."
+    status: completed
   - id: shoot
     content: "Phase 5: One on-camera shoot day for intro/outro/whiteboard + SubQ Code demo screen capture + final VO."
     status: pending

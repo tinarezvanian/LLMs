@@ -1,2 +1,2 @@
 # LLMs
-LLM ideas
+LLM ideas and experiments.

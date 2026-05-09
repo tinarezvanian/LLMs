@@ -22,13 +22,14 @@ research/notes.md              primary-source notes; every claim in the videos t
 scripts/teaser.md              ~155-word teaser script with [ANIM] cues
 scripts/deepdive.md            ~1700-word deep-dive script with [ANIM]/[ON-CAM]/[SCREEN] cues
 vid/                           Manim Python package (NOTE: directory is `vid/` to avoid clashing with the `manim` PyPI package)
-  theme.py                     palette, type sizes, pacing constants
+  theme.py                     palette, type sizes, pacing constants, equation()/text_equation() helpers
   lib/mobjects.py              reusable mobjects (AttentionGrid, GPUOutline, KVCacheBar, ScalingCurve, PostTransformerTree, SubQWordmark)
   scenes/teaser/scene_0N_*.py  6 teaser scenes, one Manim Scene class per file
-  scenes/deepdive/scene_0N_*.py 14 deep-dive scenes (some are placeholders with SKIP_RENDER = True for camera/screen segments)
+  scenes/deepdive/scene_0N_*.py 11 deep-dive scenes (some are placeholders with SKIP_RENDER = True for camera/screen segments)
 companion/
-  subq-quickstart/             standalone GitHub starter repo to publish separately
+  subq-quickstart/             standalone GitHub starter repo to publish separately (MIT)
     README.md                  "Build a whole-codebase QA agent on SubQ in 50 lines"
+    LICENSE                    MIT
     examples/codebase-qa/      load entire repo into context, ask cross-file questions
     examples/long-doc-summarizer/  load 500-page PDF into context
     benchmarks/needle_in_haystack.py   reproducible long-context test
@@ -36,10 +37,12 @@ companion/
   blog/post.md                 written companion to the deep-dive (MDX-ready)
   social/x_thread.md           9-tweet launch thread
   cover_letter.md              cover note for the SubQ application
-audio/  video/  demo/  edit/   gitignored: VO recordings, on-cam footage, screen capture, DaVinci project
+assets/branding/               SubQ wordmark sources, custom fonts, palette swatches (.gitkeep'd)
+audio/  video/  demo/  edit/   pipeline dirs (.gitkeep'd) — large media gitignored: VO recordings, on-cam footage, screen capture, DaVinci project
 bin/                           project-local binaries (ffmpeg, micromamba); large files gitignored
 .venv/  .micromamba/           gitignored Python toolchains
-Makefile                       `make setup` / `make teaser` / `make deepdive` / `make all`
+LICENSE                        MIT (project root)
+Makefile                       `make setup` / `make check` / `make teaser` / `make deepdive` / `make stills` / `make all` / `make clean` / `make setup-latex` / `make help`
 environment.yml                conda-forge env spec (canonical install path)
 ```
 
@@ -53,7 +56,7 @@ mkdir -p bin && curl -L -o bin/ffmpeg.zip "https://evermeet.cx/ffmpeg/getrelease
 # 2) micromamba (static binary, no system install)
 curl -Ls https://micro.mamba.pm/api/micromamba/osx-64/latest | tar -xvj bin/micromamba
 
-# 3) conda env (NOTE: see "Gotchas" below — install just `manim` first, then `pip install manim-voiceover`)
+# 3) conda env (lean: manim + ffmpeg only; pip install manim-voiceover separately if needed — see Gotcha 2)
 make setup
 make check
 ```
@@ -74,7 +77,7 @@ The directory was originally `manim/` but that collides with the actual `manim` 
 On macOS, `pycairo` and `manimpango` need system `cairo` and `pango`. Homebrew was misconfigured on the build machine (HOMEBREW_CELLAR mis-set, no bottles available). conda-forge ships prebuilt cairo/pango/ffmpeg as conda packages; micromamba is a single 5MB static binary that doesn't need root. This is the standard Manim-on-macOS recipe.
 
 ### 4. Scripts and scenes are 1:1 (numbered)
-`scripts/teaser.md` describes 6 sections, and `vid/scenes/teaser/scene_01_*.py` through `scene_06_*.py` implement them. Same convention for the deep-dive (14 scenes, 12 of them rendered + 2 placeholders for camera/screen footage). Keep this numbering aligned when editing.
+`scripts/teaser.md` describes 6 sections, and `vid/scenes/teaser/scene_01_*.py` through `scene_06_*.py` implement them. Same convention for the deep-dive (11 Manim scenes + 2 SKIP_RENDER placeholders for camera/screen footage = 13 total numbered files; the script's "Scene 4 — pivot" doubles as the Chinchilla beat, which used to have its own scene file but was reconciled away — see TASKS.md). Keep this numbering aligned when editing, and update the Makefile's `DEEPDIVE_SCENES` list whenever a scene is renamed.
 
 ### 5. Two scenes in the deep-dive intentionally don't render
 `scene_02_oncam_hook.py` and `scene_13_demo_capture.py` set `SKIP_RENDER = True`. They exist to keep numbering consistent with the script and the DaVinci edit list. The actual content is camera footage (scene 2) and screen capture (scene 13).
@@ -94,10 +97,11 @@ Day 4 of the 10-day sprint. Reasoning: launches plant flags. Even a 75-second pu
 3. **`MathTex` / `equation()` require system LaTeX with the `preview` package.** If Manim errors with `preview.sty not found`, install it (MiKTeX: install package `preview`; TeX Live: `tlmgr install preview`). Teaser scene 2 deliberately uses `Text("O(n²)")` so `make teaser` works without LaTeX; `make deepdive` still needs LaTeX until those scenes are refactored.
 4. **Don't rename `vid/` back to `manim/`.** See decision 2 above.
 5. **`.gitignore` line 17 (`lib/`) would hide `vid/lib/`.** The negation `!vid/lib/` keeps it visible. Don't remove the negation.
-6. **`make` targets use micromamba via `MAMBA_ROOT_PREFIX="$ROOT/.micromamba".** Never run `micromamba activate subq` outside that env var or you'll target the user's global micromamba (if any).
-7. **Manim CE versions move fast.** As of writing the env targets `manim` (latest from conda-forge, ~0.18+). If a future scene file uses an API that shifts, pin in `environment.yml`.
-8. **The SubQ Python SDK (`subq` package) is a placeholder.** As of writing, the production package surface isn't documented yet. The starter-repo example scripts assume `from subq import SubQ` with a `client.responses.create(...)` shape, which mirrors the OpenAI SDK convention. Update once docs exist at https://docs.subq.ai.
+6. **`make` targets use micromamba via `MAMBA_ROOT_PREFIX="$ROOT/.micromamba"`.** Never run `micromamba activate subq` outside that env var or you'll target the user's global micromamba (if any).
+7. **Manim CE versions move fast.** As of writing the env targets `manim` (latest from conda-forge, ~0.20+). If a future scene file uses an API that shifts, pin in `environment.yml`.
+8. **The SubQ Python SDK (`subq` package) is a placeholder.** As of writing, the production package surface isn't documented yet. The starter-repo example scripts assume `from subq import SubQ` with a `client.responses.create(...)` shape, which mirrors the OpenAI SDK convention. **`pip install -r requirements.txt` will fail on this line until SubQ ships the package** — that's expected; the failure is the prompt to update the import once docs exist at https://docs.subq.ai.
 9. **Tina doesn't yet have SubQ beta access.** The live demo at the end of the deep-dive depends on it. If access is denied by Day 8 of the sprint, the demo becomes a "what I'd build the day I get access" mock-up — still valuable but weaker. Apply for the waitlist immediately.
+10. **Three deep-dive scene files were intentionally deleted on 2026-05-09.** `scene_04_chinchilla.py`, `scene_05_attention_grid.py`, `scene_07_flash_attention.py` were duplicates of canonical scenes 04/05/07; their better bits were folded in. Don't restore them from git history without re-reading TASKS.md "Reconcile duplicate scene files".
 
 ## How to continue the work
 
@@ -105,11 +109,12 @@ Current state: **`make setup` + `make check` work; teaser smoke-render at `-ql` 
 
 Next steps, in order:
 
-1. **Install LaTeX `preview` package** on your machine if `make deepdive` fails with `preview.sty not found` (see README troubleshooting). Alternatively refactor deep-dive `equation()` calls to plain text (large effort).
+1. **Install LaTeX `preview` package** if `make deepdive` fails with `preview.sty not found` (run `make setup-latex` for platform-specific commands). The escape hatch is `text_equation(...)` from `vid/theme.py` — a Unicode-only Text fallback for any `equation(...)` call, no LaTeX needed.
 2. Polish each teaser scene against [`scripts/teaser.md`](scripts/teaser.md), then re-render at `QUALITY=-qh` (1080p).
-3. Assemble teaser VO + music in DaVinci (or ffmpeg concat); export 16:9 and 1:1 cuts.
+3. Assemble teaser VO + music in DaVinci (or ffmpeg concat); export **16:9, 1:1, and 9:16** cuts (see [DESIGN.md §3, §7](DESIGN.md)).
 4. Run `make deepdive` once LaTeX works; fix scenes one at a time if needed.
-5. Shoot day (camera + SubQ Code capture + final VO).
+5. Run `make stills` to export PNG end-frames of every scene for the X thread.
+6. Shoot day (camera + SubQ Code capture + final VO).
 
 See [`TASKS.md`](TASKS.md) for the live backlog with acceptance criteria.
 

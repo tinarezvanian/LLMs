@@ -1,5 +1,7 @@
 # Cover note — Founding Developer Advocate, Subquadratic
 
+<!-- TODO before sending: replace [link] / [email] / [phone] / [github] / [twitter] placeholders below with live URLs. -->
+
 Dear Justin and Alex,
 
 You launched five days ago. The conversation around SubQ on X is going to spike, plateau, and then live or die based on whether developers can actually build something with the API and explain why it matters to the next developer over.

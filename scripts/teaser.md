@@ -23,7 +23,7 @@ VO: "At one million tokens, the cache alone needs five hundred and twenty-four g
 **[0:32 - 0:48]  THE BREAK**
 [ANIM: The red curve cracks. Falls away. A green linear line slides in to replace it. SubQ logo pulses in.]
 
-VO: "Subquadratic just shipped a model that flips that curve. Linear scaling. Twelve million token context. Fifty-two times faster than FlashAttention at one million tokens."
+VO: "Subquadratic just shipped a model that flips that curve. Linear scaling. One million tokens in production, twelve million in research. Fifty-two times faster than FlashAttention at one million tokens."
 
 **[0:48 - 1:00]  THE PAYOFF**
 [ANIM: Three icons cascade — a whole repo, a 500-page PDF, a multi-hour video transcript — all flowing into a single prompt window.]
@@ -40,6 +40,10 @@ VO: "I broke down the math, the architecture, and built the starter repo. Link b
 ## Production notes
 - Music: low cinematic synth, fade out under VO at -22 LUFS
 - Color: SubQ palette — deep navy bg, signal-green for "good" curves, signal-red for "bad" curves
-- Captions burned in (X autoplay is muted)
-- Two cuts: 16:9 (YouTube short / LinkedIn / blog embed) and 1:1 (X feed / Instagram)
+- Captions burned in for social cuts (X / LinkedIn / Shorts / Reels / TikTok all autoplay muted); see [DESIGN.md §6](../DESIGN.md) for caption spec
+- Three cuts (re-render with `config.frame_size`):
+  - **16:9** (1920×1080) — YouTube short, LinkedIn, blog embed
+  - **1:1** (1080×1080) — X feed, Instagram
+  - **9:16** (1080×1920) — YouTube Shorts, Reels, TikTok. CTA text moves to upper third to survive platform overlays.
 - End frame holds 2s for thumbnail grab
+- ANIM cue at 0:08-0:18 says "n²" (Unicode); on-screen mobject also uses `Text("O(n²)")`, not `MathTex`, so the teaser renders without LaTeX

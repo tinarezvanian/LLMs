@@ -32,16 +32,20 @@ DEEPDIVE_SCENES := \
   vid/scenes/deepdive/scene_12_demo_intro.py:Scene12DemoIntro \
   vid/scenes/deepdive/scene_14_close.py:Scene14EndCard
 
-.PHONY: all teaser deepdive setup check clean help
+STILLS_DIR := $(OUT_DIR)/stills
+
+.PHONY: all teaser deepdive stills setup setup-latex check clean help
 
 help:
 	@echo "Targets:"
-	@echo "  setup     - install micromamba env (run once)"
-	@echo "  check     - smoke-test that manim + ffmpeg work"
-	@echo "  teaser    - render all teaser scenes (override QUALITY=-qh for HD)"
-	@echo "  deepdive  - render all deep-dive scenes"
-	@echo "  all       - render everything"
-	@echo "  clean     - remove rendered media (keeps source)"
+	@echo "  setup       - install micromamba env (run once)"
+	@echo "  setup-latex - print platform-specific commands for LaTeX 'preview' package"
+	@echo "  check       - smoke-test that manim + ffmpeg work"
+	@echo "  teaser      - render all teaser scenes (override QUALITY=-qh for HD)"
+	@echo "  deepdive    - render all deep-dive scenes (needs LaTeX 'preview')"
+	@echo "  stills      - export final PNG frame of every scene (for X thread)"
+	@echo "  all         - render teaser + deepdive"
+	@echo "  clean       - remove edit/renders and __pycache__"
 
 # Lean install: conda-forge `manim` + `ffmpeg` only. Installing `manim-voiceover`
 # from conda in the same solve pulls a huge TTS dep tree and can hang for 20+ min.
@@ -73,6 +77,25 @@ deepdive:
 	  echo "==> rendering $$file::$$klass"; \
 	  $(ACTIVATE) && manim $(QUALITY) --media_dir $(OUT_DIR)/deepdive $$file $$klass; \
 	done
+
+stills:
+	@mkdir -p $(STILLS_DIR)
+	@set -e; for entry in $(TEASER_SCENES) $(DEEPDIVE_SCENES); do \
+	  file=$${entry%%:*}; klass=$${entry##*:}; \
+	  echo "==> still $$file::$$klass"; \
+	  $(ACTIVATE) && manim -s --format png --media_dir $(STILLS_DIR) $$file $$klass; \
+	done
+	@echo "==> stills written under $(STILLS_DIR)/images/"
+
+setup-latex:
+	@echo "Manim's MathTex needs the LaTeX 'preview' package."
+	@echo "Install per platform, then re-run 'make deepdive':"
+	@echo ""
+	@echo "  macOS / Linux (TeX Live):  sudo tlmgr install preview"
+	@echo "  Windows (MiKTeX):          MiKTeX Console -> Packages -> install 'preview'"
+	@echo ""
+	@echo "Alternative: in any deep-dive scene, swap equation(...) for text_equation(...)"
+	@echo "from vid.theme — renders plain Text, no LaTeX needed."
 
 all: teaser deepdive
 

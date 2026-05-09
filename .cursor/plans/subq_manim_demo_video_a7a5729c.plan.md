@@ -133,17 +133,17 @@ Open mic feedback loop: record a scratch VO of the deep-dive script the same day
 
 Repo structure to set up:
 
-- `manim/` — Manim Community Edition + `manim-voiceover` plugin
+- `vid/` — Manim Community Edition. **Named `vid/`, not `manim/`**, to avoid the `manim` PyPI namespace collision (see [AGENTS.md](../AGENTS.md) decision 2).
   - `scenes/teaser/` and `scenes/deepdive/` with one file per scene
-  - Shared `theme.py` with 3B1B-ish palette + a custom `SubQLogo` mobject
+  - Shared `theme.py` with 3B1B-ish palette + a custom `SubQWordmark` mobject
 - `audio/` — Final VO (record in a closet with blankets if no booth; a Shure MV7 or even AirPods Pro with Krisp is acceptable)
 - `video/` — On-camera footage (single key light + window fill, 4K 24fps, lavalier mic)
 - `edit/` — DaVinci Resolve project (free tier is fine; better color than Premiere)
 - `demo/` — Live SubQ Code screen capture (OBS, 1440p, hide secrets)
 - `companion/` — Blog post (MDX) + GitHub starter repo `subq-quickstart`
-- `Makefile` with `make teaser`, `make deepdive`, `make all`
+- `Makefile` with `make teaser`, `make deepdive`, `make all`, `make stills`
 
-Manim version note: pin to Manim CE 0.18+ and `manim-voiceover` 0.3+. Don't use 3b1b/manim — it's the personal version, harder to install, fewer maintainers.
+Manim version note: Manim CE 0.20+ from conda-forge. `manim-voiceover` is **deferred** (heavy TTS deps make the conda solve hang); install with pip on demand if VO automation becomes useful. Don't use 3b1b/manim — it's the personal version, harder to install, fewer maintainers.
 
 ## Phase 4 — Animation (Days 4-7)
 
@@ -222,7 +222,7 @@ The video is the centerpiece, but the application is much stronger if it arrives
 
 - Day 1: Research sources read + `notes.md`
 - Day 2: Research wrap + storyboard rough sketches
-- Day 3: Both scripts written + scratch VO + repo scaffold + manim-voiceover installed
+- Day 3: Both scripts written + scratch VO + repo scaffold (Manim CE 0.20+ via micromamba)
 - Day 4: Teaser fully animated + rendered + posted on X (early publish to start traction)
 - Day 5: Deep-dive scenes 1-5 animated
 - Day 6: Deep-dive scenes 6-10 animated
@@ -234,6 +234,8 @@ The video is the centerpiece, but the application is much stronger if it arrives
 ## Risks and mitigations
 
 - **No SubQ beta access yet** → apply for waitlist immediately Day 1; if not granted by Day 8, the live demo becomes a "what I'd build the day I get access" mock-up (still valuable, slightly weaker)
-- **Animation slips past budget** → cut scenes 4 (Chinchilla) and 11 (Mamba intuition) first; they're the most "nice to have"
+- **LaTeX `preview.sty` blocks deep-dive renders** → install MiKTeX/TeX Live `preview` package (`make setup-latex` prints commands); fallback is `text_equation()` in `vid/theme.py` which renders plain `Text` instead of `MathTex`
+- **Independent verification of SubQ benchmarks fails** → scene 11 already hedges ("SubQ-reported, independent verification pending"); if RULER 128K replication misses badly in `companion/subq-quickstart/benchmarks/`, add an honest disclosure card before scene 11 rather than burying the result
+- **Animation slips past budget** → cut scenes 4 (Chinchilla content folded into scene 3) and 9 (Mamba intuition) first; they're the most "nice to have"
 - **On-camera anxiety** → record intro/outro in 6+ takes, pick best; keep on-cam segments under 90s total
 - **SubQ does its own deep-dive video first** → ship the teaser by Day 4 to plant a flag; the deep-dive can then position as the community/educator response, not competing coverage

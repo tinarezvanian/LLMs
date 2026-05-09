@@ -1,3 +1,7 @@
+# NOTE: as of 2026-05-09, the `subq` Python SDK is a placeholder. SubQ has
+# not published the package on PyPI yet (see https://docs.subq.ai when live).
+# The example scripts will raise ImportError until the package exists; that
+# error is caught and printed with an install hint.
 subq>=0.1.0
 tiktoken>=0.7.0
 python-dotenv>=1.0.0

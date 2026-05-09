@@ -54,7 +54,22 @@ def caption(text: str, color: str = SUBQ_MUTED) -> Text:
 
 
 def equation(tex: str, color: str = SUBQ_FG) -> MathTex:
+    """LaTeX-rendered equation. Requires system LaTeX with the 'preview' package.
+
+    If your machine lacks LaTeX (or `preview.sty`), use ``text_equation()`` instead
+    or run ``make setup-latex`` for install commands.
+    """
     return MathTex(tex, font_size=EQUATION_SIZE, color=color)
+
+
+def text_equation(plain: str, color: str = SUBQ_FG) -> Text:
+    """LaTeX-free fallback for ``equation()``.
+
+    Renders the equation as a plain ``Text`` mobject using Unicode (e.g. ``"O(n²)"``,
+    ``"h_t = A·h_{t-1} + B·x_t"``). Use this on machines without LaTeX, or when you
+    want a quick layout pass before installing the LaTeX preview package.
+    """
+    return Text(plain, font_size=EQUATION_SIZE, color=color, weight=BOLD)
 
 
 def source_footnote(text: str) -> Text:

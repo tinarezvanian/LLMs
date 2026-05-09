@@ -92,11 +92,11 @@ For each `[~]` scene:
 - [ ] **Color**: subtle warm grade on on-cam, leave Manim untouched
 - [ ] **Sound mix**: -18 LUFS dialog, -22 LUFS music bed, duck under VO
 - [ ] **Captions**: Whisper-large auto-transcribe, hand-correct LaTeX terms (alpha, sqrt, n^2 etc.)
-- [ ] **Render formats**:
-  - 4K H.265 archive master
-  - 1080p H.264 distribution copy (YouTube)
+- [ ] **Render formats** (final masters; see [DESIGN.md §3, §7](DESIGN.md) for full spec):
+  - 4K H.265 archive master (16:9, deep-dive only)
+  - 1080p H.264 distribution copy (16:9, YouTube primary)
   - 1080×1080 square cut of the teaser (X / Instagram)
-  - 1080×1920 vertical cut of the teaser (Shorts / Reels / TikTok)
+  - 1080×1920 vertical cut of the teaser (Shorts / Reels / TikTok) — CTA text in upper third, see safe-area table
 
 ## Phase 7 — Companion deliverables
 
@@ -121,15 +121,13 @@ For each `[~]` scene:
 
 ---
 
-## Reconcile duplicate scene files (one-off cleanup)
+## Reconcile duplicate scene files — DONE 2026-05-09
 
-Three deep-dive scenes have **two implementations** on disk (an older draft and a newer one). The Makefile only references the newer ones. Pick one of each pair and delete the loser:
+Three deep-dive scenes had two implementations on disk. Reconciled as follows:
 
-- `scene_04_chinchilla.py` (alternate, dedicated Chinchilla isoflops valley) vs `scene_04_pivot.py` (used by Makefile, the "pivot to context length" beat). The script wants the pivot, but the Chinchilla content is good enough that it could be added as a half-scene 3.5 if there's room.
-- `scene_05_attention_grid.py` (alternate, includes `softmax(QK^T)` equation) vs `scene_05_attention.py` (used by Makefile). The alternate's softmax equation is nicer; consider merging that visual into the Makefile-tracked file.
-- `scene_07_flash_attention.py` (alternate, adds a linear-comparison line) vs `scene_07_flashattention.py` (used by Makefile). The alternate's three-curve comparison (attn vs FlashAttn vs linear) is stronger; consider merging.
-
-After reconciling, update the Makefile if filenames change, and remove the loser files.
+- `scene_04_chinchilla.py` → **deleted.** Chinchilla content stays as a verbal beat inside [scene_03_scaling_laws](vid/scenes/deepdive/scene_03_scaling_laws.py). Plan also lists Chinchilla as the first cut candidate.
+- `scene_05_attention_grid.py` → **deleted.** Its `softmax(QK^T/sqrt(d))V` equation was folded into the canonical [scene_05_attention.py](vid/scenes/deepdive/scene_05_attention.py).
+- `scene_07_flash_attention.py` → **deleted.** Its three-curve comparison (attn / FlashAttn / linear) replaced the simpler version in [scene_07_flashattention.py](vid/scenes/deepdive/scene_07_flashattention.py).
 
 ## Things that are nice-to-have but cuttable if time runs out
 

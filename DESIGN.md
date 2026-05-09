@@ -56,9 +56,10 @@ The teaser and the deep-dive serve different jobs. Don't blur them.
 
 ### Teaser (~75s)
 - **Job:** social-feed magnet. Stops the scroll, communicates the core idea, links to depth.
-- **Format:** pure Manim + voiceover. No on-camera. 16:9 and 1:1 cuts.
+- **Format:** pure Manim + voiceover. No on-camera.
+- **Cuts:** **16:9** (1920×1080) for YouTube/LinkedIn/blog embed, **1:1** (1080×1080) for X feed and Instagram, **9:16** (1080×1920) for YouTube Shorts / Reels / TikTok. All three are mastered from the same scene source by re-rendering with `config.frame_size`; see "Safe areas" below.
 - **Content:** the wall (n²) → the break (linear). Everything else is cut.
-- **Distribution:** X tweet 1, LinkedIn, Discord, blog embed.
+- **Distribution:** X tweet 1 (1:1), LinkedIn (16:9), Discord (16:9), blog embed (16:9), Shorts/Reels/TikTok (9:16).
 
 ### Deep-dive (~10-12 min)
 - **Job:** trust + depth. Convinces engineers Tina knows what she's talking about and SubQ is worth their time.
@@ -82,15 +83,39 @@ The JD says: "build reference applications, demos, and GitHub starter repositori
 
 The `BENCHMARKS.md` template ships with intentionally empty result tables — the act of filling them in honestly is itself a content moment ("here are SubQ's claims, here are the numbers I measured, here's the gap").
 
-## 6. Editorial rules for any text we ship
+## 6. Captions
+
+Burned-in captions are required on every social cut (X, LinkedIn, Shorts, Reels, TikTok all autoplay muted). YouTube uses uploaded `.srt` instead of burn-in.
+
+- **Source:** Whisper-large transcribe → hand-correct technical terms (alpha, sqrt, n², FlashAttention, RULER, SSA).
+- **Font:** SF Pro / Inter / system sans, weight 600.
+- **Size:** 36pt for 1080p; 1:1 and 9:16 cuts use the same font size on a smaller canvas, so lines stay short.
+- **Color:** `#FFFFFF` on a 75%-opacity `#0B1020` rounded pill. Never on raw video — readability over aesthetics.
+- **Position:** lower third for 16:9; vertical center-low for 1:1; upper third for 9:16 (so it survives the platform-overlaid like/comment buttons at the bottom).
+- **Line length:** ≤ 32 chars per line, ≤ 2 lines on screen at once.
+- **Timing:** appear 80ms before the matching word; hold 200ms after the phrase ends.
+
+## 7. Safe areas (per aspect ratio)
+
+Critical text and the SubQ wordmark must sit inside the safe area for every cut, otherwise platform overlays or center-cropping will eat them.
+
+| ratio | canvas        | safe area (centered)         | platform overlay risk |
+| ----- | ------------- | ---------------------------- | --------------------- |
+| 16:9  | 1920 × 1080   | 1728 × 972  (90% × 90%)      | YouTube progress bar bottom 6% |
+| 1:1   | 1080 × 1080   | 972 × 972   (90% × 90%)      | Instagram username top, like button right |
+| 9:16  | 1080 × 1920   | 864 × 1536  (80% × 80%)      | TikTok/Shorts: bottom 25% (caption + buttons), right 12% (action rail) |
+
+In Manim, set `config.frame_size = (W, H)` per render pass and keep all CTA mobjects within the safe rectangle. Test by exporting a frame and overlaying the platform's UI screenshot before publishing.
+
+## 8. Editorial rules for any text we ship
 
 - **Engineers, not marketing.** Active voice, concrete nouns, numbers with units.
-- **No buzzwords.** Forbidden: "leverage", "unlock", "supercharge", "revolutionary", "AI-powered", "next-generation", "game-changing", "groundbreaking".
+- **No buzzwords.** Forbidden in **Tina's own copy**: "leverage", "unlock", "supercharge", "revolutionary", "AI-powered", "next-generation", "game-changing", "groundbreaking". Verbatim quotes from SubQ's launch material or the JD are exempt — but flag them as quotes when used.
 - **Cite or don't claim.** Numbers without sources don't ship.
 - **Hedge appropriately.** SubQ's claims are SubQ-reported until verified. Say so when stating them. The audience trusts you more for hedging than for amplifying.
 - **Short paragraphs.** Three sentences max in any blog or script paragraph.
 
-## 7. Distribution rhythm
+## 9. Distribution rhythm
 
 Day 4: teaser ships to X first (catch SubQ team and their followers in the launch wave). Embed in LinkedIn same day.
 

@@ -222,6 +222,11 @@ __marimo__/
 # Re-include source library directories that the generic `lib/` rule above hides.
 !vid/lib/
 !vid/lib/**
+# ...but keep build artifacts inside vid/lib/ ignored (the broad negation re-exposed them).
+vid/lib/__pycache__/
+
+# Personal IDE / editor workspace files (per-user, not project canon).
+*.code-workspace
 
 # Project-local toolchains and large binaries (kept out of git, set up via README).
 .venv/

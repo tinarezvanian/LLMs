@@ -1,4 +1,12 @@
-"""Deep-dive scene 5 — attention from scratch. Build Q, K, V, then the n x n grid."""
+"""Deep-dive scene 5 — attention from scratch.
+
+Builds Q/K/V matrices, shows the softmax(QK^T/sqrt(d))V equation, materializes
+the n x n attention grid, highlights cells, lands on O(n^2 d) and the trillion-
+cells callout.
+
+Reconciles two earlier drafts (canonical + scene_05_attention_grid alt) into
+one scene that has both the equation and the grid + highlights.
+"""
 
 from manim import *
 import numpy as np
@@ -35,6 +43,13 @@ class Scene05Attention(Scene):
         k = make_matrix("K  [n x d]", SUBQ_YELLOW, ORIGIN)
         v = make_matrix("V  [n x d]", SUBQ_FG, RIGHT * 4)
         self.play(FadeIn(q), FadeIn(k), FadeIn(v), run_time=PACE_NORMAL)
+        self.wait(0.3)
+
+        # Canonical attention equation, shown briefly while Q/K/V are still on screen.
+        # Requires LaTeX preview.sty; swap for text_equation() if rendering without LaTeX.
+        eq_full = equation(r"A = \mathrm{softmax}\!\left(\frac{Q K^{\!\top}}{\sqrt{d}}\right) V").scale(0.8)
+        eq_full.to_edge(DOWN, buff=0.8)
+        self.play(Write(eq_full), run_time=PACE_SLOW)
         self.wait(0.5)
 
         grid = AttentionGrid(n=n, cell_size=cell, color=SUBQ_BLUE).move_to(ORIGIN)
@@ -42,6 +57,7 @@ class Scene05Attention(Scene):
             FadeOut(q),
             FadeOut(k),
             FadeOut(v),
+            FadeOut(eq_full),
             FadeIn(grid, scale=0.8),
             run_time=PACE_SLOW,
         )

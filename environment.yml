@@ -1,14 +1,15 @@
 name: subq
+# Lean spec used by `make setup`. manim-voiceover is intentionally NOT here:
+# its TTS deps explode the conda solve and hang it for 20+ minutes. Install
+# after the env exists if you need VO automation: `pip install manim-voiceover`.
 channels:
   - conda-forge
 dependencies:
   - python=3.12
-  - manim
+  - manim     # pulls numpy, pycairo, manimpango, cairo, pango transitively
   - ffmpeg
-  - numpy
   - pip
   - pip:
-      # Optional voiceover plugin — install after env exists: pip install manim-voiceover
       - openai
       - python-dotenv
       - tiktoken

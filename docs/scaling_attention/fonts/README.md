@@ -1,6 +1,33 @@
-# EB Garamond (SIL Open Font License)
+# Fonts (SIL Open Font License)
 
-Static `.ttf` files expected by `preamble.tex` (paths match **Algorithmic Adventures**):
+The book is set in **Alegreya Sans** (Juan Pablo del Peral). The TTFs were
+copied from `LLMs/docs/Alegreya_Sans/`, where the upstream OFL.txt also lives.
+EB Garamond TTFs are kept as a fallback for anyone wanting to flip the
+preamble back to the original Algorithmic Adventures look.
+
+## Active font (Alegreya Sans)
+
+| File | Used as |
+|------|---------|
+| `AlegreyaSans-Regular.ttf` | `\setmainfont` upright (body) |
+| `AlegreyaSans-Italic.ttf` | italic |
+| `AlegreyaSans-Bold.ttf` | bold |
+| `AlegreyaSans-BoldItalic.ttf` | bold italic |
+| `AlegreyaSans-Light.ttf` / `LightItalic.ttf` | `\AlegreyaLight` running text |
+| `AlegreyaSans-Medium.ttf` / `MediumItalic.ttf` | medium weight |
+| `AlegreyaSans-Black.ttf` / `BlackItalic.ttf` | `\AlegreyaDisplay` chapter / part titles |
+
+To re-vendor or refresh from the workspace copy:
+
+```bash
+cp /Users/ed/Developer/LLMs/docs/Alegreya_Sans/AlegreyaSans-*.ttf .
+cp /Users/ed/Developer/LLMs/docs/Alegreya_Sans/OFL.txt .
+```
+
+## Fallback (EB Garamond)
+
+Kept around in case the preamble is reverted to the original Algorithmic
+Adventures `\setmainfont{EB Garamond}` setup.
 
 | File | Source |
 |------|--------|
@@ -9,9 +36,7 @@ Static `.ttf` files expected by `preamble.tex` (paths match **Algorithmic Advent
 | `EBGaramond-Bold.ttf` | same |
 | `EBGaramond-BoldItalic.ttf` | same |
 
-`OFL.txt` is copied from the same upstream repository.
-
-Download when vendoring:
+Download:
 
 ```bash
 BASE=https://raw.githubusercontent.com/octaviopardo/EBGaramond12/master/fonts/ttf

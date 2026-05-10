@@ -1,0 +1,108 @@
+\chapter{Scaling laws — Kaplan et al.}
+\label{ch:kaplan}
+
+\newthought{Most of what we now call} ``the LLM playbook'' rests on a single
+empirical observation made between 2017 and 2020 and crystallised by
+\citet{kaplan2020scaling}. The observation: as you make a transformer
+language model bigger, give it more data, and train it longer, its loss
+follows a smooth power law in each of those resources. Plotting loss against
+any of them on log-log axes gives a \emph{straight line}.
+
+That line is the reason the field collectively decided to spend hundreds of
+millions of dollars per training run. Before it, scaling up was speculative.
+After it, scaling up was a quantitative bet with predictable payoff.
+
+\section{The three power laws}
+
+\citet{kaplan2020scaling} swept seven orders of magnitude of model size and
+five of data, training transformers on text. They fit:
+\begin{align}
+  L(N) &\;\approx\; \left(\frac{N_c}{N}\right)^{\alpha_N},
+  & \alpha_N &\;\approx\; 0.076 \\
+  L(D) &\;\approx\; \left(\frac{D_c}{D}\right)^{\alpha_D},
+  & \alpha_D &\;\approx\; 0.095 \\
+  L(C) &\;\approx\; \left(\frac{C_c}{C}\right)^{\alpha_C},
+  & \alpha_C &\;\approx\; 0.050,
+\end{align}
+where \(N\) is non-embedding parameters, \(D\) is dataset tokens, and \(C\)
+is training compute in PF-days.\sidenote{The constants \(N_c, D_c, C_c\) and
+exponents \(\alpha_*\) are fitted from the empirical sweeps; they shift
+slightly with corpus and architecture but the shape — a power law over
+many orders of magnitude — is remarkably robust.} Each holds when the named
+resource is the \emph{bottleneck}; when it is not, the loss flattens out
+into a regime governed by whatever is the next-tightest constraint.
+
+\section{What ``straight on log-log'' actually means}
+
+Take logs of \(L(N) = (N_c/N)^{\alpha_N}\):
+\begin{equation}
+  \log L \;=\; \alpha_N \log N_c - \alpha_N \log N.
+\end{equation}
+Plot \(\log L\) against \(\log N\): a line with slope \(-\alpha_N\). For
+\(\alpha_N = 0.076\), every 10$\times$ in \(N\) buys roughly an
+\(0.076\)-decade fall in loss, i.e.\ about a 16\% reduction in cross-entropy.
+That sounds tiny — and it is — but it compounds over many orders of
+magnitude, and small drops in cross-entropy translate into qualitatively
+different model behaviour at the right scale.
+
+\paragraph{Why this is so important.} Most engineering quantities saturate.
+Add more cores, you eventually hit Amdahl's law. Add more disk, you eventually
+hit network. Power laws don't saturate; they slow. The Kaplan curves told
+the field that a model 100$\times$ bigger \emph{will} be measurably better,
+and quantified by how much. That is the licence to spend.
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{loglogaxis}[
+  width=8.5cm, height=5cm,
+  xlabel={parameters \(N\) (log scale)},
+  ylabel={loss \(L\) (log scale)},
+  xmin=1e6, xmax=1e12,
+  ymin=1, ymax=10,
+  axis lines=left,
+  grid=both,
+  major grid style={line width=.1pt, draw=gray!30},
+  tick pos=left,
+  ticklabel style={font=\small},
+  label style={font=\small},
+]
+  \addplot[domain=1e6:1e12, samples=40, thick, color=DarkSlateGray] {10*x^(-0.076)};
+\end{loglogaxis}
+\end{tikzpicture}
+\caption{The shape of \(L(N)\) on log-log axes — straight, with slope
+\(-\alpha_N\). Same picture for \(L(D)\) and \(L(C)\). Numbers are
+illustrative; the point is the geometry.}
+\end{figure}
+
+\section{Architecture details barely matter (within reason)}
+
+Another result, almost as important as the lines themselves: depth, width,
+heads, head dimension, layer normalisation flavour — all of those move the
+intercept of the line by a small amount, but not the slope. Within a
+generous envelope, what determines loss is total parameter count, not how
+those parameters are arranged.
+
+This is why papers comparing two architectures on a single point estimate
+of model size are often misleading: the difference between, say, GPT-style
+and BERT-style at 350M parameters tells you almost nothing about which would
+win at 70B parameters.
+
+\section{What Kaplan got slightly wrong}
+
+The original paper recommended that, given a fixed compute budget, you
+should make models \emph{larger} faster than you should give them more data.
+This was the recipe behind GPT-3 (175B parameters, ${\sim}300$B training
+tokens — a token-to-parameter ratio of less than 2). Two years later,
+Chinchilla \citep{hoffmann2022training} re-ran the analysis with a wider
+sweep and found that the optimal allocation shifts the other way:
+parameters and tokens should grow \emph{together}, with a token-to-parameter
+ratio of roughly 20.
+
+We cover Chinchilla in the next chapter. For now, take Kaplan as the paper
+that established \emph{that} scaling laws exist and \emph{what shape} they
+have. The numbers got refined; the framework is permanent.
+
+\keyidea{Loss is a power law in parameters, in data, and in compute. The
+straight lines are why scaling up is a strategy. The exponents tell you
+how steeply.}

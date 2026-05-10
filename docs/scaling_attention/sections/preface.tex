@@ -1,0 +1,58 @@
+% =====================================================================
+% Preface / how to read
+% =====================================================================
+
+This book is a primer for an engineer who has touched a neural network at least
+once and is comfortable with the words \emph{token}, \emph{transformer}, and
+\emph{loss function}, but who would like a complete picture of \emph{why} the
+field looks the way it does in 2026 — why every frontier lab is publishing a
+paper about \emph{long context}, why \emph{sparse} and \emph{linear} attention
+keep coming back, and what a startup like Subquadratic is actually claiming
+when it says it has a \emph{subquadratic sparse attention} mechanism.\sidenote{%
+The companion video lives in the same repository under \texttt{vid/scenes/};
+this book is the long form of the same argument.}
+
+The ambition is to start from first principles and end somewhere uncomfortable.
+By the last chapter, you should be able to (a) write down on a napkin why
+\(n^2\) is unavoidable for dense attention, (b) draw the 2$\times$2 frame that
+positions every alternative architecture against it, (c) read a benchmark table
+for a long-context language model and not be fooled by it, and (d) hold an
+informed opinion about what could replace attention in five years.
+
+\newthought{The road map.} Six parts.
+
+\begin{itemize}
+\item \textbf{Part I — Background.} What an LM is in one equation. Tokens
+(BPE, WordPiece, SentencePiece). And the pre-transformer history that almost
+everyone has forgotten: n-grams, RNNs, LSTMs, GRUs, sequence-to-sequence,
+and Bahdanau attention as a small bolt-on that ate the world.
+
+\item \textbf{Part II — The transformer.} The Vaswani recipe in detail.
+Self-attention from scratch, with the matrix shapes everyone gets wrong.
+Why the cost is exactly \(\bigO(n^2 d)\) per head per layer.
+
+\item \textbf{Part III — Scaling laws.} Kaplan's straight line on a log-log
+plot. Chinchilla's correction. What scaling laws \emph{don't} say about
+inference and context length, which is the entire reason this book exists.
+
+\item \textbf{Part IV — Living with \(\bigO(n^2)\).} FlashAttention, KV
+caches, multi-query and grouped-query attention, paged caches, sliding
+windows, RoPE/YaRN. Brilliant engineering that does not change the asymptote.
+
+\item \textbf{Part V — Subquadratic alternatives.} Fixed-pattern sparse,
+state-space models (Mamba), long convolutions (Hyena), kernel-feature linear
+attention, hybrids (SAMBA, Jamba, Griffin). What each one wins, and what
+each one gives up.
+
+\item \textbf{Part VI — The 2$\times$2 frame and SubQ.} The single picture
+that makes the whole landscape make sense. Subquadratic Sparse Attention
+(SSA) as one bet on the bottom-right quadrant. How to read SubQ's published
+benchmarks honestly, and what comes after attention.
+\end{itemize}
+
+\newthought{A note on margin notes.} This book is set in the Tufte style, so
+short clarifications, tangents, and citations live in the margin rather than
+in footnotes at the bottom of the page. They are meant to be skimmed, not
+mandatory. The main text reads on its own.\sidenote{Like this. If a sentence
+in the body could use a sanity-check, a derivation, or a pointer to a paper,
+look right.}

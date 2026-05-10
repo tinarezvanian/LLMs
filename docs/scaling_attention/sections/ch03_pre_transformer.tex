@@ -1,0 +1,162 @@
+\chapter{The pre-transformer era}
+\label{ch:pre-transformer}
+
+\newthought{The transformer is a 2017 paper.} Language modelling has been a
+serious research topic for at least 70 years before that. Most of the
+intuitions in modern LLMs — the chain-rule decomposition, the importance of
+context, the trade-off between fixed and unbounded memory — are not new. They
+have been re-discovered, with increasing computational firepower, several
+times.
+
+This chapter is a tour of what came before the transformer, framed in the
+language we will use in the rest of the book. It is short, but it matters:
+many of the ``new'' subquadratic architectures in Part~V are direct
+descendants of pre-transformer ideas that the field stopped using because
+GPUs got big enough to brute-force the problem.
+
+\section{n-gram models — counting your way to fluency}
+
+The first practical language models were just \emph{count tables}. Pick a
+window size \(k\) (usually 3 to 5). For every \(k\)-tuple of tokens you ever
+saw in a training corpus, store
+\begin{equation}
+  p(x_t \mid x_{t-k+1}, \ldots, x_{t-1})
+  \;=\;
+  \frac{\#(x_{t-k+1}, \ldots, x_{t-1}, x_t)}
+       {\#(x_{t-k+1}, \ldots, x_{t-1})}.
+  \label{eq:ngram}
+\end{equation}
+That is the entire model.\sidenote{In practice you smooth the counts so
+unseen tuples get a tiny non-zero probability — Kneser-Ney smoothing
+\citep{kneser1995smoothing} was the dominant technique for two decades.}
+
+\paragraph{Strengths.} O(1) compute per token. Embarrassingly parallel to
+train. For \(k = 5\), competitive with much fancier models on speech-recognition
+language-model rescoring up to roughly 2010.\sidenote{Google's 2007
+paper described training 5-grams over 2 trillion words for machine
+translation, several years before any neural alternative was viable
+\citep{brants2007large}.}
+
+\paragraph{Weaknesses.} Fundamentally bounded by \(k\). An \(n\)-gram model
+literally cannot use information from more than \(k - 1\) tokens back, even
+in principle. The state space grows as \(V^k\), so going from 5-grams to
+10-grams blows up by twelve orders of magnitude.
+
+That hard bound — \emph{context up to \(k\) tokens, period} — is the original
+sin every architecture since has been trying to escape.
+
+\section{Recurrent neural networks (RNNs)}
+
+A recurrent network throws the count table out and replaces it with a single
+hidden vector \(h_t \in \R^{d}\) that is updated step by step:
+\begin{equation}
+  h_t \;=\; \tanh(W_h h_{t-1} + W_x e_t + b),
+  \quad
+  p_\theta(x_{t+1} \mid x_{\le t}) \;=\; \softmax(W_o h_t).
+  \label{eq:rnn}
+\end{equation}
+Now the model can in principle use \emph{all} prior tokens, because each
+\(h_t\) is a function of the entire prefix.\sidenote{The clean derivation
+goes back to \citep{elman1990finding}; \citep{mikolov2010rnnlm} put it on
+the LM map for modern NLP.} Compute per token is \(\bigO(d^2)\), independent
+of \(t\), which is a beautiful property. We will return to that.
+
+\paragraph{The vanishing gradient problem.} The catch is that ``in
+principle'' is doing all the work. Training the RNN by backpropagation
+through time multiplies many Jacobians together; with the \(\tanh\)
+non-linearity, the gradients vanish (or, worse, explode) within roughly
+20 steps. Vanilla RNNs effectively have a context of about that length, and
+nobody could train them stably enough to do better.
+
+\section{LSTMs and GRUs — the gated decade}
+
+The fix that worked is \emph{gating}. A long short-term memory cell
+\citep{hochreiter1997lstm} replaces the simple update in
+equation~\eqref{eq:rnn} with a small machine made of \term{gates}:
+\begin{align}
+  f_t &= \sigma(W_f [h_{t-1}, e_t] + b_f) & \text{forget gate} \\
+  i_t &= \sigma(W_i [h_{t-1}, e_t] + b_i) & \text{input gate} \\
+  o_t &= \sigma(W_o [h_{t-1}, e_t] + b_o) & \text{output gate} \\
+  \tilde c_t &= \tanh(W_c [h_{t-1}, e_t] + b_c) & \text{candidate} \\
+  c_t &= f_t \odot c_{t-1} + i_t \odot \tilde c_t & \text{cell state} \\
+  h_t &= o_t \odot \tanh(c_t).
+\end{align}
+The cell state \(c_t\) flows along an additive path, so its gradient does
+not vanish; the gates decide what to write, what to keep, and what to read.
+\citet{cho2014gru} simplified this to the GRU, which has fewer parameters and
+behaves similarly in practice.\sidenote{If you have ever wondered why
+\emph{Mamba} (Chapter~\ref{ch:ssm}) keeps using the words ``selective'',
+``state'', and ``gate'' — it is because Mamba is the same idea, polished
+and re-discovered with hardware-aware tricks.}
+
+LSTMs ran the world from roughly 2014 to 2017. Google Translate, Siri's
+on-device speech, the original Alexa wake-word detector — all LSTM under
+the hood.
+
+\paragraph{Why LSTMs eventually lost.} Two reasons.
+
+\begin{enumerate}
+\item \textbf{Sequential by construction.} Each \(h_t\) depends on \(h_{t-1}\).
+You cannot parallelise across the time axis; the GPU sits half idle.
+Transformers, in contrast, evaluate every position simultaneously during
+training.
+\item \textbf{Compressed memory.} Everything from the past has to be squeezed
+into a single \(h_t\) vector of fixed size. With enough capacity an LSTM
+can remember a few thousand tokens; beyond that, things blur. We will see
+this exact trade-off come back as a feature of state-space models, where it
+is sometimes a virtue.
+\end{enumerate}
+
+\section{Encoder-decoder, sequence-to-sequence, and the original ``attention''}
+
+In 2014, two papers \citep{sutskever2014seq2seq, cho2014gru} proposed
+\term{sequence-to-sequence} models for machine translation: an encoder LSTM
+reads the source sentence into a fixed-size vector, a decoder LSTM generates
+the target one token at a time, conditioned on that vector.
+
+This worked for short sentences and fell over for long ones — the bottleneck
+of compressing an entire paragraph into one vector was too tight.
+
+The fix is the original meaning of the word \term{attention}.
+\citet{bahdanau2014attention} let the decoder, at every step, look back at
+\emph{all} the encoder hidden states and produce a weighted average:
+\begin{equation}
+  c_t \;=\; \sum_{i=1}^{n} \alpha_{t,i}\, h_i^{\text{enc}},
+  \quad
+  \alpha_{t,i} \;=\; \frac{\exp(\text{score}(h_t^{\text{dec}}, h_i^{\text{enc}}))}
+                          {\sum_{j} \exp(\text{score}(h_t^{\text{dec}}, h_j^{\text{enc}}))}.
+\end{equation}
+The weights \(\alpha_{t,i}\) say ``how much should the decoder pay attention
+to source position \(i\) when emitting target token \(t\)''. They are softmax
+normalised. They are computed from the current decoder state and the encoder
+states.
+
+\keyidea{The attention layer that runs every transformer in 2026 is a direct
+descendant of the Bahdanau attention bolted onto an LSTM in 2014. The
+transformer's contribution is to delete the LSTM and use \emph{only}
+attention.}
+
+\section{The 2017 turn}
+
+What \citet{vaswani2017attention} pointed out is that you can build a
+sequence model out of attention alone. No recurrence, no convolution.
+Stack attention layers, mix in some position-wise feed-forward layers, add
+positional encodings so the model knows token order, and you get a model
+that:
+
+\begin{itemize}
+\item parallelises across the time axis (every position is computed at
+once),
+\item lets every token attend to every other token in a single layer (no
+vanishing gradient over distance),
+\item and trains roughly an order of magnitude faster on the same hardware.
+\end{itemize}
+
+The price is a quadratic dependence on sequence length. That price is what
+the rest of the book is about.
+
+The 2017 paper was about machine translation, but within four years the same
+recipe — scaled up by three orders of magnitude — was producing GPT-3, a
+language model that could do arithmetic, write code, and pass standardised
+exams. The transformer ate the field. Part~II is the careful explanation
+of why.

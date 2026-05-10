@@ -1,0 +1,75 @@
+\chapter{Linear attention and long convolutions}
+\label{ch:linattn}
+
+\newthought{Two more lines of attack} on the \(n^2\) cost don't go through
+either fixed-pattern sparsity or state-space recurrence. They take the
+attention equation and reformulate it.
+
+\section{Linear attention via kernel feature maps}
+
+Standard attention computes
+\begin{equation}
+  o_t \;=\; \sum_{s \le t} \frac{\exp(q_t \cdot k_s / \sqrt{\dhead})}
+                                {\sum_{s' \le t} \exp(q_t \cdot k_{s'} / \sqrt{\dhead})}\, v_s.
+\end{equation}
+The \(\exp\) of a dot product is the kernel that makes everything
+quadratic — each \(q_t\) has to be paired with every \(k_s\). What if we
+replace it with a kernel \(\phi(q) \cdot \phi(k)\) for some explicit
+feature map \(\phi : \R^{\dhead} \to \R^{m}\)?
+
+Then, dropping the normaliser briefly,
+\begin{equation}
+  o_t \;=\; \sum_{s \le t} \phi(q_t) \cdot \phi(k_s)\, v_s
+        \;=\; \phi(q_t)\T \underbrace{\sum_{s \le t} \phi(k_s)\, v_s\T}_{S_t}.
+\end{equation}
+The sum \(S_t \in \R^{m \times \dhead}\) can be maintained
+incrementally: \(S_t = S_{t-1} + \phi(k_t)\, v_t\T\). One outer product
+per token, one matvec per token. Total cost: \(\bigO(n \cdot m \cdot
+\dhead)\). Linear in \(n\). \citet{katharopoulos2020linear} dubbed this
+\emph{linear attention} and showed the equivalence to a fast linear-RNN.
+
+\paragraph{What goes wrong.} The choice of \(\phi\) is the whole game. The
+exact \(\exp\) kernel cannot be written as a finite \(\phi(q) \cdot \phi(k)\)
+in any low-dimensional space.\sidenote{The Performer
+\citep{choromanski2021performer} uses random feature maps that approximate
+the softmax kernel, with provable accuracy bounds. Other proposals use
+ReLU, ELU, or learned positive feature maps. None matches the empirical
+quality of full softmax attention at scale.} In practice, linear attention
+underperforms exact attention by a meaningful amount, especially on
+associative-recall tasks.
+
+\paragraph{Modern revival: gated linear attention.} RetNet
+\citep{sun2023retnet}, GLA, and the Mamba-2 family all use
+linear-attention machinery with gating to recover some of the lost
+expressivity. They have become a standard ingredient in hybrids
+(Chapter~\ref{ch:hybrids}).
+
+\section{Long convolutions and Hyena}
+
+The other reformulation is to drop attention's all-pairs structure and
+replace it with a \emph{very long, learned convolutional kernel}.
+Convolutions are linear in \(n\) when computed with the FFT
+(\(\bigO(n \log n)\) per layer for kernel length \(n\)).
+
+Hyena \citep{poli2023hyena} composes implicit (parametrised by an MLP),
+data-dependent (gated by the input), long convolutions to build a sequence
+mixer that scales sub-quadratically. The convolutional kernels are
+\emph{long enough} to span the entire context, addressing the receptive-field
+limitation of standard CNN-based language models from the 2010s.
+
+\paragraph{Trade-offs.}
+\begin{itemize}
+\item \textbf{Asymptote.} \(\bigO(n \log n)\) — better than transformers,
+worse than pure linear-attention, but the FFT constants are friendly.
+\item \textbf{Routing is again content-light.} The kernel is a function of
+position (and, in Hyena, a gate function of the input), but it does not
+\emph{select} which positions to attend to in the way a softmax does.
+\item \textbf{Quality.} Hyena and friends are competitive on long-range
+benchmarks at small scale; the picture at frontier scale is still being
+written.
+\end{itemize}
+
+\keyidea{Linear attention and long convolutions both win the
+\(n\)-dependence by giving up the precise dot-product routing of
+softmax attention. They tend to live in hybrids rather than as pure
+replacements.}

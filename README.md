@@ -10,9 +10,9 @@ Video portfolio piece for a Founding Developer Advocate application to [Subquadr
 - **Deep-dive** (~11min, hybrid: Manim + on-camera + live SubQ Code demo) — `vid/scenes/deepdive/`
 - **Scripts** — [scripts/teaser.md](scripts/teaser.md), [scripts/deepdive.md](scripts/deepdive.md)
 - **Research** — [research/notes.md](research/notes.md) — sourced primer on Kaplan/Chinchilla scaling laws, attention math, the subquadratic landscape (Mamba, Hyena, RWKV, hybrids), and SubQ's launch facts
-- **LaTeX science companion** — [docs/scaling_attention/](docs/scaling_attention/) — tufte-book + EB Garamond (same template as `Algorithmic_Adventures`); build with **XeLaTeX** (`./compile.sh`). See [docs/scaling_attention/README.md](docs/scaling_attention/README.md).
+- **LaTeX science companion** — [docs/scaling_attention/](docs/scaling_attention/) — *From n-grams to Subquadratic Attention*, a ~100-page deep-dive primer (six parts: background, transformer, scaling laws, living with O(n²), subquadratic alternatives, SubQ + what comes next). Tufte-book layout (same as `Algorithmic_Adventures`) set in **Alegreya Sans**; build with **XeLaTeX** (`./compile.sh`). See [docs/scaling_attention/README.md](docs/scaling_attention/README.md).
 - **Companion deliverables** — `companion/` (GitHub starter repo + blog post + X thread + cover letter)
-- **Plan** — [.cursor/plans/subq_manim_demo_video_a7a5729c.plan.md](.cursor/plans/subq_manim_demo_video_a7a5729c.plan.md) for the full sprint plan
+ - **Plan** — [.cursor/plans/subq_manim_demo_video_a7a5729c.plan.md](.cursor/plans/subq_manim_demo_video_a7a5729c.plan.md) for the full sprint plan
 - **Handoff for new agents/humans** — [AGENTS.md](AGENTS.md), [DESIGN.md](DESIGN.md), [TASKS.md](TASKS.md)
 
 ## Directory layout
@@ -30,7 +30,7 @@ video/                  on-camera footage
 demo/                   screen-capture footage (SubQ Code session)
 edit/                   DaVinci Resolve project + final renders
 companion/              GitHub starter repo + blog post + X thread draft
-docs/scaling_attention/ LaTeX companion (XeLaTeX + tufte-book + EB Garamond)
+docs/scaling_attention/ LaTeX deep-dive primer (XeLaTeX + tufte-book + Alegreya Sans)
 assets/branding/        logos, fonts, color swatches
 bin/                    project-local binaries (ffmpeg, micromamba)
 ```

@@ -1,0 +1,135 @@
+\chapter{Self-attention from scratch}
+\label{ch:self-attention}
+
+\newthought{If the transformer block} in Chapter~\ref{ch:transformer} has a
+single piece worth understanding cell-by-cell, it is the self-attention
+sub-layer. This chapter writes it out, with all the matrix shapes.
+
+\section{The setup}
+
+Take the input to one block: a tensor \(X \in \R^{n \times d}\), where \(n\)
+is the number of tokens and \(d = \dmodel\) is the hidden dimension. Each row
+\(x_t\) is the current representation of token \(t\).
+
+We are going to produce an output of the same shape: a new representation
+for each token that has incorporated information from earlier tokens.
+
+\section{Queries, keys, and values}
+
+Project the input into three different spaces:
+\begin{equation}
+  Q \;=\; X W_Q, \quad
+  K \;=\; X W_K, \quad
+  V \;=\; X W_V,
+\end{equation}
+with three learned matrices \(W_Q, W_K, W_V \in \R^{d \times \dhead}\). Each
+of \(Q, K, V\) is \([n, \dhead]\).\sidenote{The intuition. \emph{Query} =
+``what am I looking for?''. \emph{Key} = ``what do I advertise as being
+about?''. \emph{Value} = ``what do I actually carry that you'd want to
+read?''. The attention weight from token \(t\) to token \(s\) is high when
+\(t\)'s query and \(s\)'s key align; the value \(v_s\) is what gets copied
+into \(t\)'s next representation.}
+
+\section{The attention matrix}
+
+Form pairwise scores via dot product, scale by \(\sqrt{\dhead}\) so the
+softmax does not saturate, and softmax row-wise:
+\begin{equation}
+  A \;=\; \softmax\!\left( \frac{Q K\T}{\sqrt{\dhead}} \right)
+  \;\in\; \R^{n \times n}.
+  \label{eq:attn-mat}
+\end{equation}
+\(A_{t,s}\) is ``how much should token \(t\) attend to token \(s\)''. The
+softmax is taken over rows, so each row sums to one — every token spreads
+its attention budget over all other tokens.\sidenote{The scaling
+\(1 / \sqrt{\dhead}\) is not a cosmetic choice. Without it, dot products
+grow with \(\sqrt{\dhead}\) in expectation, the softmax saturates, and
+gradients vanish. \citet{vaswani2017attention} document this in their
+section 3.2.1.}
+
+\section{The output}
+
+Use \(A\) as a row-stochastic matrix to mix values:
+\begin{equation}
+  H \;=\; A V \;\in\; \R^{n \times \dhead}.
+\end{equation}
+Row \(t\) of \(H\) is the weighted sum \(\sum_s A_{t,s} v_s\) of all values,
+weighted by how much token \(t\) wanted to attend to token \(s\).
+
+\keyidea{Self-attention is one matrix multiply (\(QK\T\)), one row-wise softmax,
+one more matrix multiply (\(AV\)). The three steps look small. The middle
+matrix \(A\) is \(n \times n\). That is the entire story of this book.}
+
+\section{Multi-head attention}
+
+The single-head version has limited capacity: every position attends to every
+other through a single dot-product space of dimension \(\dhead\). In
+practice, you run \(\heads\) of these in parallel:
+\begin{equation}
+  H_h \;=\; \softmax\!\left( \frac{Q_h K_h\T}{\sqrt{\dhead}} \right) V_h,
+  \quad h = 1, \ldots, \heads,
+\end{equation}
+with \(\dhead = d / \heads\). Concatenate the head outputs along the
+feature axis and apply a final output projection \(W_O \in \R^{d \times d}\):
+\begin{equation}
+  \text{MHA}(X) \;=\; [H_1, H_2, \ldots, H_\heads]\, W_O \;\in\; \R^{n \times d}.
+\end{equation}
+Different heads can specialise — one might track syntax, another co-reference,
+another long-range topical similarity. The cost adds linearly in \(\heads\)
+because each head shrinks \(\dhead\) proportionally.\sidenote{Concretely, for
+\(d = 4096\) and \(\heads = 32\), each head has \(\dhead = 128\). This is
+a common choice; \(\dhead\) between 64 and 128 has been the sweet spot since
+GPT-3.}
+
+\section{The causal mask}
+
+For an \emph{autoregressive} language model, token \(t\) is not allowed to
+look at tokens \(> t\) — that would be cheating during training (the model
+could just copy the next token from the input). The fix is the
+\term{causal mask}: before the softmax, set every entry above the diagonal
+of \(QK\T\) to \(-\infty\). The softmax of \(-\infty\) is zero, so
+\(A_{t,s} = 0\) whenever \(s > t\). The lower triangular structure is
+what the entire generation loop depends on.
+
+\section{Why self-attention is genuinely different from an LSTM}
+
+In an LSTM, information from token \(s\) reaches token \(t\) (with \(s \ll t\))
+through a chain of \(t - s\) updates of the hidden state. Each update can
+distort, drop, or blur the signal.
+
+In self-attention, the contribution of token \(s\) to token \(t\) is a single
+dot product followed by a softmax-weighted sum. There is no chain. Distance
+in the sequence does not, by itself, attenuate the signal.
+
+\keyidea{A transformer can ``copy'' a fact from token 1 into token 1000 in
+a single attention layer. An LSTM has to relay it through 999 hidden-state
+updates. This is why transformers are so much better at long-range
+dependencies — and why the resulting compute bill is paid in an \(n \times n\)
+matrix.}
+
+\section{The shapes, summarised}
+
+For a transformer with \(n\) tokens, \(\dmodel = d\), \(\heads\) heads, and
+\(\dhead = d / \heads\):
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Tensor & Shape & Notes \\
+\midrule
+\(X\)   & \([n, d]\)              & input to the block \\
+\(Q, K, V\) per head & \([n, \dhead]\) & queries, keys, values \\
+\(QK\T\) per head & \([n, n]\)    & \emph{the} matrix \\
+\(A\) per head    & \([n, n]\)    & after row-wise softmax \\
+\(AV\) per head   & \([n, \dhead]\) & weighted values \\
+concat            & \([n, d]\)    & all heads stitched \\
+output            & \([n, d]\)    & after \(W_O\) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The bold row to remember is \([n, n]\). One \(n \times n\) tensor per head per
+layer. For \(n = 10^6\) and 32 heads and 32 layers, that is
+\(32 \cdot 32 \cdot (10^6)^2 = 10^{15}\) cells per forward pass. Even at one
+byte per cell that is a petabyte of intermediate state. The next chapter
+spells out the consequences.

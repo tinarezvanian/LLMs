@@ -1,0 +1,110 @@
+\chapter{What a language model actually does}
+\label{ch:what-lm}
+
+\newthought{A language model} is a function that takes a sequence of symbols
+and returns a probability distribution over what symbol could come next. That
+is the entire idea. Everything in this book — embeddings, attention, scaling
+laws, KV caches, subquadratic alternatives — is engineering on top of that
+one definition.
+
+\section{The one equation you need}
+
+Let \(x_1, x_2, \ldots, x_n\) be a sequence of \term{tokens} (Chapter~\ref{ch:tokens}
+defines that word precisely; for now, think ``approximately a word''). A
+language model is a parameterised distribution
+\begin{equation}
+  p_\theta(x_1, x_2, \ldots, x_n)
+  \;=\;
+  \prod_{t=1}^{n} p_\theta\!\left(x_t \,\middle|\, x_1, \ldots, x_{t-1}\right).
+  \label{eq:chain-rule}
+\end{equation}
+The right-hand side is the chain rule of probability.\sidenote{This is the
+\emph{autoregressive} factorisation. Predict each token given the prefix; multiply
+the per-token probabilities to get the joint. Almost every modern LLM is
+trained this way.} The model's job is to learn the conditional
+\(p_\theta(x_t \mid x_{<t})\) — the probability of the \emph{next} token given
+everything that came before.
+
+Training is just maximum-likelihood estimation: pick parameters \(\theta\) that
+make a large corpus of real text look as likely as possible.\sidenote{Equivalently,
+minimise the negative log-likelihood, which (averaged over tokens) is what
+people report as ``cross-entropy loss''. Lower is better. \(\log\) is natural
+unless someone says otherwise.}
+
+\keyidea{An LM is a next-token probability machine. Training is fitting that
+machine to a corpus by maximum likelihood. Almost everything else is plumbing
+that makes the machine fast and accurate.}
+
+\section{Why that humble idea is so powerful}
+
+A model that can predict ``the cat sat on the \rule{1cm}{0.4pt}'' has, in
+order to do so, picked up a startling amount of structure. To put a high
+probability on \emph{mat} (or \emph{floor}, or \emph{lap}) and a low
+probability on \emph{microservice}, the model has to encode:
+
+\begin{itemize}
+\item the syntax of English noun phrases,
+\item the typical co-occurrence of cats and household objects,
+\item the rough fact that ``sat on'' takes a flat surface as its object,
+\item and probably a sense of register (this is a children's-book sentence,
+not a stack-trace).
+\end{itemize}
+
+None of that was hand-coded. It is a side effect of the maximum-likelihood
+objective on enough text. \emph{Generation} is then the same model run
+forwards: sample a token from the distribution, append it, and repeat. That
+loop is the entire reason ChatGPT works.\sidenote{The other half is
+instruction tuning and reinforcement learning from human feedback, which we
+will not cover. The pretraining objective in
+equation~\eqref{eq:chain-rule} is what builds the latent capability; RLHF
+shapes the surface behaviour.}
+
+\section{What the input \emph{actually} looks like}
+
+Equation~\eqref{eq:chain-rule} talks about tokens as if they were given. They
+are not — there is no canonical way to chop text into tokens, and the choice
+matters. We unpack that in Chapter~\ref{ch:tokens}. For now: imagine each
+\(x_t\) as one element of a finite \emph{vocabulary} of size~\(V\), so the
+model's output at each step is a vector of \(V\) probabilities that sum
+to~one.\sidenote{Typical \(V\) is between \(30{,}000\) and \(200{,}000\) for a
+modern LLM. GPT-2 used 50,257; Llama 3 uses 128,000. Larger vocabularies
+shorten the average input but make the output projection more expensive.}
+
+\section{What the output \emph{actually} looks like}
+
+The model produces a vector \(z_t \in \R^{V}\) of \term{logits} — pre-softmax
+scores — and turns them into a probability distribution by
+\begin{equation}
+  p_\theta(x_t = v \mid x_{<t})
+  \;=\;
+  \frac{\exp(z_{t,v} / \tau)}{\sum_{v'=1}^{V} \exp(z_{t,v'} / \tau)},
+  \label{eq:softmax}
+\end{equation}
+where \(\tau > 0\) is the \term{temperature}. At training time \(\tau = 1\)
+and the loss is the negative log probability of the true next token. At
+generation time you can sample directly, take the argmax (greedy decoding),
+keep only the top-\(k\) most probable tokens (top-\(k\) sampling), or restrict
+to the smallest set whose probability exceeds \(p\) (\term{nucleus} or
+top-\(p\) sampling).\sidenote{Lower \(\tau\) sharpens the distribution and
+makes the model deterministic-looking. Higher \(\tau\) makes it surprising,
+sometimes unhelpfully so. Most product systems use \(\tau\) between
+\(0.2\) and \(1.0\) and combine it with top-\(p\)~\(\approx\)~\(0.9\).}
+
+\section{Why we care about \emph{how} \(p_\theta\) is computed}
+
+The chain-rule view in equation~\eqref{eq:chain-rule} is architecture-free. It
+does not say whether \(p_\theta(x_t \mid x_{<t})\) should be computed by a
+hash table, an n-gram count, an LSTM, or a transformer. Those are
+engineering choices, and they have very different cost profiles in compute
+and in memory. The rest of this book is about that choice — how the field
+arrived at the transformer, how that choice scales, and what is being
+proposed in 2026 to replace it.
+
+In particular, the cost of computing \(p_\theta(x_t \mid x_{<t})\) is not a
+fixed constant per token. It depends on \emph{how much context} \(x_{<t}\) the
+model is asked to attend to. For an n-gram model the cost is constant
+(Chapter~\ref{ch:pre-transformer}). For an RNN it is also roughly constant
+per token, but information from far back is lost (also
+Chapter~\ref{ch:pre-transformer}). For a dense transformer it grows
+\emph{quadratically} with context length (Chapter~\ref{ch:why-quadratic}).
+That last fact is what the second half of the book is about.

@@ -1,0 +1,103 @@
+\chapter{The 2$\times$2 frame}
+\label{ch:quadrant}
+
+\newthought{If you have read this far} you have a list of architectures
+that all claim to do something interesting with long context: dense
+transformers, FlashAttention, MQA/GQA, sliding windows, Longformer,
+BigBird, S4, Mamba, Hyena, Performer, RetNet, Jamba, SAMBA, Griffin,
+Subquadratic. The list keeps growing. Without a frame to compare them
+they look like a zoo.
+
+This chapter is the frame. Two axes, four quadrants, every architecture
+gets a pin.
+
+\section{The two axes}
+
+\paragraph{Axis 1 — Routing.} How does the model choose which past
+information to use at each step?
+
+\begin{description}
+\item[Position-fixed routing.] The set of relevant past tokens is
+determined entirely by token \emph{positions}, not by their content.
+``Attend to the last \(w\) tokens.'' ``Attend to every \(k\)-th
+position.'' ``Convolve with a fixed kernel.'' ``Maintain a fixed-size
+running state.'' Cheap and parallelisable. Bad at queries that need a
+specific fact at an unpredictable position.
+\item[Content-dependent routing.] The model uses the current query to
+\emph{select} which past tokens matter, based on a similarity score
+between the query and the past tokens' representations. Soft selection
+(\emph{softmax over all positions}) is what dense attention does. Hard
+selection (\emph{pick top-\(k\)}) is what content-dependent sparse
+attention does.
+\end{description}
+
+\paragraph{Axis 2 — Scaling.} What is the asymptotic compute cost as a
+function of context length \(n\)?
+
+\begin{description}
+\item[Quadratic.] \(\bigO(n^2)\). Every pair of tokens scored.
+\item[Linear (or near-linear).] \(\bigO(n)\) or \(\bigO(n \log n)\).
+The total compute grows in step with the input.
+\end{description}
+
+\section{The four quadrants}
+
+\begin{figure}
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  qbox/.style={draw=gray!50, text width=3.6cm, align=center,
+               minimum height=3.0cm, rounded corners, inner sep=4pt},
+  axislabel/.style={font=\footnotesize}
+]
+  \node[qbox] (tl) at (0,0)   {\textbf{Position-fixed, quadratic}\\[2pt]\textit{(empty for good reason)}};
+  \node[qbox] (tr) at (4.6,0) {\textbf{Content-dependent, quadratic}\\[2pt]Transformer\\FlashAttention\\DeepSeek SA*};
+  \node[qbox] (bl) at (0,-3.6){\textbf{Position-fixed, linear}\\[2pt]Sliding window\\Longformer / BigBird\\S4 / Mamba (lossy)\\Hyena (long conv)};
+  \node[qbox] (br) at (4.6,-3.6){\textbf{Content-dependent, linear}\\[2pt]\textbf{SSA / SubQ}\\(content-routed\\sparse mechanisms)};
+
+  \draw[-{Latex[length=2mm]}, thick] (-3.2, -1.8) -- (-2.0, -1.8);
+  \node[axislabel] at (-2.6, -1.5) {routing};
+  \node[axislabel] at (-3.2, -2.2) {pos.\ fixed};
+  \node[axislabel] at (-2.0, -2.2) {content};
+  \draw[-{Latex[length=2mm]}, thick] (-3.2, -2.6) -- (-3.2, -1.2);
+  \node[axislabel, rotate=90] at (-3.6, -2.6) {linear};
+  \node[axislabel, rotate=90] at (-3.6, -1.2) {quadratic};
+\end{tikzpicture}
+\caption{The 2$\times$2 frame. Top-right is dense attention and its
+implementation-only optimisations. Bottom-left is the position-fixed
+linear-cost zoo. Bottom-right — content-dependent and linear — is the
+quadrant SSA aims at. Top-left is empty because spending \(\bigO(n^2)\)
+on a content-blind mechanism is strictly dominated.}
+\label{fig:quadrant}
+\end{figure}
+
+\paragraph{Top-left (position-fixed, quadratic).} Empty. Spending \(n^2\)
+compute without using content to choose which pairs to score is strictly
+worse than dense attention; nobody builds these.
+
+\paragraph{Top-right (content-dependent, quadratic).} The classic
+transformer. FlashAttention, MQA, GQA, paged caches, RoPE/YaRN — every
+mitigation in Part~IV — lives here. The asymptote is \(n^2\); the
+constants are spectacular by 2026 standards. DeepSeek's recently published
+DSA \citep{deepseek2024dsa} is also content-dependent but applies sparsity
+at training-time-decided sparsity patterns, blurring the line.
+
+\paragraph{Bottom-left (position-fixed, linear).} The two big sub-families
+of Part~V live here: fixed-pattern sparse (Chapter~\ref{ch:sparse}) and
+state-space / convolutional models (Chapters~\ref{ch:ssm}--\ref{ch:linattn}).
+They are linear in \(n\) but content-blind: routing is decided by
+position or by a fixed kernel, not by the data. This is the dominant
+flavour of ``efficient'' attention and it has known weak spots on
+associative-recall tasks.
+
+\paragraph{Bottom-right (content-dependent, linear).} The hard quadrant.
+You need to keep the dot-product-routing virtue of dense attention, while
+limiting the number of (query, key) pairs you actually score to be
+\emph{linear} in \(n\). This requires a non-trivial selection mechanism:
+given a query, find the small set of keys that matter, in $\bigO(\log n)$
+or $\bigO(n)$ work, without doing the full $n \times n$ dot product first.
+
+\keyidea{The interesting frontier in long-context architectures is the
+bottom-right quadrant: content-dependent routing at linear cost. Every
+major architecture in Part~V occupies a different quadrant; SSA / SubQ
+explicitly aims for the bottom-right.}

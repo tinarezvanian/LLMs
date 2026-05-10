@@ -1,0 +1,141 @@
+\chapter{The transformer recipe}
+\label{ch:transformer}
+
+\newthought{This chapter} walks through a standard decoder-only transformer
+block end to end, the way you would actually code it. The next chapter zooms
+into the attention sub-layer; the chapter after that derives why that
+sub-layer is the cost driver.
+
+\section{The block, in one picture}
+
+A decoder-only transformer is a stack of \(L\) identical blocks. Each block
+takes a tensor of shape \([n, d]\) — \(n\) tokens, each represented by a
+vector of \(\dmodel = d\) dimensions — and returns a tensor of the same
+shape. Inside the block, two sub-layers do the work:
+
+\begin{enumerate}
+\item \term{Self-attention}, which lets every token mix information from
+every other (earlier) token.
+\item A \term{position-wise feed-forward network} (a small MLP applied
+independently to each token), which gives the model nonlinear capacity
+beyond what attention alone provides.
+\end{enumerate}
+
+Each sub-layer is wrapped in a \term{residual connection} and a
+\term{normalisation} layer:
+\begin{align}
+  z &\;\leftarrow\; x + \text{Attn}(\text{LN}(x)) \\
+  y &\;\leftarrow\; z + \text{MLP}(\text{LN}(z)).
+  \label{eq:block}
+\end{align}
+That is a complete block.\sidenote{Two flavours: \emph{post-LN} (the
+original 2017 paper) puts the LN \emph{after} the residual sum;
+\emph{pre-LN} (now standard) puts it \emph{before}, as written here.
+Pre-LN trains more stably at depth.} The whole model wraps token embeddings
++ positional information as input, runs \(L\) of these blocks, applies a
+final LN, and projects to logits over the vocabulary.
+
+\begin{figure}
+\centering
+\begin{tikzpicture}[
+  node distance=4mm,
+  block/.style={draw, rounded corners, minimum width=4.0cm, minimum height=6mm, align=center, font=\small},
+  res/.style={draw, circle, inner sep=1pt, font=\small},
+  every node/.style={font=\small},
+]
+  \node[block] (in)  {input \([n, d]\)};
+  \node[block, below=of in] (ln1) {LayerNorm};
+  \node[block, below=of ln1] (att) {Self-Attention};
+  \node[res,   below=of att] (s1)  {\(+\)};
+  \node[block, below=of s1]  (ln2) {LayerNorm};
+  \node[block, below=of ln2] (mlp) {Feed-Forward};
+  \node[res,   below=of mlp] (s2)  {\(+\)};
+  \node[block, below=of s2]  (out) {output \([n, d]\)};
+  \draw[-{Latex[length=2mm]}] (in) -- (ln1);
+  \draw[-{Latex[length=2mm]}] (ln1) -- (att);
+  \draw[-{Latex[length=2mm]}] (att) -- (s1);
+  \draw[-{Latex[length=2mm]}] (s1) -- (ln2);
+  \draw[-{Latex[length=2mm]}] (ln2) -- (mlp);
+  \draw[-{Latex[length=2mm]}] (mlp) -- (s2);
+  \draw[-{Latex[length=2mm]}] (s2) -- (out);
+  \draw[-{Latex[length=2mm]}, dashed] (in.east) -- ++(1.0,0) |- (s1.east);
+  \draw[-{Latex[length=2mm]}, dashed] (s1.east) -- ++(1.0,0) |- (s2.east);
+\end{tikzpicture}
+\caption{One transformer block (pre-LN). Dashed lines are residual
+connections; the two solid sub-blocks (attention and feed-forward) are where
+all the actual work happens.}
+\label{fig:block}
+\end{figure}
+
+\section{The pieces, named}
+
+\paragraph{Embeddings.} Token ids \(\to\) vectors of dimension \(d\) via the
+table from Chapter~\ref{ch:tokens}.
+
+\paragraph{Positional information.} Attention is permutation-invariant — if
+you shuffle the tokens, the output is the same. Real language is not. The
+fix is to add positional information to the embeddings.\sidenote{Three
+families have dominated. (i) Learned absolute positions (BERT, GPT-2):
+add a learned vector per index. (ii) Sinusoidal (Vaswani 2017): use
+hand-crafted sine waves at geometric frequencies. (iii) RoPE (rotary
+position embeddings, \citealp{su2021rope}): apply a position-dependent
+rotation inside the attention's Q and K, which is the de-facto modern
+choice (Llama, Mistral, Gemma). RoPE composes cleanly with extrapolation
+tricks like YaRN \citep{peng2023yarn}.}
+
+\paragraph{Self-attention.} The hero of Chapter~\ref{ch:self-attention}.
+Lets every token's representation be a weighted average of every other
+token's value, where the weights are computed from the dot product of the
+current token's \emph{query} with the others' \emph{keys}.
+
+\paragraph{Feed-forward (MLP).} A two-layer MLP applied independently at
+each position:
+\begin{equation}
+  \text{MLP}(x) \;=\; W_2\,\sigma(W_1 x + b_1) + b_2,
+\end{equation}
+with hidden dimension \(d_{\text{ff}}\), typically \(4d\) (so 16,384 for
+\(d = 4{,}096\)). \(\sigma\) is GeLU, SwiGLU, or similar. This is where
+most of the parameters live — the FFN is roughly \(8 d^2\) parameters per
+layer, vs. \(4 d^2\) for attention's projection matrices.\sidenote{For a
+7B model with \(d=4096\), \(L=32\): attention \(\approx 32 \cdot 4 d^2
+\approx 2.1\)B params, FFN \(\approx 32 \cdot 8 d^2 \approx 4.3\)B params,
+plus embeddings and norms. The FFN dominates the parameter count even
+though attention dominates the asymptotic compute.}
+
+\paragraph{LayerNorm / RMSNorm.} A normalisation that rescales each token's
+hidden vector to have zero mean and unit variance (LN) or just unit norm
+(RMSNorm). Standard since 2018, plus a small learned scale and shift.
+
+\paragraph{Output projection.} A linear layer of shape \([d, V]\) followed
+by a softmax (equation~\ref{eq:softmax}) to produce next-token probabilities.
+
+\section{Why the transformer beat the LSTM}
+
+Three reasons matter.
+
+\begin{enumerate}
+\item \textbf{Parallelism on the time axis.} Equation~\eqref{eq:rnn} forced
+\(h_t\) to be computed before \(h_{t+1}\). Self-attention computes all
+positions at once via a single matrix multiply; the GPU stays busy.
+\item \textbf{No vanishing gradient over distance.} An LSTM's signal from
+token 1 to token 1000 has to survive 999 multiplicative updates. In a
+transformer there is a direct dot product between any two positions in any
+layer.
+\item \textbf{Easy depth scaling.} Residuals + LayerNorm let you stack 100+
+identical blocks with no special handling. RNNs above ${\sim}4$ layers were
+notoriously hard to train.
+\end{enumerate}
+
+\section{What it cost}
+
+The transformer pays for those three wins with one bill: every layer's
+attention sub-block computes an \(n \times n\) matrix of pairwise
+similarities between tokens. Compute scales as \(n^2\). Memory for the
+attention matrix scales as \(n^2\). The KV cache used at generation time
+scales as \(n\) per layer, but with multiplicatively large constants.
+
+For \(n\) of a few thousand — the regime of GPT-2 and GPT-3 — this was fine.
+For \(n\) of one million — what 2026's agentic workloads want — it is the
+defining problem of the field. Chapter~\ref{ch:why-quadratic} derives the
+\(n^2\) cost carefully; Part~IV documents the engineering response;
+Part~V covers the architectures that try to escape it.

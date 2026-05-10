@@ -1,0 +1,107 @@
+\chapter{Tokens — the unit of work}
+\label{ch:tokens}
+
+\newthought{In Chapter~\ref{ch:what-lm}} we wrote ``each \(x_t\) is one
+element of a vocabulary of size \(V\)'' and waved our hands. That hand wave
+hides one of the most consequential design choices in the entire stack. This
+chapter unpacks it.
+
+\section{Why characters and why not}
+
+The simplest possible vocabulary is the alphabet: 26 letters plus punctuation
+and digits. Vocab size \(V\) becomes ${\sim}100$, the model never sees an
+\term{out-of-vocabulary} word, and tokenisation is trivial.\sidenote{The
+extreme of character-level modelling is byte-level: \(V = 256\), every
+sequence of bytes is representable, no Unicode normalisation needed. Models
+like ByT5 take this seriously.}
+
+The price you pay is sequence length. ``the unfortunate consequences of
+quadratic scaling'' is 7 words but about 50 characters. A character model
+sees 7$\times$ as many tokens for the same input. Since the cost of attention
+grows with the square of sequence length (the whole point of
+Part~\ref{ch:why-quadratic}), that 7$\times$ becomes a 50$\times$ compute
+penalty per layer.
+
+\section{Why words and why not}
+
+The opposite extreme is whole words: \(V \approx 10^5\) for English. Sequences
+become short, but you suddenly have to handle words you have never seen
+before — proper nouns, technical jargon, typos, every other language. Most
+serious work has used \term{subwords} since around 2016.
+
+\section{Subword tokenisation in one page}
+
+The dominant tokenisers all do roughly the same thing: build a vocabulary by
+merging frequent character pairs, then tokenise text greedily against that
+vocabulary.
+
+\paragraph{Byte-pair encoding (BPE).} Start with a vocabulary of all
+characters. Find the most frequent adjacent pair in your corpus
+(say, ``\code{t h}''), merge it into a single token (``\code{th}''), and add
+that to the vocabulary. Repeat until you hit a target \(V\). This was
+originally a compression algorithm; \citet{sennrich2016bpe} adapted it for
+neural machine translation, and GPT-2 / GPT-3 popularised it for
+LLMs.\sidenote{See \citep{sennrich2016bpe} for the original NLP application
+and the OpenAI tokenizer notebooks for the engineering reality.}
+
+\paragraph{WordPiece.} Used by BERT. Same merging idea, slightly different
+scoring criterion (likelihood gain rather than raw frequency).\sidenote{Tied
+to the \texttt{bert-base-uncased} vocabulary and the famous ``\code{\#\#}''
+prefix that marks ``this is a continuation of the previous token''.}
+
+\paragraph{SentencePiece (unigram).} Used by Llama, Mistral, and Gemma.
+Treats tokenisation as a probabilistic model: pick the segmentation that
+maximises a per-token probability. Operates directly on raw bytes and does
+not require pre-tokenising into words first, which is a real win for
+languages without whitespace boundaries.\sidenote{\citep{kudo2018sentencepiece}.
+SentencePiece is the reason Llama-style models can tokenise Japanese without
+a custom segmenter.}
+
+\section{Why this affects everything downstream}
+
+A subword tokeniser fixes a vocabulary \(V\) at training time. Three
+consequences ripple through the rest of the system:
+
+\begin{enumerate}
+\item \textbf{The output projection costs \(\bigO(V \cdot d)\) per token.}
+At each step, the model converts a hidden vector of dimension \(d\) into
+\(V\) logits via a linear layer. If \(V\) is 128,000 and \(d\) is 4,096
+that is ${\sim}500$ million multiply-adds per token, just for the last layer.
+
+\item \textbf{Sequence length is in tokens, not characters.} A 1M-token
+context window means roughly 750k English words, or 3,000 pages of
+double-spaced text — assuming an English subword tokeniser. Code, Chinese,
+or mixed content have different token-to-character ratios.\sidenote{Rule of
+thumb for the OpenAI/Llama tokenisers: 1 token $\approx$ 4 English
+characters $\approx$ 0.75 English words. Code is denser; one short
+identifier can be one token.}
+
+\item \textbf{The choice of tokeniser bakes in biases.} A tokeniser trained
+mostly on English will fragment Hindi or Korean into many small tokens,
+making non-English usage measurably more expensive both in compute and in
+context window.
+\end{enumerate}
+
+\keyidea{Tokens are a cheap-looking choice with expensive consequences. The
+``context length'' a vendor advertises is in their tokens, not yours, and
+the shape of the cost curves in later chapters is in token-space.}
+
+\section{Embeddings: turning tokens into vectors}
+
+Once you have a token id (an integer in \([0, V)\)), the very first thing the
+model does is look it up in a table:
+\begin{equation}
+  e_t \;=\; E[x_t] \in \R^{d},
+\end{equation}
+where \(E \in \R^{V \times d}\) is the \term{embedding matrix}, learned along
+with everything else. Every transformer block sees only these dense vectors,
+not the original token ids.
+
+For a 7B parameter model with \(V = 32{,}000\) and \(d = 4{,}096\) the
+embedding table alone is ${\sim}130$M parameters — roughly 2\% of the
+model.\sidenote{Many models tie the embedding matrix to the output
+projection (use the same \(E\) on the way in and the way out) which halves
+this cost. Tied embeddings are standard in Llama; OpenAI's are not.}
+
+The next chapter is about how, before the transformer, people stitched these
+embeddings together over time without an attention matrix at all.

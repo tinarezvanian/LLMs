@@ -1,0 +1,100 @@
+\chapter{FlashAttention — same math, much better hardware story}
+\label{ch:flashattention}
+
+\newthought{The first thing to try} when faced with a costly algorithm is
+to see if you have been computing it stupidly. \citet{dao2022flashattention}
+asked exactly this question of dense attention and discovered that, on
+modern GPUs, the standard implementation was leaving an enormous amount of
+performance on the table — not because the algorithm was bad, but because
+the \emph{memory hierarchy} was being abused.
+
+\section{The GPU memory hierarchy in one paragraph}
+
+A modern data-centre GPU (H100, B200) has three relevant memory tiers:
+
+\begin{itemize}
+\item \term{HBM} (high-bandwidth memory): the on-package DRAM. 80 GB on
+H100, ${\sim}3$ TB/s bandwidth.
+\item \term{SRAM} (the on-chip shared memory): a few hundred KB per
+streaming multiprocessor (SM), but \emph{much} faster — bandwidth on the
+order of 19 TB/s.
+\item Registers: even faster, smallest of all.
+\end{itemize}
+
+Going to HBM is roughly 6$\times$ slower than staying in SRAM. For an
+operation that is bottlenecked by data movement rather than arithmetic,
+choosing where to keep your tensors decides your wall clock.
+
+\section{The standard implementation's mistake}
+
+The naive way to implement attention on a GPU is what
+equation~\eqref{eq:attn-mat} literally says:
+\begin{enumerate}
+\item Materialise the matrix \(S = QK\T \in \R^{n \times n}\) in HBM.
+\item Apply a row-wise softmax to \(S\), writing \(A\) back to HBM.
+\item Compute \(O = A V\) by reading \(A\) and \(V\) from HBM.
+\end{enumerate}
+For \(n = 64{,}000\), \(S\) is \({\sim}16\) GB. Writing it out and reading
+it back twice is the bottleneck — not the arithmetic.
+
+\section{What FlashAttention does}
+
+The FlashAttention insight is a classical one from numerical linear algebra:
+\term{tile} the computation, do it in pieces small enough to fit in SRAM,
+and \emph{never write the intermediate \(n \times n\) matrix to HBM}.
+
+The clever bit is doing softmax this way. Naively, softmax needs the full
+row in order to compute the normalising constant
+\(\sum_j \exp(s_{i,j})\). The standard trick is to compute it in two
+passes — once to find the max, once to compute the exponentials and the
+sum. \citet{dao2022flashattention} use a streaming, single-pass formulation
+based on running statistics: as you process tile after tile of \(K, V\),
+update running max and running sum in registers, and finalise the output for
+each query tile when its work is done.
+
+\section{What it costs and what it doesn't}
+
+\paragraph{The good news.}
+\begin{itemize}
+\item \textbf{Memory.} Activation memory drops from \(\bigO(n^2)\) to
+\(\bigO(n)\). At \(n = 64\)K, that is the difference between 16 GB and a
+few MB.
+\item \textbf{Wall clock.} 2--4$\times$ faster end-to-end for typical
+sequence lengths in 2022; FlashAttention-2 \citep{dao2023fa2} and
+FlashAttention-3 \citep{shah2024fa3} push this further by exploiting
+GPU-specific instructions.
+\item \textbf{Numerics.} The output is bit-equivalent to the naive
+implementation (modulo standard floating-point reduction order). It is
+\emph{exact} attention, not an approximation.
+\end{itemize}
+
+\paragraph{The bad news.}
+\begin{equation}
+  \text{FLOPs} \;=\; \bigO(n^2 d).
+\end{equation}
+Same as before. FlashAttention is a constant-factor win, not an asymptotic
+one. Doubling \(n\) still quadruples the work; the work is just done much
+more efficiently.
+
+\keyidea{FlashAttention buys roughly an order of magnitude of practical
+context length on the same hardware. It does not change the slope of the
+cost curve. At sufficiently large \(n\), no implementation of dense
+attention can be fast enough.}
+
+\section{Why this matters for the rest of the book}
+
+Two reasons.
+
+\paragraph{It set the practical baseline.} ``Faster than FlashAttention-2 on
+a B200'' is the de-facto unit of comparison for any new long-context
+attention mechanism in 2026. When SubQ reports a 52$\times$ prefill
+speedup at 1M tokens (Chapter~\ref{ch:benchmarks}), the baseline is
+FlashAttention-2 — which is itself an aggressively-optimised implementation
+of plain dense attention. Beating that by 52$\times$ is a real claim.
+
+\paragraph{It clarified what \emph{can't} be fixed by implementation alone.}
+Once your implementation is IO-optimal, what is left is the algorithm. If
+the algorithm is \(n^2\), the algorithm has to change. That observation —
+that we have collectively wrung most of the implementation lemon dry — is
+why the architectural alternatives in Part~V get serious attention now,
+when they were curiosities in 2020.

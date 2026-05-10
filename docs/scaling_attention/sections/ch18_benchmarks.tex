@@ -1,0 +1,113 @@
+\chapter{Reading the benchmarks honestly}
+\label{ch:benchmarks}
+
+\newthought{Long-context benchmarks} have a credibility problem in 2026.
+Vendors report numbers that look spectacular; independent reproductions
+either don't exist or contradict the vendor numbers; the underlying
+evaluation setups (which model, which prompt template, which scoring
+method, which context window) often differ from one paper to the next.
+
+This chapter is a survival guide for reading SubQ's published numbers
+without either dismissing them or being sold by them.\sidenote{Source for
+all of SubQ's numbers in this chapter: \citet{subq2026ssa}. The
+``third-party verified'' qualification on these numbers refers to a
+specific evaluation lab; the full methodology was not public as of the
+last update of this book.}
+
+\section{The three benchmarks that matter}
+
+\paragraph{RULER.} \citet{hsieh2024ruler} is the de-facto long-context
+benchmark in 2026. A battery of 13 sub-tasks covering needle-in-a-haystack,
+multi-key retrieval, multi-hop reasoning, and aggregation, all at
+configurable context lengths from 4K to 128K. Reported as average
+accuracy across the 13 tasks at a given length.
+
+\paragraph{MRCR v2.} \citet{chen2025mrcr} is the harder successor. Multi-
+document reasoning + retrieval. Tests whether a model can read multiple
+related documents at long context and answer a question requiring
+cross-document inference. The 2026 version includes a leaderboard.
+
+\paragraph{Wall-clock prefill speedup.} The non-quality benchmark: how
+fast does the model encode a long prompt? Usually reported relative to a
+baseline (FlashAttention-2 on a B200, in SubQ's case).
+
+\section{What SubQ reports}
+
+From \citet{subq2026ssa}, paraphrased:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Metric & SSA / SubQ result \\
+\midrule
+RULER \@ 128K (avg of 13 tasks) & \(\sim\) 95\% \\
+Prefill speedup vs FA-2 \@ 1M tokens (B200) & \(\sim\) 52$\times$ \\
+Attention-FLOP reduction vs dense \@ 1M & \(\sim\) two orders of magnitude \\
+MRCR v2 (overall) & 65.9\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{What the RULER number means.} 95\% on RULER \@ 128K is
+genuinely strong. Frontier proprietary models (Claude 3.5/4, GPT-4/5,
+Gemini) report numbers in the 90--96\% range at this length; SubQ being
+competitive here is the headline.
+
+\paragraph{What the prefill speedup means.} 52$\times$ vs FlashAttention-2
+on a B200, at 1M tokens. The baseline matters: FA-2 is itself an
+aggressive optimisation of dense attention. The speedup is for
+\emph{prefill} specifically — the initial encoding of the prompt — which
+is where the \(n^2\) hits hardest. Decode (per-token generation) speedup
+will be smaller because both architectures hit the KV-cache memory wall
+in similar ways.
+
+\paragraph{What the MRCR v2 number means — the part the marketing
+underplays.} The honest read of the MRCR v2 leaderboard at the time of
+writing (paraphrased from \citealp{subq2026ssa}'s own table):
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+Model & MRCR v2 \\
+\midrule
+Claude Opus 4.6     & 78.3\% \\
+GPT-5.5             & 74.0\% \\
+\textbf{SubQ (SSA)} & \textbf{65.9\%} \\
+GPT-5.4             & 36.6\% \\
+Claude Opus 4.7     & 32.2\% \\
+Gemini 3.1 Pro      & 26.3\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+SubQ is \emph{in the conversation} but \emph{not at the top}. The frontier
+proprietary models have a clear lead. The relative position is what
+matters: at a presumably much smaller training-compute footprint, SSA
+is competitive with — but not yet beating — the best dense transformers
+at multi-document long-context reasoning. That is a credible architectural
+result.
+
+\keyidea{Long-context benchmarks are a moving target. SubQ's strongest
+honest claim is that SSA is competitive with frontier proprietary
+transformers on RULER and MRCR v2 \emph{while running 50$\times$ faster
+on prefill at 1M tokens}. ``Faster than the best, comparable in quality''
+is a much stronger claim than ``best at everything''.}
+
+\section{What is missing}
+
+A short list of things the public materials do not (yet) settle:
+
+\begin{itemize}
+\item Training data composition, total training tokens, and parameter
+count. Without these, comparing to GPT-5 or Claude Opus 4.6 isn't
+apples-to-apples.
+\item The full text of the third-party verification.
+\item Decoding wall-clock numbers (the prefill speedup is for
+\emph{prompt encoding}; per-token decode performance is a separate
+question).
+\item Behaviour at $> 1$M tokens — RULER \@ 1M, MRCR v2 \@ 1M.
+\end{itemize}
+
+The right posture is ``cautiously impressed and waiting for
+reproducibility''. That posture is the one this book has tried to model
+throughout.

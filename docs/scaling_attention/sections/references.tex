@@ -1,63 +1,218 @@
+% Numeric bibliography. Each \bibitem carries an [Author(Year)] tag so that
+% natbib's \citet{...} can render "Author [N]" alongside numeric \citep{...}.
 \begin{thebibliography}{99}
 
-\bibitem{kaplan2020scaling}
-J.~Kaplan et al.,
-\newblock \emph{Scaling Laws for Neural Language Models.}
+\bibitem[Kneser \& Ney(1995)]{kneser1995smoothing}
+R.~Kneser and H.~Ney.
+\newblock Improved backing-off for m-gram language modeling.
+\newblock \emph{ICASSP}, 1995.
+
+\bibitem[Brants et~al.(2007)]{brants2007large}
+T.~Brants, A.~Popat, P.~Xu, F.~Och, and J.~Dean.
+\newblock Large language models in machine translation.
+\newblock \emph{EMNLP-CoNLL}, 2007.
+
+\bibitem[Elman(1990)]{elman1990finding}
+J.~Elman.
+\newblock Finding structure in time.
+\newblock \emph{Cognitive Science}, 1990.
+
+\bibitem[Mikolov et~al.(2010)]{mikolov2010rnnlm}
+T.~Mikolov, M.~Karafi\'at, L.~Burget, J.~\v{C}ernock\'y, and S.~Khudanpur.
+\newblock Recurrent neural network based language model.
+\newblock \emph{INTERSPEECH}, 2010.
+
+\bibitem[Hochreiter \& Schmidhuber(1997)]{hochreiter1997lstm}
+S.~Hochreiter and J.~Schmidhuber.
+\newblock Long short-term memory.
+\newblock \emph{Neural Computation}, 1997.
+
+\bibitem[Cho et~al.(2014)]{cho2014gru}
+K.~Cho et~al.
+\newblock Learning phrase representations using RNN encoder--decoder for
+  statistical machine translation.
+\newblock \emph{EMNLP}, 2014.
+
+\bibitem[Sutskever et~al.(2014)]{sutskever2014seq2seq}
+I.~Sutskever, O.~Vinyals, and Q.~Le.
+\newblock Sequence to sequence learning with neural networks.
+\newblock \emph{NeurIPS}, 2014.
+
+\bibitem[Bahdanau et~al.(2015)]{bahdanau2014attention}
+D.~Bahdanau, K.~Cho, and Y.~Bengio.
+\newblock Neural machine translation by jointly learning to align and
+  translate.
+\newblock \emph{ICLR}, 2015.
+
+\bibitem[Vaswani et~al.(2017)]{vaswani2017attention}
+A.~Vaswani et~al.
+\newblock Attention is all you need.
+\newblock \emph{NeurIPS}, 2017.
+
+\bibitem[Sennrich et~al.(2016)]{sennrich2016bpe}
+R.~Sennrich, B.~Haddow, and A.~Birch.
+\newblock Neural machine translation of rare words with subword units.
+\newblock \emph{ACL}, 2016.
+
+\bibitem[Kudo \& Richardson(2018)]{kudo2018sentencepiece}
+T.~Kudo and J.~Richardson.
+\newblock SentencePiece: a simple and language-independent subword tokenizer.
+\newblock \emph{EMNLP}, 2018.
+
+\bibitem[Su et~al.(2021)]{su2021rope}
+J.~Su et~al.
+\newblock RoFormer: enhanced transformer with rotary position embedding.
+\newblock arXiv:2104.09864, 2021.
+
+\bibitem[Peng et~al.(2023)]{peng2023yarn}
+B.~Peng, J.~Quesnelle, H.~Fan, and E.~Shippole.
+\newblock YaRN: efficient context window extension of large language models.
+\newblock arXiv:2309.00071, 2023.
+
+\bibitem[Kaplan et~al.(2020)]{kaplan2020scaling}
+J.~Kaplan et~al.
+\newblock Scaling laws for neural language models.
 \newblock arXiv:2001.08361, 2020.
-\newblock \url{https://arxiv.org/abs/2001.08361}
 
-\bibitem{hoffmann2022training}
-J.~Hoffmann et al.,
-\newblock \emph{Training Compute-Optimal Large Language Models.}
-\newblock arXiv:2203.15556, 2022.
-\newblock \url{https://arxiv.org/abs/2203.15556}
+\bibitem[Hoffmann et~al.(2022)]{hoffmann2022training}
+J.~Hoffmann et~al.
+\newblock Training compute-optimal large language models.
+\newblock \emph{NeurIPS}, 2022.
 
-\bibitem{vaswani2017attention}
-A.~Vaswani et al.,
-\newblock \emph{Attention Is All You Need.}
-\newblock NeurIPS, 2017.
-\newblock \url{https://arxiv.org/abs/1706.03762}
+\bibitem[Dao et~al.(2022)]{dao2022flashattention}
+T.~Dao, D.~Y.~Fu, S.~Ermon, A.~Rudra, and C.~R\'e.
+\newblock FlashAttention: fast and memory-efficient exact attention with
+  IO-awareness.
+\newblock \emph{NeurIPS}, 2022.
 
-\bibitem{dao2022flashattention}
-T.~Dao et al.,
-\newblock \emph{FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness.}
-\newblock NeurIPS, 2022.
-\newblock \url{https://arxiv.org/abs/2205.14135}
+\bibitem[Dao(2023)]{dao2023fa2}
+T.~Dao.
+\newblock FlashAttention-2: faster attention with better parallelism and
+  work partitioning.
+\newblock arXiv:2307.08691, 2023.
 
-\bibitem{gu2023mamba}
-A.~Gu and T.~Dao,
-\newblock \emph{Mamba: Linear-Time Sequence Modeling with Selective State Spaces.}
+\bibitem[Shah et~al.(2024)]{shah2024fa3}
+J.~Shah et~al.
+\newblock FlashAttention-3: fast and accurate attention with asynchrony and
+  low-precision.
+\newblock arXiv:2407.08608, 2024.
+
+\bibitem[Shazeer(2019)]{shazeer2019mqa}
+N.~Shazeer.
+\newblock Fast transformer decoding: one write-head is all you need.
+\newblock arXiv:1911.02150, 2019.
+
+\bibitem[Ainslie et~al.(2023)]{ainslie2023gqa}
+J.~Ainslie et~al.
+\newblock GQA: training generalized multi-query transformer models from
+  multi-head checkpoints.
+\newblock \emph{EMNLP}, 2023.
+
+\bibitem[Kwon et~al.(2023)]{kwon2023vllm}
+W.~Kwon et~al.
+\newblock Efficient memory management for large language model serving with
+  PagedAttention.
+\newblock \emph{SOSP}, 2023.
+
+\bibitem[Jiang et~al.(2023)]{jiang2023mistral7b}
+A.~Q.~Jiang et~al.
+\newblock Mistral 7B.
+\newblock arXiv:2310.06825, 2023.
+
+\bibitem[Child et~al.(2019)]{child2019sparse}
+R.~Child, S.~Gray, A.~Radford, and I.~Sutskever.
+\newblock Generating long sequences with sparse transformers.
+\newblock arXiv:1904.10509, 2019.
+
+\bibitem[Beltagy et~al.(2020)]{beltagy2020longformer}
+I.~Beltagy, M.~Peters, and A.~Cohan.
+\newblock Longformer: the long-document transformer.
+\newblock arXiv:2004.05150, 2020.
+
+\bibitem[Zaheer et~al.(2020)]{zaheer2020bigbird}
+M.~Zaheer et~al.
+\newblock Big Bird: transformers for longer sequences.
+\newblock \emph{NeurIPS}, 2020.
+
+\bibitem[Gu et~al.(2022)]{gu2021s4}
+A.~Gu, K.~Goel, and C.~R\'e.
+\newblock Efficiently modeling long sequences with structured state spaces.
+\newblock \emph{ICLR}, 2022.
+
+\bibitem[Gu \& Dao(2023)]{gu2023mamba}
+A.~Gu and T.~Dao.
+\newblock Mamba: linear-time sequence modeling with selective state spaces.
 \newblock arXiv:2312.00752, 2023.
-\newblock \url{https://arxiv.org/abs/2312.00752}
 
-\bibitem{poli2023hyena}
-M.~Poli et al.,
-\newblock \emph{Hyena Hierarchy: Towards Larger Convolutional Language Models.}
-\newblock ICML, 2023.
-\newblock \url{https://arxiv.org/abs/2302.10866}
+\bibitem[Poli et~al.(2023)]{poli2023hyena}
+M.~Poli et~al.
+\newblock Hyena hierarchy: towards larger convolutional language models.
+\newblock \emph{ICML}, 2023.
 
-\bibitem{katharopoulos2020transformers}
-A.~Katharopoulos et al.,
-\newblock \emph{Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention.}
-\newblock ICML, 2020.
-\newblock \url{https://arxiv.org/abs/2006.16236}
+\bibitem[Katharopoulos et~al.(2020)]{katharopoulos2020linear}
+A.~Katharopoulos, A.~Vyas, N.~Pappas, and F.~Fleuret.
+\newblock Transformers are RNNs: fast autoregressive transformers with linear
+  attention.
+\newblock \emph{ICML}, 2020.
 
-\bibitem{subq2026ssa}
-Subquadratic,
-\newblock \emph{How SSA Makes Long Context Practical,}
-\newblock May 2026.
-\newblock \url{https://subq.ai/how-ssa-makes-long-context-practical}
+\bibitem[Choromanski et~al.(2021)]{choromanski2021performer}
+K.~Choromanski et~al.
+\newblock Rethinking attention with Performers.
+\newblock \emph{ICLR}, 2021.
 
-\bibitem{subq2026intro}
-Subquadratic,
-\newblock \emph{Introducing SubQ --- Efficiency is Intelligence,}
-\newblock May 2026.
-\newblock \url{https://subq.ai/introducing-subq}
+\bibitem[Sun et~al.(2023)]{sun2023retnet}
+Y.~Sun et~al.
+\newblock Retentive network: a successor to transformer for large language
+  models.
+\newblock arXiv:2307.08621, 2023.
 
-\bibitem{venturebeat2026subq}
-VentureBeat,
-\newblock Coverage of Subquadratic efficiency claims and calls for independent verification,
-\newblock May 2026.
-\newblock \url{https://venturebeat.com}
+\bibitem[Lieber et~al.(2024)]{lieber2024jamba}
+O.~Lieber et~al.
+\newblock Jamba: a hybrid Transformer-Mamba language model.
+\newblock arXiv:2403.19887, 2024.
+
+\bibitem[Ren et~al.(2024)]{ren2024samba}
+L.~Ren et~al.
+\newblock SAMBA: simple hybrid state space models for efficient unlimited
+  context language modeling.
+\newblock arXiv:2406.07522, 2024.
+
+\bibitem[De et~al.(2024)]{de2024griffin}
+S.~De et~al.
+\newblock Griffin: mixing gated linear recurrences with local attention for
+  efficient language models.
+\newblock arXiv:2402.19427, 2024.
+
+\bibitem[DeepSeek AI(2024)]{deepseek2024dsa}
+DeepSeek AI.
+\newblock DeepSeek Sparse Attention: a content-dependent attention mechanism.
+\newblock 2024 technical report.
+
+\bibitem[Hsieh et~al.(2024)]{hsieh2024ruler}
+C.-P.~Hsieh et~al.
+\newblock RULER: what's the real context size of your long-context language
+  models?
+\newblock arXiv:2404.06654, 2024.
+
+\bibitem[Chen et~al.(2025)]{chen2025mrcr}
+G.~Chen et~al.
+\newblock MRCR: a multi-document reasoning and retrieval benchmark.
+\newblock 2025.
+
+\bibitem[Subquadratic(2026)]{subq2026ssa}
+Subquadratic.
+\newblock How SSA makes long context practical.
+\newblock \texttt{subq.ai/how-ssa-makes-long-context-practical}, 2026.
+
+\bibitem[LeCun(2022)]{lecun2022jepa}
+Y.~LeCun.
+\newblock A path towards autonomous machine intelligence.
+\newblock OpenReview, 2022.
+
+\bibitem[Lou et~al.(2024)]{lou2024discrete}
+A.~Lou, C.~Meng, and S.~Ermon.
+\newblock Discrete diffusion language modelling by estimating the ratios of
+  the data distribution.
+\newblock \emph{ICML}, 2024.
 
 \end{thebibliography}

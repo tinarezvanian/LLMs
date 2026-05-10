@@ -1,0 +1,110 @@
+\chapter{State-space models and Mamba}
+\label{ch:ssm}
+
+\newthought{The other major family} of post-transformer architectures
+takes a completely different angle. Rather than make attention sparse, it
+deletes attention entirely and replaces it with a \emph{recurrent} update
+that compresses the past into a fixed-size hidden state. This is, in
+spirit, a return to the LSTM (Chapter~\ref{ch:pre-transformer}). What
+makes 2023--2026's state-space models more than a nostalgia trip is a
+mathematical reformulation that lets that recurrent computation be
+\emph{trained} as a parallel scan rather than as a sequential loop.
+
+\section{What a state-space model is}
+
+A continuous-time linear state-space model is the differential equation
+\begin{equation}
+  h'(t) \;=\; A h(t) + B u(t), \qquad y(t) \;=\; C h(t),
+  \label{eq:ssm-continuous}
+\end{equation}
+where \(u(t) \in \R\) is the input signal, \(h(t) \in \R^{N}\) is the
+hidden state, and \(A, B, C\) are learnable matrices. This is undergraduate
+control theory.
+
+To use it on a discrete sequence \(u_1, u_2, \ldots, u_n\), you discretise
+with a step size \(\Delta\):
+\begin{equation}
+  h_t \;=\; \bar A\, h_{t-1} + \bar B\, u_t, \qquad y_t \;=\; C h_t,
+  \label{eq:ssm-discrete}
+\end{equation}
+where \(\bar A, \bar B\) are derived from \(A, B, \Delta\) via a standard
+zero-order-hold formula. Equation~\eqref{eq:ssm-discrete} looks identical
+to a linear RNN.\sidenote{In fact, if you set \(\bar A\) and \(\bar B\)
+to be arbitrary learnable matrices and add a non-linearity, you get back
+a vanilla RNN. The state-space framing buys two things the RNN didn't
+have: (i) a principled connection to continuous-time signal processing
+that gives you \emph{HiPPO} initialisations \citep{gu2021s4} that handle
+long-range dependencies stably, and (ii) the parallel-scan computation
+form, next.}
+
+\section{The convolutional view}
+
+Unrolling equation~\eqref{eq:ssm-discrete} from \(h_0 = 0\):
+\begin{equation}
+  y_t \;=\; \sum_{k=0}^{t} \underbrace{C \bar A^k \bar B}_{\bar K_k}\, u_{t-k}.
+\end{equation}
+This is a \emph{convolution} of the input with a kernel
+\(\bar K = (\bar K_0, \bar K_1, \ldots, \bar K_{n-1})\) of length \(n\).
+For \emph{linear} state-space models — where \(\bar A, \bar B, \bar C\) do
+not depend on the data — that kernel is the same for every position. You
+can compute the convolution with a fast Fourier transform in
+\(\bigO(n \log n)\), or precompute the kernel and apply it as a single
+matrix-vector multiply.
+
+S4 \citep{gu2021s4} took this idea seriously, picked an HiPPO-flavoured
+\(A\) that gives the model a long-range memory, and showed it could match
+transformers on long-range benchmarks at much lower cost.
+
+\section{Why S4 wasn't quite enough — the ``selectivity'' missing piece}
+
+S4 was beautiful but fell short of transformer quality on language. The
+reason, identified by \citet{gu2023mamba}, is that the dynamics
+\((\bar A, \bar B)\) in equations~\eqref{eq:ssm-discrete} were
+\emph{input-independent} — the model could not change \emph{how it
+remembered} based on \emph{what} it was reading. That is the entire
+strength of attention.
+
+\section{Mamba — selective state spaces}
+
+Mamba's contribution is to make \(\bar A, \bar B, \bar C\) functions of
+the input \(u_t\). Concretely, at every time step the model computes
+\begin{equation}
+  \bar B_t = f_B(u_t), \quad
+  \bar C_t = f_C(u_t), \quad
+  \Delta_t = f_\Delta(u_t),
+\end{equation}
+and uses these in a per-step update of the form
+\begin{equation}
+  h_t \;=\; \bar A_t\, h_{t-1} + \bar B_t\, u_t.
+\end{equation}
+This breaks the convolution view — you can no longer fold a single fixed
+kernel across the sequence. Instead, the authors implement the
+selective recurrence as a hardware-efficient parallel scan that processes
+the sequence in $\bigO(n)$ work but $\bigO(\log n)$ depth on a GPU,
+keeping the state in SRAM throughout.
+
+\paragraph{What Mamba wins.} Linear-time training and inference
+($\bigO(n)$). Constant-memory generation: there is no growing KV cache,
+just the fixed-size \(h_t\). For very long sequences this is the entire
+ballgame.
+
+\paragraph{What Mamba gives up.} The hidden state \(h_t\) is finite. Every
+token's information has to be compressed into a vector of size \(N\)
+(typically a few hundred). For a needle-in-a-haystack task — find one
+specific fact among 100K tokens — a finite state struggles, because
+storing the full input losslessly is exactly the problem an attention
+matrix solves and a state vector cannot.
+
+\keyidea{Mamba is a linear-time, constant-memory sequence model. It is
+genuinely different from a transformer, not a faster transformer. Its
+benchmarks favour it on smooth signals and tasks with locally-relevant
+context, and it loses to transformers on tasks that require associative
+recall over arbitrary positions.}
+
+\section{Where this fits in the bigger picture}
+
+State-space models give us the bottom-left of the 2$\times$2 frame in
+Chapter~\ref{ch:quadrant}: linear-scaling, content-blind in the sense
+that the state is a fixed-size summary regardless of what it has seen.
+Their honest trade-off is the one we will see again and again: cheap, but
+\emph{lossy}, in a way that depends on the task.

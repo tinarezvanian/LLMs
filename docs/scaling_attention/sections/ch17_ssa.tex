@@ -1,0 +1,105 @@
+\chapter{Subquadratic Sparse Attention}
+\label{ch:ssa}
+
+\newthought{Subquadratic Sparse Attention (SSA)} is the mechanism behind
+the SubQ company. This chapter explains, with the limited information
+that has been made public as of mid-2026, what it is, why it lives in the
+bottom-right quadrant of Chapter~\ref{ch:quadrant}, and what is honestly
+known versus what is still proprietary.\sidenote{Primary source for this
+chapter: Subquadratic's technical post \citep{subq2026ssa}, supplemented
+by the company's blog and demos. Where claims are vendor-reported, that
+is said out loud.}
+
+\section{The mechanism, in one sentence}
+
+For each query, score it against every key in the past, but only
+\emph{actually compute} a small data-dependent subset of those scores —
+specifically, the ones likely to be largest — and treat the rest as
+zero.
+
+That subset is chosen by a learned selection function that does not require
+materialising the full \(n \times n\) attention matrix to know which
+entries matter. The selection function's cost is sublinear or linear in
+\(n\), not quadratic.
+
+\section{Why this isn't trivial}
+
+The naive way to ``only score the top-\(k\) keys'' is to score \emph{all}
+keys, sort, and keep the top \(k\). That is \(\bigO(n)\) per query and
+\(\bigO(n^2)\) per layer — exactly what we are trying to avoid.
+
+The non-trivial bit is finding the top \(k\) without doing the all-pairs
+dot product first. This is the same problem as approximate nearest
+neighbour search, and like ANN it is solved by some combination of:
+\begin{itemize}
+\item \textbf{Indexing the keys.} Build a structure (LSH, IVF, HNSW,
+learned routing tree) that, given a query, returns a small candidate set
+of keys in $\bigO(\log n)$ or $\bigO(\sqrt n)$ work. Then score only
+those candidates.
+\item \textbf{Hierarchical selection.} Group keys into clusters at training
+time; route a query to one or a few clusters; do dense attention within
+the chosen clusters.
+\item \textbf{Learned routing.} A small network looks at the query and
+predicts which keys are likely to be relevant, without computing the
+actual dot products.
+\end{itemize}
+\citet{subq2026ssa} describe their selection as content-dependent and
+hardware-friendly, but the specific algorithm is proprietary.
+
+\section{What this buys you, on paper}
+
+\begin{itemize}
+\item \textbf{Cost.} If the selection function returns $\bigO(\log n)$ or
+$\bigO(1)$ keys per query and itself costs $\bigO(\log n)$ per query, the
+per-token attention cost is essentially constant in $n$. Total per-layer
+cost becomes $\bigO(n \log n)$ rather than $\bigO(n^2)$.
+\item \textbf{Routing fidelity.} Unlike sliding-window or state-space
+models, the selected keys can be \emph{anywhere in the past}. A relevant
+fact 800K tokens ago can be retrieved as easily as one 8 tokens ago, as
+long as the selection function thinks to look at it.
+\item \textbf{Drop-in.} The mechanism is meant to slot into a standard
+transformer's attention block, allowing existing transformer training and
+inference infrastructure to be reused.
+\end{itemize}
+
+\section{What it costs in correctness}
+
+The honest version is that any sparse-attention mechanism trades off
+\emph{recall}: the selection function will sometimes miss a key that
+\emph{should} have been attended to, and the model will not see that
+information. Two failure modes are worth naming.
+
+\paragraph{Selection-function false negatives.} If the selector thinks key
+\(s\) is irrelevant when it actually is, the dependent token \(t\) gets
+no signal from \(s\). The model's behaviour will quietly degrade on tasks
+where the relevant key looks superficially unrelated to the query.
+
+\paragraph{Training-distribution dependence.} The selection function is
+learned from data. If a long-context use case is sufficiently
+out-of-distribution, the selector may pick the wrong keys. This is one
+of the main reasons SubQ-style architectures need extensive
+long-context-specific training, not just a long-context evaluation tail
+on top of a standard transformer.
+
+\section{Where SSA sits relative to the alternatives}
+
+In the 2$\times$2 frame from Chapter~\ref{ch:quadrant}: bottom-right.
+Linear-cost (or near-linear-cost), content-dependent routing. Distinct
+from:
+
+\begin{itemize}
+\item Fixed-pattern sparse (Chapter~\ref{ch:sparse}) — same asymptote,
+position-fixed routing.
+\item State-space models (Chapter~\ref{ch:ssm}) — same asymptote,
+content-dependent dynamics but \emph{lossy compression} of the past into
+a finite state.
+\item Linear attention / Hyena (Chapter~\ref{ch:linattn}) — better-than-
+quadratic asymptote, but expressivity-limited routing kernels.
+\item Hybrids (Chapter~\ref{ch:hybrids}) — mostly position-fixed mixers
+plus a few full-attention layers; complementary to SSA, not competitive.
+\end{itemize}
+
+\keyidea{SSA's claim is that it occupies a quadrant nobody else can
+practically reach: linear-cost \emph{and} content-dependent. If the
+claim holds at frontier scale, it is a genuine architectural advance,
+not an implementation trick.}

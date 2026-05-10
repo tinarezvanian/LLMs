@@ -1,0 +1,59 @@
+\chapter{Open questions}
+\label{ch:open}
+
+\newthought{No-one has won} the long-context architecture argument. This
+chapter is a short, opinionated list of the questions whose answers will
+decide it over the next few years.
+
+\section{Selection algorithms at frontier scale}
+
+For content-dependent sparse attention to live in the bottom-right
+quadrant of Chapter~\ref{ch:quadrant}, the selection function has to be
+fast \emph{and} accurate \emph{and} differentiable. We have plenty of
+algorithms that hit two of those: ANN indexes are fast and accurate but
+not differentiable; learned routers are differentiable and fast but lose
+accuracy; hierarchical clustering is differentiable and accurate but slow
+to update during training.
+
+The open question is whether SSA-style mechanisms can keep their
+selection function quality at the 1B-parameter / 1T-token scale where the
+real customers live. SubQ's published results suggest yes; independent
+reproduction is the next move.
+
+\section{Training infrastructure for the bottom-right quadrant}
+
+A standard transformer trains in a well-understood, GPU-friendly way:
+matrix multiplies dominate, FlashAttention handles the rest, communication
+patterns are predictable. A content-dependent sparse model breaks every
+one of those assumptions. The selection function makes computation
+data-dependent, the sparsity makes communication patterns irregular, and
+the routing produces load imbalance across devices.
+
+How to train these models at scale, on cheap commodity hardware, with
+mixed precision and tensor parallelism, is genuinely an open engineering
+problem. The architectural papers tend to be quiet on this; the
+implementations that work are mostly proprietary.
+
+\section{Evaluation that survives Goodhart}
+
+Every benchmark in the long-context space has been gamed within months
+of release.\sidenote{Original needle-in-a-haystack tests were trivial
+once everyone trained on synthetic NIAH data; the move to RULER and now
+MRCR v2 is the response. Each new benchmark eventually stops
+discriminating, and a harder one has to be built.} The community's
+ability to come up with new benchmarks faster than vendors can train to
+them is the only thing keeping this honest. Expect MRCR v3, v4, etc.
+
+\section{Inference economics, not training economics}
+
+Frontier model training has consumed the field's budget for five years.
+The question that decides 2027--2030 is whether anyone can serve a
+high-quality 1M-token model for under a cent per million input tokens.
+The arithmetic doesn't work for dense transformers; whether it works for
+SSA, Mamba-hybrids, or some still-unnamed architecture is genuinely
+unsettled. Whoever wins the inference economics question wins the
+agentic-applications business.
+
+\keyidea{The next five years of LLM research are about inference, not
+training. Whoever can serve frontier-quality 1M-token context cheaply
+wins the agent platform business.}

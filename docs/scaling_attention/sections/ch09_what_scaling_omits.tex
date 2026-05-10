@@ -1,0 +1,90 @@
+\chapter{What scaling laws don't tell you}
+\label{ch:what-scaling-omits}
+
+\newthought{Both Kaplan and Chinchilla} are about \emph{training} cost. Their
+loss curves assume that the model, once trained, can be \emph{used} at the
+context length it was trained at. That assumption was nearly free in 2020.
+It is the bottleneck in 2026.
+
+\section{Three things the laws are silent on}
+
+\paragraph{1. Inference cost as a function of context length.} The Kaplan
+power law says that loss falls smoothly in parameters \(N\), data \(D\), and
+training compute \(C\). It does not say a word about how much \emph{compute
+per query} a trained model needs at sequence length \(n\). That compute
+grows as \(\bigO(n^2)\) for dense attention (Chapter~\ref{ch:why-quadratic}),
+and that growth has no analog on the scaling-laws plot.
+
+\paragraph{2. The KV cache.} The cache size grows as \(\bigO(n)\) per layer.
+For long contexts and large models, it can exceed the model's weight footprint
+by a wide margin. Scaling laws are written about a model that fits on one
+GPU and serves one short request at a time; they have nothing to say about
+a model whose KV cache for a single request requires multi-GPU sharding.
+
+\paragraph{3. The quality--length curve.} A nominal context window says how
+many tokens a model accepts. A \emph{functional} context window says how
+many tokens a model can actually reason over. There is no scaling law that
+relates the two. The community-standard benchmarks
+(\citealp{hsieh2024ruler, chen2025mrcr}) consistently find that nominal
+windows of 128K tokens have functional windows much smaller, and that the
+gap depends on architecture in ways that scaling laws do not capture.
+
+\section{Why the agentic workloads broke the model}
+
+Through about 2022 the typical LLM workload was: short user query
+(${\sim}100$ tokens), short response (${\sim}500$ tokens). Total context
+${\sim}600$ tokens. For that regime, dense attention's \(n^2\) is small,
+the KV cache fits on a single card, scaling laws describe the behaviour you
+care about, and the world is fine.
+
+The 2023--2026 wave broke that regime. The new workloads:
+
+\begin{itemize}
+\item A coding agent reading an entire 400k-token monorepo and refactoring
+across files.
+\item A legal assistant reading a 200-page contract and resolving
+cross-references.
+\item A research summariser reading 50 PDFs and producing a structured
+literature map.
+\item A long-running agent session whose ``context'' is the trace of every
+prior tool call, plan, and observation.
+\end{itemize}
+
+These do not look like 600-token chats. They look like 100k--1M-token
+contexts, served at frontier-model quality. And the scaling-laws-era
+infrastructure — dense transformer, single H100, FlashAttention,
+GQA — does not deliver them at any reasonable price.
+
+\section{Two responses, and the rest of the book}
+
+Faced with the gap between what scaling laws describe (training compute)
+and what 2026's products need (cheap, accurate long-context
+inference), the field has split into two camps.
+
+\begin{description}
+\item[\textnormal{\textbf{Camp 1: don't change the algorithm, change the
+implementation.}}] FlashAttention (Chapter~\ref{ch:flashattention}),
+better KV-cache schemes (Chapter~\ref{ch:kv-cache}), MQA / GQA, paged
+caches, sliding windows. The asymptote stays \(n^2\); the constants and
+the memory bills get much better. This is where most production
+deployments live in 2026.
+
+\item[\textnormal{\textbf{Camp 2: change the algorithm.}}] State-space models
+(Chapter~\ref{ch:ssm}), long convolutions and linear attention
+(Chapter~\ref{ch:linattn}), hybrids (Chapter~\ref{ch:hybrids}), and
+content-dependent sparse mechanisms like SSA
+(Chapter~\ref{ch:ssa}). The asymptote becomes
+\(\bigO(n)\) or \(\bigO(n \log n)\); the trade-off is that something else
+about the model has to be different — finite state, fixed sparsity
+patterns, or proprietary selection routing.
+\end{description}
+
+\keyidea{Scaling laws describe training-loss returns on training resources.
+They do not describe inference-time cost as a function of context length,
+and that gap is the entire reason the post-transformer landscape exists.}
+
+\section{Where the rest of the book goes}
+
+Part~IV (next) is Camp 1. Part~V is Camp 2. Part~VI is the 2$\times$2
+frame that makes the whole landscape make sense, and the careful read of
+SubQ's bet inside it.

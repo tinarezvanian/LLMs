@@ -1,0 +1,86 @@
+\chapter{What comes after attention}
+\label{ch:post-attention}
+
+\newthought{Sparse attention} of any flavour is still attention. The
+selection function is new; the dot-product-and-softmax routing inside the
+selected set is unchanged. Several research programmes in 2026 are asking
+the more aggressive question: \emph{is the entire attention pattern
+the right computational primitive at all?}
+
+This is speculative. None of the alternatives below has a frontier-quality
+deployment yet. The point of including them is to remind the reader that
+the post-transformer landscape might extend well past where this book has
+mapped it.
+
+\section{Diffusion language models}
+
+Discrete diffusion models \citep{lou2024discrete} apply the
+denoising-diffusion machinery (which has dominated image generation since
+2022) to text. Instead of predicting the next token autoregressively,
+they iteratively refine a draft of the entire output, all positions in
+parallel.
+
+\paragraph{Why this could matter.} The autoregressive loop is the
+dominant cost of LLM inference: generating 1000 tokens takes 1000
+sequential forward passes. A diffusion LM that produces a fluent draft
+in 20 refinement steps is potentially 50$\times$ faster at the same
+quality.
+
+\paragraph{Why it hasn't won yet.} Quality. Discrete diffusion language
+models in 2026 are competitive with mid-size autoregressive transformers
+but not with frontier models. The gap may close with scale; nobody is
+sure.
+
+\section{JEPA and the world-model camp}
+
+Yann LeCun's Joint Embedding Predictive Architectures
+\citep{lecun2022jepa} argue that LLMs train on the wrong objective: they
+predict surface symbols (tokens) instead of latent abstractions. A JEPA
+predicts the embedding of the future, not the future itself, and uses
+that embedding-prediction task as the basis for representation learning.
+
+\paragraph{The bet.} If you can train a world model that predicts
+\emph{abstract} state rather than concrete tokens, you should get a model
+that plans and reasons better. Whether you can train such a world model
+purely on text — without the multimodal grounding LeCun has emphasised —
+is contested.
+
+\paragraph{Status.} Early. JEPA is a research direction, not a deployed
+product, as of mid-2026.
+
+\section{Programmatic / neuro-symbolic systems}
+
+A different bet: instead of making models bigger, make them \emph{call
+out} to deterministic computation (search engines, code interpreters,
+databases) and treat the LLM as a \emph{controller} of those tools rather
+than the source of all answers. Agents in this style are already common;
+the open question is how much of the LLM's parametric knowledge can
+eventually be moved to external tools, and whether that lets the LLM
+itself be much smaller.
+
+\section{Energy-based and continuous-state models}
+
+A small but persistent line of work pursues sequence models that maintain
+a continuous, low-dimensional state and update it via energy
+minimisation rather than autoregression. The connection to control
+theory and physics-informed models is strong; the connection to
+production NLP is, so far, weak.
+
+\section{Honest closing}
+
+A book like this is by definition out of date the moment it ships. The
+$\bigO(n^2)$ wall is real, the engineering response is mature, and the
+architectural response is still in flux. SSA is one credible bet on the
+hardest quadrant of that response. Whether it is \emph{the} bet is going
+to be settled by independent reproduction, by training-cost economics,
+and by what happens when the next generation of long-context benchmarks
+makes everyone start over again.
+
+The interesting part of the field is the part where the answer is not yet
+obvious. We are squarely in that part right now.
+
+\keyidea{Attention has been the centre of language modelling for a
+decade. There is no law that says it has to stay there. The honest
+position — for engineers, not marketers — is to bet on whichever
+architecture serves the customer cheapest at the quality the customer
+needs, and to keep reading the papers.}

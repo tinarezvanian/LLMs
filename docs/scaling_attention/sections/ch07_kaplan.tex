@@ -106,3 +106,26 @@ have. The numbers got refined; the framework is permanent.
 \keyidea{Loss is a power law in parameters, in data, and in compute. The
 straight lines are why scaling up is a strategy. The exponents tell you
 how steeply.}
+
+\fillme{FILL-07-01}{Worked example: extrapolating Kaplan to GPT-4 scale}{%
+  Use \(L(N) = (N_c / N)^{\alpha_N}\) with \(\alpha_N = 0.076\) and a
+  fitted intercept calibrated to GPT-3 (175B parameters, reported
+  cross-entropy ${\sim}1.7$ on the OpenAI WebText test set). Predict the
+  loss at GPT-4 scale (assume some plausible \(N\), e.g.\ 1.7T MoE
+  ``effective''). Then disclaim: this is illustrative only — Chinchilla
+  showed Kaplan over-estimated parameters relative to data, and GPT-4 was
+  not trained Kaplan-style.}{%
+  Kaplan et al.\ 2020 \S 3.1; GPT-3 paper for the loss anchor;
+  Chapter~\ref{ch:chinchilla} for the disclaimer.}{%
+  Half a page; one equation chain; one paragraph of disclaimer.}
+
+\fillme{FILL-07-02}{Sidebar: emergent capabilities and what they're really about}{%
+  ${\sim}300$-word sidebar on Wei et al.\ 2022 ``Emergent Abilities of Large
+  Language Models'' and Schaeffer et al.\ 2023 ``Are Emergent Abilities a
+  Mirage?''. Convey: (a) the original claim of phase-transition-like
+  behaviour, (b) the counter-claim that emergence is mostly an artifact of
+  discontinuous metrics, (c) the honest middle ground that capability
+  surfaces nonlinearly even when loss does not. Cite both papers; add
+  \texttt{\textbackslash bibitem} entries to \texttt{references.tex}.}{%
+  Wei et al.\ 2022; Schaeffer et al.\ NeurIPS 2023.}{%
+  ${\sim}300$ words; no equations needed.}

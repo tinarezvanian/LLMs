@@ -111,3 +111,33 @@ question).
 The right posture is ``cautiously impressed and waiting for
 reproducibility''. That posture is the one this book has tried to model
 throughout.
+
+\fillme{FILL-18-01}{Sidebar: what each RULER sub-task actually tests}{%
+  Half-page sidebar listing the 13 RULER sub-tasks (NIAH / multi-key NIAH /
+  multi-value NIAH / variable tracking / common words extraction /
+  frequent-words extraction / QA / aggregation, etc.) with one sentence
+  each on what it stresses. Render as a 13-row \texttt{tabular}. Source it
+  from the RULER paper directly so we don't paraphrase wrongly.}{%
+  Hsieh et al.\ 2024.}{%
+  Half a page; 13-row \texttt{tabular}.}
+
+\fillme{FILL-18-02}{Worked example: a checklist for reading a long-context benchmark report}{%
+  Bullet-point checklist, ${\sim}10$ items, that an engineer can run through
+  before believing a vendor's long-context number. Items should include:
+  Which model checkpoint exactly? Which context length? Which RULER /
+  MRCR variant? Which scoring function (exact match vs LLM-as-judge)?
+  Which prompt template? Was decoding greedy or sampled? Was the eval
+  done on the vendor's own infra or third-party? Etc. Designed to be
+  printable and pinned next to a monitor.}{%
+  RULER and MRCR papers; vendor practice from 2025--2026.}{%
+  ${\sim}10$-bullet enumerated list.}
+
+\fillme{FILL-18-03}{Comparison table: third-party RULER reproductions}{%
+  ${\sim}6$-row \texttt{tabular} of independent RULER reproductions for
+  GPT-5, Claude Opus 4.6/4.7, Gemini 3.1 Pro, Llama-3 70B-Instruct, and
+  SubQ. Two columns: vendor-claimed @ 128K, third-party @ 128K. Footnote
+  the source for each row. Where no third-party number exists, write
+  ``not available'' rather than guessing.}{%
+  RULER GitHub leaderboard; lm-evaluation-harness contributions; HELM
+  long-context if applicable; \citet{subq2026ssa}.}{%
+  6-row \texttt{tabular} + 2-sentence caption.}

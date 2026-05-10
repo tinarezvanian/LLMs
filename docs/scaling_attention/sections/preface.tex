@@ -56,3 +56,46 @@ in footnotes at the bottom of the page. They are meant to be skimmed, not
 mandatory. The main text reads on its own.\sidenote{Like this. If a sentence
 in the body could use a sanity-check, a derivation, or a pointer to a paper,
 look right.}
+
+\newthought{A note on the amber boxes.} The book is a draft. Many places
+where a worked example, code listing, comparison table, or extended sidebar
+\emph{would} be useful are marked with an amber \textsc{To fill} box like
+the one immediately below. Each box has a stable ID (\texttt{FILL-XX-NN}),
+a short brief, the source material to draw on, and a target length. The
+intent is that any subsequent author — human or LLM — can grep the source
+tree, pick a stub, fill it, and the book gets a little better.
+
+\fillme{FILL-PRE-01}{Worked example: read this preface as if it were the only thing in the book}{%
+  Write a 200-word \emph{tl;dr} that someone with a single afternoon could read
+  instead of the rest of the book and still walk away with the central
+  argument: dense attention is \(\bigO(n^2)\); the engineering response is
+  the FlashAttention / KV-cache stack; the architectural response is the
+  bottom-right quadrant of Chapter~\ref{ch:quadrant} where SSA lives.
+  Done when a non-expert can repeat back ``this book is about why long
+  context is expensive and what people are doing about it''.}{%
+  This preface, plus Chapters~\ref{ch:why-quadratic}, \ref{ch:quadrant},
+  and \ref{ch:ssa}.}{%
+  ~200 words, single paragraph, no equations.}
+
+\paragraph{Workflow for filling stubs.}
+The recipe for any future LLM picking off a \texttt{FILL-XX-NN}:
+
+\begin{enumerate}
+\item Run \texttt{bash scripts/list\_fill\_stubs.sh} from the repository
+root to print a checklist of every open stub with its ID, title, file, and
+line number.
+\item Pick one. Read the surrounding chapter so you understand what was
+already said and what \emph{not} to repeat.
+\item Read the named sources in \texttt{research/notes.md} or the
+referenced primary papers.
+\item Replace the entire \verb|\fillme{...}{...}{...}{...}{...}| invocation
+with the finished prose / table / listing / figure. Hit the target length
+to within roughly \(\pm 30\%\); much shorter usually means you skipped
+something.
+\item Cite using the \texttt{\textbackslash citep\{key\}} or
+\texttt{\textbackslash citet\{key\}} keys already defined in
+\texttt{sections/references.tex}; add a new \verb|\bibitem[Author(Year)]{key}|
+entry if the source isn't there.
+\item Recompile (\texttt{./compile.sh}) and confirm no \texttt{Citation
+undefined} or \texttt{Reference undefined} warnings appear in the log.
+\end{enumerate}

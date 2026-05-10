@@ -73,3 +73,24 @@ written.
 \(n\)-dependence by giving up the precise dot-product routing of
 softmax attention. They tend to live in hybrids rather than as pure
 replacements.}
+
+\fillme{FILL-14-01}{Code listing: linear attention as a recurrence}{%
+  ${\sim}20$-line PyTorch listing implementing the recurrence
+  \(S_t = S_{t-1} + \phi(k_t)\, v_t\T\),
+  \(o_t = \phi(q_t)\T S_t / (\phi(q_t)\T z_t)\) (with \(z_t = z_{t-1} + \phi(k_t)\)
+  for the normaliser). Use \(\phi = \mathrm{ELU} + 1\) as in
+  \citet{katharopoulos2020linear}. Annotate shapes; emphasise that the
+  state \(S_t\) is fixed-size — that's the whole win.}{%
+  Katharopoulos et al.\ 2020.}{%
+  ${\sim}20$ lines of code + 2 sentences.}
+
+\fillme{FILL-14-02}{Sidebar: the Performer kernel approximation, sketched}{%
+  ${\sim}300$-word sidebar on Performers: random Fourier features applied
+  to the softmax kernel, FAVOR+ unbiased estimator, accuracy bounds. End
+  with the honest note that, while the theory is clean, in practice
+  Performers underperform full softmax attention on language modelling at
+  scale, which is why pure linear attention has not displaced standard
+  attention.}{%
+  Choromanski et al.\ 2021 (Performer); Rahimi \& Recht 2007 (random
+  features) for context.}{%
+  ${\sim}300$ words; one inline equation OK.}

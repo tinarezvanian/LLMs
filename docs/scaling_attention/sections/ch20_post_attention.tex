@@ -84,3 +84,26 @@ decade. There is no law that says it has to stay there. The honest
 position — for engineers, not marketers — is to bet on whichever
 architecture serves the customer cheapest at the quality the customer
 needs, and to keep reading the papers.}
+
+\fillme{FILL-20-01}{Sidebar: diffusion language models for text people}{%
+  ${\sim}400$-word sidebar walking a transformer-trained engineer through
+  discrete diffusion: forward process (corrupt tokens with masking or
+  uniform noise), reverse process (learn to denoise), the trade-off vs
+  autoregression (parallel decoding but harder training objective). Cite
+  Lou et al.\ 2024 and Hoogeboom et al.\ 2021 (multinomial diffusion).
+  End with one sentence on Inception Labs / Mercury demos as the 2025
+  proof-of-concept that this works at deployable speed.}{%
+  Lou et al.\ 2024; Hoogeboom et al.\ 2021; Inception Labs Mercury blog.}{%
+  ${\sim}400$ words; one schematic equation OK; no figure required.}
+
+\fillme{FILL-20-02}{Sidebar: what JEPA actually predicts}{%
+  ${\sim}400$-word sidebar with a clear word-picture of the JEPA training
+  objective: encoder \(f\) maps an input to a latent embedding; predictor
+  \(g\) takes a context view's latent and predicts a target view's latent;
+  loss is in latent space, not pixel / token space. Contrast with
+  autoregressive next-token loss. End with one sentence on V-JEPA
+  (video-JEPA) results and one on the open question of whether JEPA-style
+  objectives transfer to text.}{%
+  LeCun 2022 position paper; Assran et al.\ 2023 I-JEPA; Bardes et al.\
+  2024 V-JEPA.}{%
+  ${\sim}400$ words; one schematic equation; no figure required.}

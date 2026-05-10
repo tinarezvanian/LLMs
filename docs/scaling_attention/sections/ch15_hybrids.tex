@@ -47,3 +47,23 @@ about that bet.
 \keyidea{Hybrids work because attention's value is concentrated in a few
 layers per stack, not spread evenly. Replace the cheap layers with
 linear-time mixers; keep attention for the genuinely hard work.}
+
+\fillme{FILL-15-01}{Case study: Jamba in detail}{%
+  One-page deep-dive on AI21's Jamba architecture. Cover: the layer pattern
+  (Mamba / attention / Mamba / MoE-FFN, repeat), parameter count
+  (52B total / 12B active), reported throughput vs Mixtral, RULER
+  performance. Render the layer pattern as a small TikZ diagram (rectangles
+  in a column, labelled). End with one sentence on what the Jamba team's
+  ablations say about which layer matters most.}{%
+  Lieber et al.\ 2024; AI21 blog post.}{%
+  One full page including a small TikZ figure; 5--6 paragraphs.}
+
+\fillme{FILL-15-02}{Comparison table: Jamba vs SAMBA vs Griffin head-to-head}{%
+  Three-column \texttt{tabular} table comparing Jamba, SAMBA, Griffin on:
+  layer pattern, parameter scale published, hidden state type
+  (Mamba / SWA / GLA), evaluation context length, throughput claim, and
+  status (research / production). Include a footnote calling out which
+  numbers are from the original papers and which are from independent
+  reproduction.}{%
+  Lieber et al.\ 2024; Ren et al.\ 2024; De et al.\ 2024.}{%
+  3-column table + 4-row body; one paragraph caption.}

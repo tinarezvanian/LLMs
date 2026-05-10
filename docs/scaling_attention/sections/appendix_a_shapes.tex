@@ -1,0 +1,36 @@
+\chapter{Tensor shape cheat sheet}
+\label{app:shapes}
+
+A single-page reference for the tensor shapes you'll see in any transformer
+or transformer-adjacent code. Use it when reading other people's
+implementations.
+
+\fillme{FILL-A-01}{Master cheat sheet table for transformer shapes}{%
+  Build a single \texttt{tabular} table with columns:
+  \emph{Tensor name}, \emph{Symbol}, \emph{Shape}, \emph{Where it lives},
+  \emph{Bytes (fp16)}. Rows: input tokens (\(x\), \([B, n]\)), embedded
+  input (\(X\), \([B, n, d]\)), \(Q/K/V\) per head (\([B, n, \dhead]\)),
+  attention scores per head (\([B, n, n]\)), attention probs (same),
+  weighted values (\([B, n, \dhead]\)), MHA output (\([B, n, d]\)),
+  FFN hidden (\([B, n, d_{\text{ff}}]\)), final logits (\([B, n, V]\)),
+  KV cache per layer per head (\([B, n_{\text{cache}}, \dhead]\)). Use
+  Llama-3 8B numbers (\(B=1, n=8\text{K}, d=4096, \heads=32, \dhead=128,
+  d_{\text{ff}}=14336, V=128\text{k}\)) for the byte column. Caption: this
+  is the table to print and pin next to your monitor.}{%
+  This book's notation; Llama-3 8B model card.}{%
+  Single full-page \texttt{tabular} table.}
+
+\fillme{FILL-A-02}{Cheat sheet table for KV-cache variants}{%
+  Two-row variant of FILL-A-01 showing how MHA / GQA-8 / MQA differ in the
+  \emph{KV cache per layer} row. Per-token bytes for each scheme at the
+  Llama-3 70B configuration.}{%
+  Chapter~\ref{ch:kv-cache}; Llama-3 70B model card.}{%
+  Small 4-row \texttt{tabular}.}
+
+\fillme{FILL-A-03}{Cheat sheet table for state-space models (Mamba shapes)}{%
+  Companion table for the Mamba block: hidden state \(h_t\) shape;
+  per-token \(\bar A_t, \bar B_t, \bar C_t\) shapes; output shape; the
+  \emph{constant-memory at inference} note. Use Mamba-2.8B numbers if
+  available, otherwise illustrative.}{%
+  Gu \& Dao 2023; the \texttt{state-spaces/mamba} reference repo.}{%
+  Small 5-row \texttt{tabular}.}

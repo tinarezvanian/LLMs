@@ -160,3 +160,31 @@ recipe — scaled up by three orders of magnitude — was producing GPT-3, a
 language model that could do arithmetic, write code, and pass standardised
 exams. The transformer ate the field. Part~II is the careful explanation
 of why.
+
+\fillme{FILL-03-01}{Code listing: vanilla RNN forward pass in PyTorch}{%
+  ${\sim}20$-line PyTorch listing implementing equation~\ref{eq:rnn} as a
+  loop over time, returning the per-step hidden states. Use the
+  \texttt{lstlisting} environment. Include shape comments on every line that
+  manipulates a tensor. Below the listing, add a one-paragraph note that
+  this is correct but slow because of the time-axis loop, foreshadowing the
+  parallelism advantage of attention in Chapter~\ref{ch:transformer}.}{%
+  PyTorch \texttt{nn.RNNCell} source as a reference; equation~\ref{eq:rnn}.}{%
+  ${\sim}20$ lines of code + one paragraph.}
+
+\fillme{FILL-03-02}{Code listing: LSTM cell forward pass in PyTorch}{%
+  Same shape as FILL-03-01, but for a single LSTM cell. Render the four
+  gates explicitly so the reader can map every line to one row of the
+  derivation in this chapter. Comment which lines correspond to ``forget'',
+  ``input'', ``output'', and ``cell update''. Don't use the built-in
+  \texttt{nn.LSTMCell} — write the linear algebra by hand.}{%
+  Hochreiter \& Schmidhuber 1997; PyTorch source for sanity-check.}{%
+  ${\sim}25$ lines of code + 2 sentence caption.}
+
+\fillme{FILL-03-03}{Worked example: parameter count of an LSTM cell}{%
+  Derive symbolically the parameter count of an LSTM cell with input
+  dimension \(d\) and hidden dimension \(h\). Show the answer is
+  \(4 \cdot (d \cdot h + h \cdot h + h)\). Plug in \(d = h = 1024\) for a
+  numeric. Then compare to a transformer block of comparable hidden
+  dimension (forward-pointer to Chapter~\ref{ch:transformer}).}{%
+  Standard LSTM derivation; equation block from this chapter.}{%
+  Half a page; one symbolic equation, one numeric.}

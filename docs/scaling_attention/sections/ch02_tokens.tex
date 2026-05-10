@@ -103,5 +103,29 @@ model.\sidenote{Many models tie the embedding matrix to the output
 projection (use the same \(E\) on the way in and the way out) which halves
 this cost. Tied embeddings are standard in Llama; OpenAI's are not.}
 
+\fillme{FILL-02-01}{Comparison table: the same sentence in three tokenisers}{%
+  Tokenise the sentence
+  \emph{``The quick brown fox jumps over the lazy dog. \textbackslash n
+  def fibonacci(n): return n if n < 2 else fibonacci(n-1) + fibonacci(n-2)''}
+  using GPT-2's BPE, BERT's WordPiece, and Llama-3's SentencePiece. Render as
+  a three-column \texttt{tabular} with the token sequences shown
+  literally (with \texttt{\#\#} prefixes for WordPiece, \texttt{\textvisiblespace}\
+  prefixes for SentencePiece). Discuss in two sentences how code tokenises
+  more densely than prose and why \texttt{fibonacci} is one token in some
+  vocabularies and several in others.}{%
+  HuggingFace \texttt{tokenizers} library; the BPE / WordPiece /
+  SentencePiece references already in the bibliography.}{%
+  3-column \texttt{tabular} table plus 2-sentence caption.}
+
+\fillme{FILL-02-02}{Worked example: token economics for a 10\,000-word essay}{%
+  Compute, for the OpenAI \texttt{cl100k\_base} tokeniser: the number of
+  tokens for (a) a 10\,000-word English essay, (b) a 10\,000-word Hindi
+  essay, (c) a 1\,000-line Python file, (d) a 100-page legal contract.
+  Then convert each to dollars at the current GPT-4-class input pricing.
+  End with one sentence on what this implies for non-English users.}{%
+  OpenAI tokenizer cookbook; tiktoken README;
+  \texttt{research/notes.md \S 2}.}{%
+  4-row table + 3 sentences of commentary.}
+
 The next chapter is about how, before the transformer, people stitched these
 embeddings together over time without an attention matrix at all.

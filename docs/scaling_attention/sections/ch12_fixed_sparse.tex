@@ -121,3 +121,23 @@ content-dependent sparsity has to justify itself.
 sparsity pattern in advance, based only on position. Routing is content-
 blind. The asymptote is gorgeous; the failure mode is missing the one
 sentence in a million-token document that actually matters.}
+
+\fillme{FILL-12-01}{Worked example: Longformer's effective receptive field after \(L\) layers}{%
+  For sliding-window-only attention with window \(w\) and \(L\) layers,
+  derive the effective receptive field of the top layer (it composes
+  approximately like a convolution: \(L \cdot w\)). Plug in Mistral 7B
+  numbers (\(w = 4096\), \(L = 32\)) and compute. Then explain in one
+  paragraph why ``effective'' is a friendly word here: information from
+  position 0 has to be relayed through 32 LayerNorms to reach the top
+  layer, and quality decays.}{%
+  Beltagy et al.\ 2020; Jiang et al.\ 2023 (Mistral 7B).}{%
+  Half a page; one inline equation.}
+
+\fillme{FILL-12-02}{Code listing: sliding-window attention in PyTorch}{%
+  ${\sim}25$-line listing implementing causal sliding-window attention with
+  window \(w\), without materialising the full \(n \times n\) score matrix.
+  Use \texttt{torch.nn.functional.unfold} or a chunked loop. Comment on
+  shape at every line. Below: one paragraph noting that \texttt{flash-attn}'s
+  built-in sliding-window kernel is the production version.}{%
+  Mistral 7B paper; \texttt{flash-attn} library docs.}{%
+  ${\sim}25$ lines of code + one paragraph.}

@@ -101,3 +101,22 @@ or $\bigO(n)$ work, without doing the full $n \times n$ dot product first.
 bottom-right quadrant: content-dependent routing at linear cost. Every
 major architecture in Part~V occupies a different quadrant; SSA / SubQ
 explicitly aims for the bottom-right.}
+
+\fillme{FILL-16-01}{Sidebar: where does DeepSeek Sparse Attention sit?}{%
+  ${\sim}300$-word sidebar placing DeepSeek Sparse Attention (DSA) on the
+  quadrant. Argue that DSA is content-dependent (selection is data-driven
+  via a learned router) but its computational cost remains roughly
+  $\bigO(n^2)$ in the worst case because the routing structure is denser
+  than e.g.\ SSA's. Cite DeepSeek's 2024 technical report.}{%
+  DeepSeek 2024 technical report; the company's blog post.}{%
+  ${\sim}300$ words; no equations.}
+
+\fillme{FILL-16-02}{Worked example: cost curves overlaid for \(n \in \{10^3, 10^4, 10^5, 10^6\}\)}{%
+  Produce a single \texttt{pgfplots} figure with four curves on the same
+  log-log axes: dense \(\bigO(n^2)\), sliding-window \(\bigO(n w)\) at
+  \(w = 4096\), Mamba \(\bigO(n)\), and SSA \(\bigO(n \log n)\).
+  Normalise so all four curves coincide at \(n = 10^3\). Caption: this is
+  the picture that motivates the entire bottom row of the quadrant.}{%
+  Asymptotics from Chapters~\ref{ch:why-quadratic}, \ref{ch:sparse},
+  \ref{ch:ssm}, \ref{ch:ssa}.}{%
+  One small \texttt{pgfplots} figure + 3 sentences caption.}

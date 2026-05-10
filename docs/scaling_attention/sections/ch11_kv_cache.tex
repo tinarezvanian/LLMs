@@ -126,3 +126,35 @@ or the fundamental fact that the KV cache grows linearly per layer.
 At sufficiently large \(n\), or sufficiently demanding quality bars, you
 have to change the algorithm — which is what the rest of the book is
 about.}
+
+\fillme{FILL-11-01}{Worked example: KV-cache for Llama-3 70B at \(n = 1\)M}{%
+  Compute KV-cache memory for Llama-3 70B (\(L = 80\), \(\heads = 64\),
+  \(\dhead = 128\), GQA-8) at \(n = 1\)M tokens, in fp16. Compare against
+  hypothetical MHA (\(g = 64\)) and MQA (\(g = 1\)) variants. Add a row
+  for an H100 (80 GB) and a B200 (192 GB) and answer: how many concurrent
+  1M-token requests fit per device for each scheme? Render as a 4-row
+  table.}{%
+  KV-cache equation in this chapter; Llama-3 70B model card; H100/B200
+  spec sheets.}{%
+  4-row \texttt{tabular} table + one paragraph of commentary.}
+
+\fillme{FILL-11-02}{Sidebar: PagedAttention in pictures}{%
+  ${\sim}300$-word sidebar describing how vLLM's PagedAttention works as if
+  explaining virtual memory to someone who hasn't taken an OS course. Cover:
+  page size, page table per sequence, the copy-on-write trick for parallel
+  sampling. Optionally a small \texttt{tikz} figure of two sequences sharing
+  a page pool, but a clear word-picture is fine. Cite Kwon et al.\ 2023.}{%
+  Kwon et al.\ 2023 (vLLM SOSP paper).}{%
+  ${\sim}300$ words, optional small TikZ.}
+
+\fillme{FILL-11-03}{Sidebar: RoPE, NTK-aware, YaRN, and how extrapolation works}{%
+  ${\sim}400$-word sidebar going beyond the in-text mention. Show the
+  intuition: RoPE rotations at high frequencies wrap around quickly, so
+  extrapolating beyond training length puts the model in unfamiliar
+  rotational territory; NTK-aware scaling and YaRN compress the frequency
+  ladder so the same rotations apply over longer sequences. Mention
+  position-interpolation for completeness. End on the honest note that
+  these are no substitute for training at the target length.}{%
+  Su et al.\ 2021 (RoPE); Peng et al.\ 2023 (YaRN); kaiokendev /
+  bloc97 NTK-aware writeups for context.}{%
+  ${\sim}400$ words; one small equation.}

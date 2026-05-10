@@ -103,3 +103,27 @@ plus a few full-attention layers; complementary to SSA, not competitive.
 practically reach: linear-cost \emph{and} content-dependent. If the
 claim holds at frontier scale, it is a genuine architectural advance,
 not an implementation trick.}
+
+\fillme{FILL-17-01}{Code listing: sketch of an SSA-style selection function (illustrative only)}{%
+  ${\sim}30$-line PyTorch listing implementing a teaching-toy version: hash
+  keys via random LSH; for each query, hash and look up keys with the same
+  bucket; do dense attention only over the candidate set; return the
+  output. \textbf{Crucially}: caption must say in bold that this is
+  illustrative only, that SubQ's actual selection function is proprietary,
+  and that LSH is one of many possible mechanisms (learned routers,
+  hierarchical clustering, etc.).}{%
+  Andoni \& Indyk LSH survey for the toy mechanism; SubQ technical post
+  for what we know about the real mechanism.}{%
+  ${\sim}30$ lines of code + bold disclaimer paragraph.}
+
+\fillme{FILL-17-02}{Sidebar: connection to approximate nearest neighbour search}{%
+  ${\sim}400$-word sidebar describing how the selection problem in
+  content-dependent sparse attention is structurally identical to the ANN
+  problem (given a query vector, return the few nearest keys from a large
+  set). Tour the three big ANN families: LSH, IVF, HNSW. Note which
+  property each gives up (recall vs latency vs memory vs differentiability),
+  and which trade-offs matter for use \emph{inside} a transformer layer
+  (where the keys change every step, unlike a static vector index).}{%
+  Andoni \& Indyk LSH survey; FAISS paper / docs (IVF); Malkov \& Yashunin
+  HNSW paper.}{%
+  ${\sim}400$ words; no code; one optional small TikZ.}

@@ -108,3 +108,30 @@ per token, but information from far back is lost (also
 Chapter~\ref{ch:pre-transformer}). For a dense transformer it grows
 \emph{quadratically} with context length (Chapter~\ref{ch:why-quadratic}).
 That last fact is what the second half of the book is about.
+
+\fillme{FILL-01-01}{Worked example: cross-entropy on a toy vocabulary}{%
+  Construct a 4-token vocabulary \(\{a, b, c, d\}\) and a 5-token training
+  sequence (e.g.\ \texttt{a b a c d}). Show by hand the negative
+  log-likelihood under (i) the uniform distribution, (ii) the empirical
+  unigram distribution from the sequence, and (iii) a perfect bigram model
+  fit to the sequence. Discuss in two sentences why (iii) trivially wins on
+  in-distribution data and why this overfits. End with a note on what
+  per-token cross-entropy means in nats vs bits.}{%
+  Cover and Thomas, \emph{Elements of Information Theory}, ch.~5;
+  \texttt{research/notes.md \S 1}.}{%
+  Half a page including the table of probabilities; one short equation per
+  case.}
+
+\fillme{FILL-01-02}{Code listing: a 30-line next-token sampler}{%
+  Provide a self-contained Python listing (no PyTorch, no transformers
+  library) that takes a function
+  \texttt{logits\_fn(prefix: list[int]) -> list[float]} as an oracle and
+  implements: (a) greedy decoding, (b) temperature sampling, (c) top-\(k\),
+  (d) nucleus / top-\(p\). Use the \texttt{lstlisting} environment with
+  \texttt{language=Python}. Comment each function with one line on \emph{when}
+  to use it. Don't import \texttt{numpy} — keep it pure Python so the listing
+  reads as runnable pseudocode.}{%
+  Equation~\ref{eq:softmax}; the Holtzman et al.\ nucleus-sampling paper if
+  citing top-\(p\).}{%
+  ${\sim}30$ lines of code, plus 2 sentences of intro and 1 sentence of
+  outro.}

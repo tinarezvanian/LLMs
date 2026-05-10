@@ -57,3 +57,25 @@ agentic-applications business.
 \keyidea{The next five years of LLM research are about inference, not
 training. Whoever can serve frontier-quality 1M-token context cheaply
 wins the agent platform business.}
+
+\fillme{FILL-19-01}{Sidebar: a taxonomy of selection-function designs}{%
+  Half-page taxonomy of how a sparse-attention selection function can be
+  built: (i) data-independent (LSH, random projections), (ii) data-dependent
+  but un-learned (k-means / IVF over keys), (iii) learned routers
+  (small MLPs predicting top-\(k\) candidates), (iv) hierarchical /
+  cluster-then-attend, (v) hybrid index-and-rerank. Pros and cons in
+  one-line bullets per family.}{%
+  ANN literature for (i)/(ii); \citet{deepseek2024dsa} for (iii); routing
+  transformer literature for (iv).}{%
+  Half a page; itemised list.}
+
+\fillme{FILL-19-02}{Worked example: \$/M-tokens at 1M context for four architectures}{%
+  Back-of-envelope: \$/M-input-tokens at \(n = 1\)M for (a) dense
+  transformer + FA-2, (b) Llama-3 70B with GQA + sliding window,
+  (c) hybrid Mamba-attention (Jamba-class), (d) SSA-style architecture.
+  Use the same 70B-active-parameter scale across all four for fairness.
+  State every assumption (GPU type, utilisation, pricing). Render as a
+  4-row table.}{%
+  KV-cache equations from Chapters~\ref{ch:why-quadratic}--\ref{ch:kv-cache};
+  prefill speedup numbers from \citet{subq2026ssa}.}{%
+  4-row table + 1-paragraph methodology note.}

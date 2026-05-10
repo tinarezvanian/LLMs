@@ -180,3 +180,34 @@
   \colorbox{codebg}{\parbox{\dimexpr\linewidth-2\fboxsep}{%
     \textbf{Key idea.~}#1}}\par\medskip
 }
+
+% --- TO-FILL stub macro ---------------------------------------------------
+% Marks a section, figure, listing, or sidebar that a later LLM pass should
+% expand. Renders as a visible amber box in the PDF so we never forget what's
+% unfinished, and is greppable from the command line via:
+%
+%   rg "\\\\fillme\\{" docs/scaling_attention/sections/
+%   bash scripts/list_fill_stubs.sh
+%
+% Args:
+%   #1  ID         e.g. FILL-05-01 (chapter-number-stub-number, kebab-stable)
+%   #2  TITLE      one-line headline of what's missing
+%   #3  BRIEF      what to write, what NOT to write, "done when ..." criteria
+%   #4  SOURCES    which references / files to draw from
+%   #5  TARGET     rough target length: "1 paragraph", "half a page",
+%                  "10-line listing", "3-row table", "small TikZ figure", etc.
+\definecolor{fillmebg}{HTML}{FFF6D9}
+\definecolor{fillmerule}{HTML}{B07F1A}
+\newcommand{\fillme}[5]{%
+  \par\smallskip\noindent
+  \fcolorbox{fillmerule}{fillmebg}{%
+    \begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
+      \footnotesize
+      \textbf{\textsc{To fill}} \quad \texttt{#1} \quad --- \quad \textbf{#2}\par
+      \smallskip
+      \textit{Brief.} #3\par
+      \textit{Sources.} #4\par
+      \textit{Target.} #5
+    \end{minipage}%
+  }\par\smallskip
+}

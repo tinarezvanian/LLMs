@@ -88,3 +88,23 @@ and that gap is the entire reason the post-transformer landscape exists.}
 Part~IV (next) is Camp 1. Part~V is Camp 2. Part~VI is the 2$\times$2
 frame that makes the whole landscape make sense, and the careful read of
 SubQ's bet inside it.
+
+\fillme{FILL-09-01}{Sidebar: ``lost in the middle''}{%
+  ${\sim}300$-word sidebar on Liu et al.\ 2023 ``Lost in the Middle: How
+  Language Models Use Long Contexts''. Convey: nominal context window is
+  not the same as functional context; LLMs put more attention on the
+  beginning and end of the prompt; prompt-engineering implication.
+  Connect to the RULER and MRCR benchmarks introduced later.}{%
+  Liu et al.\ 2023; Hsieh et al.\ 2024 (RULER).}{%
+  ${\sim}300$ words; no equations.}
+
+\fillme{FILL-09-02}{Worked example: 1M-token agent TCO over 1B requests}{%
+  Total cost of ownership for a hypothetical agent that serves 1B sessions
+  per year, each averaging 200k tokens of context plus 5k tokens of
+  generation. Assume Llama-3 70B class model on H100. Show: serving FLOPs,
+  KV-cache memory pressure, GPU-hours, and \$ per session at on-demand
+  pricing. Then re-do the row for a 10$\times$ cheaper architecture
+  (foreshadow Part~V). End with one sentence on what this implies for
+  pricing pages of frontier APIs in 2026.}{%
+  KV-cache equation from Chapter~\ref{ch:kv-cache}; current cloud pricing.}{%
+  Half a page; 2-row table + 3 sentences.}

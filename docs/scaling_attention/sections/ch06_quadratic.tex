@@ -97,3 +97,25 @@ behave as we make it bigger? The 2020 paper that answered that question
 \citep{kaplan2020scaling} is the reason any of this matters at all — it
 turned LM training from research into engineering. Part~III is about that
 paper and its 2022 correction.
+
+\fillme{FILL-06-01}{Code listing: KV-cache size calculator}{%
+  10-line Python function \texttt{kv\_cache\_bytes(n, L, H, d\_head, dtype\_bytes=2)}
+  that returns the total KV-cache size in bytes for an MHA model. Then
+  variants \texttt{kv\_cache\_bytes\_gqa(...)} and \texttt{kv\_cache\_bytes\_mqa(...)}.
+  Print a 4-row table for the Llama-3 8B configuration at
+  \(n \in \{8\text{K}, 128\text{K}, 1\text{M}, 10\text{M}\}\) with all three
+  schemes. Caption: which row crosses 80~GB (one H100) first?}{%
+  KV-cache equation in this chapter; Llama-3 config from FILL-04-02.}{%
+  ${\sim}10$ lines of code + 4-row output table.}
+
+\fillme{FILL-06-02}{Worked example: dollars per query at \(n = 128\text{k}\)}{%
+  Order-of-magnitude estimate of the cost to do a single forward pass on a
+  70B-parameter dense transformer at 128k tokens with FlashAttention-2 on
+  H100s. Show: total FLOPs, per-GPU tokens/s ballpark, GPU-seconds, GPU-hours
+  at on-demand cloud pricing (state assumption explicitly: \$3/GPU-hr).
+  Repeat at \(n = 1\text{M}\) and note where the answer becomes
+  uncomfortable. End with one sentence on why this is the entire reason
+  Part~V exists.}{%
+  Llama-3 70B paper for FLOP/token; H100 spec sheet (${\sim}2$ PFLOP/s
+  bf16); current cloud pricing pages.}{%
+  Half a page; one inline arithmetic chain; one short table.}

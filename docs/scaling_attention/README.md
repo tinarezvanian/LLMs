@@ -62,6 +62,55 @@ fully resolve TOC + cross-references).
 | `fonts/EBGaramond-*.ttf` | Optional fallback |
 | `compile.sh` | Two-pass XeLaTeX |
 
+## To-fill stubs (for future LLM passes)
+
+The book is a draft. Roughly 60 places where a worked example, code listing,
+sidebar, comparison table, or case study would help are marked with a
+`\fillme{ID}{TITLE}{BRIEF}{SOURCES}{TARGET}` macro. They render as visible
+amber boxes in the PDF so they don't get forgotten, and they are
+machine-greppable from the command line.
+
+### List every open stub
+
+```bash
+# Plain checklist, all 60 stubs with file:line
+bash scripts/list_fill_stubs.sh
+
+# Markdown task list, paste-able into an issue
+bash scripts/list_fill_stubs.sh --markdown
+
+# Just the totals
+bash scripts/list_fill_stubs.sh --count
+```
+
+### Recipe for a future LLM picking off a stub
+
+1. Run `bash scripts/list_fill_stubs.sh`. Pick one ID.
+2. Open the file at the reported line. Read the surrounding chapter so you
+   understand what was already said and what *not* to repeat.
+3. Read the sources named in the stub's `Sources.` field — usually a
+   primary paper plus the relevant section of `research/notes.md`.
+4. Replace the entire `\fillme{...}{...}{...}{...}{...}` invocation with
+   the finished prose / table / listing / figure.
+5. Hit the target length to within ±30%. Much shorter usually means you
+   skipped something the brief asked for.
+6. Cite using `\citep{key}` / `\citet{key}` keys already in
+   `sections/references.tex`. Add a `\bibitem[Author(Year)]{key}` entry
+   if the source isn't there.
+7. Recompile (`./compile.sh`) and confirm there are no `Citation undefined`
+   or `Reference undefined` warnings in `main.log`.
+
+### Stub categories
+
+- **Worked examples** (numerical) — most chapters have one or two.
+- **Code listings** — Python or PyTorch; `language=Python` in `lstlisting`.
+- **Sidebars** — half-page deeper dives on topics the body waves at.
+- **Case studies** — one full page each on Jamba (and similar).
+- **Comparison tables** — `tabular`, usually 3--5 rows.
+- **Appendices** (A: shape cheat sheet, B: glossary, C: reading list) — these
+  are entirely composed of stubs that should each be filled before the book
+  is considered done.
+
 ## Provenance
 
 - Layout / class macros: **Algorithmic Adventures** (Ehsan Shah-Hosseini).

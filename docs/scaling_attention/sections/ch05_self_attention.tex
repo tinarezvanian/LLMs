@@ -133,3 +133,25 @@ layer. For \(n = 10^6\) and 32 heads and 32 layers, that is
 \(32 \cdot 32 \cdot (10^6)^2 = 10^{15}\) cells per forward pass. Even at one
 byte per cell that is a petabyte of intermediate state. The next chapter
 spells out the consequences.
+
+\fillme{FILL-05-01}{Code listing: scaled dot-product attention from scratch}{%
+  ${\sim}15$-line PyTorch listing implementing
+  equation~\ref{eq:attn-mat}: input \([n, d]\); produce \(Q, K, V\); compute
+  \(QK\T / \sqrt{\dhead}\); apply causal mask; row-wise softmax; multiply
+  by \(V\). Annotate every shape. Add an \texttt{assert} for the causal
+  mask shape. Don't use \texttt{nn.MultiheadAttention} — write the matmul
+  by hand.}{%
+  This chapter; Vaswani et al.\ 2017 \S 3.2; nanoGPT for sanity-check.}{%
+  ${\sim}15$ lines of code + 2 sentences.}
+
+\fillme{FILL-05-02}{Sidebar: what does an attention head actually learn?}{%
+  Half-page sidebar walking through one well-documented example of head
+  specialisation — e.g.\ a syntactic-role head from BERT (Clark et al.\
+  2019), a positional / "previous-token" head from GPT-2 (Olsson et al.\
+  2022 induction heads), or a copy / retrieval head from a small LM. Pick
+  one, describe what the attention pattern looks like (text description, no
+  figure required), and connect it back to why we use multi-head attention
+  in the first place.}{%
+  Clark et al.\ ``What does BERT look at?''; Olsson et al.\ ``In-context
+  Learning and Induction Heads''; Anthropic interpretability blog.}{%
+  ${\sim}300$ words.}

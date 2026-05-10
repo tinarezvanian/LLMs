@@ -118,3 +118,23 @@ the rest of this book is fundamentally a response to.
 fed more tokens than Kaplan recommended. It does not say anything about
 how to spend inference compute on long contexts. The latter is the entire
 problem this book exists to discuss.}
+
+\fillme{FILL-08-01}{Worked example: applying 20:1 to a 100B model}{%
+  Show: at \(D = 20 N\), what training compute does a 100B-parameter model
+  require (use \(C = 6 N D\))? Convert to GPU-hours on H100 (assume sustained
+  ${\sim}500$ TFLOP/s effective per H100, state assumption explicitly).
+  Convert to dollars at on-demand cloud pricing. End with one sentence
+  comparing this to a published frontier model's training cost.}{%
+  Equation~\ref{eq:flops}; Hoffmann et al.\ 2022; H100 spec sheet.}{%
+  Half a page; arithmetic chain + 1-row summary table.}
+
+\fillme{FILL-08-02}{Sidebar: ``inference-Chinchilla'' worked through}{%
+  ${\sim}300$-word sidebar showing why a deployment-bound model (lots of
+  inference traffic, fixed quality target) should over-train relative to
+  Chinchilla. Pick numbers: ``serve 10B requests of 1k input tokens'' and
+  ``train once''. Show that, beyond some threshold, training extra tokens
+  on a smaller model amortises across all those requests and beats training
+  Chinchilla-optimal. Cite Sardana \& Frankle 2023 (``Beyond Chinchilla-Optimal'')
+  if useful; add \texttt{\textbackslash bibitem} if not present.}{%
+  Sardana \& Frankle 2023; Llama-3 model card (15T tokens / 8B params).}{%
+  ${\sim}300$ words; one inline arithmetic.}

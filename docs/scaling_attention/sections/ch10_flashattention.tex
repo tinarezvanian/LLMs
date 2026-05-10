@@ -98,3 +98,24 @@ the algorithm is \(n^2\), the algorithm has to change. That observation —
 that we have collectively wrung most of the implementation lemon dry — is
 why the architectural alternatives in Part~V get serious attention now,
 when they were curiosities in 2020.
+
+\fillme{FILL-10-01}{Code listing: pseudocode for FlashAttention's tiled outer loop}{%
+  ${\sim}25$-line Python-flavoured pseudocode showing the streaming softmax:
+  outer loop over query tiles, inner loop over key/value tiles, running max
+  + running sum updated in registers, output written once at the end.
+  Don't try to be runnable; aim for clarity. Annotate ``in HBM'' vs ``in
+  SRAM'' on each tensor. Caption: this is what FlashAttention-1 does;
+  FA-2 and FA-3 add work-partitioning and async tweaks
+  (forward-pointer to FILL-10-02).}{%
+  Dao et al.\ 2022 Algorithm~1; Dao 2023 (FA-2);
+  \texttt{research/notes.md \S 4.1}.}{%
+  ${\sim}25$ lines of pseudocode + one-paragraph caption.}
+
+\fillme{FILL-10-02}{Sidebar: how FA-2 and FA-3 differ from FA-1}{%
+  ${\sim}250$-word sidebar listing the deltas: FA-2's better
+  work-partitioning along the sequence dimension and reduced non-matmul
+  FLOPs; FA-3's exploitation of Hopper async copies, fp8, and softmax
+  warp-specialisation. End with an honest statement: each generation is a
+  ${\sim}1.5$--$2\times$ practical speedup, not an asymptotic change.}{%
+  Dao 2023 (FA-2); Shah et al.\ 2024 (FA-3); NVIDIA Hopper whitepaper.}{%
+  ${\sim}250$ words; no math.}

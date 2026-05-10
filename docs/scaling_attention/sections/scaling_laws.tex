@@ -1,0 +1,29 @@
+\chapter{Empirical scaling laws}
+
+\section{Kaplan et al.\ (2020)}
+
+For autoregressive transformers, empirical studies found that cross-entropy loss $L$ follows smooth
+power laws when a single resource is the bottleneck: model size $N$ (non-embedding parameters),
+dataset size $D$ (tokens), or training compute $C$ (e.g.\ petaFLOP-days) \cite{kaplan2020scaling}.
+On log--log axes, $L$ versus each resource is approximately linear---hence
+\begin{equation}
+  L(N) \sim \left(\frac{N_c}{N}\right)^{\alpha_N}, \qquad
+  L(D) \sim \left(\frac{D_c}{D}\right)^{\alpha_D}, \qquad
+  L(C) \sim \left(\frac{C_c}{C}\right)^{\alpha_C},
+\end{equation}
+with fitted exponents such as $\alpha_N \approx 0.076$, $\alpha_D \approx 0.095$, $\alpha_C \approx 0.050$
+in the original Kaplan analysis.
+
+\paragraph{What scaling laws omit.}
+These laws describe how to \emph{train} better models. They do not bound the \emph{inference-time}
+cost of using a long context: that cost is dominated by attention and memory traffic (Section~\ref{sec:quadratic}).
+
+\section{Chinchilla (Hoffmann et al., 2022)}
+
+For a \emph{fixed} compute budget, Hoffmann et al.\ argue that optimal training allocates compute so that
+parameters and data scale together---often summarized by a token-to-parameter ratio on the order of
+twenty-to-one for compute-optimal training \cite{hoffmann2022training}. This revised the earlier Kaplan
+recipe (which tended to favor larger models over more tokens).
+
+\paragraph{Mnemonic.}
+The ``20:1'' rule is a useful shorthand; exact ratios depend on architecture and training setup.

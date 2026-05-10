@@ -1,0 +1,153 @@
+\documentclass[
+    justified,
+    twoside,
+    paperwidth=8.5in,
+    paperheight=11in,
+    inner=1in,        % Inner margin (binding side)
+    outer=1in,        % Outer margin
+    top=1in,
+    bottom=1in,
+    marginparwidth=1.75in, % Width of margin notes
+    marginparsep=0.1in     % Separation between margin notes and text
+]{tufte-book}
+
+
+
+
+% Load essential packages
+\usepackage{fontspec} % Use fontspec for XeLaTeX or LuaLaTeX
+\setmainfont[
+    Path = ./fonts/,                    % Relative path to the fonts directory
+    UprightFont = EBGaramond-Regular.ttf,
+    BoldFont = EBGaramond-Bold.ttf,
+    ItalicFont = EBGaramond-Italic.ttf,
+    BoldItalicFont = EBGaramond-BoldItalic.ttf,
+    UprightFeatures = {Ligatures=TeX},
+    BoldFeatures = {Ligatures=TeX},
+    ItalicFeatures = {Ligatures=TeX},
+    BoldItalicFeatures = {Ligatures=TeX},  
+]{EB Garamond}
+
+% Mathematics packages
+\usepackage{amsmath, amsfonts}
+
+% Essential packages
+\usepackage{graphicx}
+\usepackage{etoolbox}
+\usepackage{microtype}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{polar}
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+\usetikzlibrary{calc, decorations.pathmorphing}
+\usepackage{booktabs, multirow, siunitx, xspace, fancyvrb}
+\usepackage[svgnames]{xcolor}
+\usepackage{listings}
+\usepackage{makeidx}
+% \makeindex
+
+
+
+% Title Information
+\title{Algorithmic Adventures: Cracking Puzzles with Code}
+% \subtitle{A Collection of Coding Challenges and Solutions} % Uncomment if using subtitle
+\author{Ehsan Shah-Hosseini}
+\date{2024}
+
+% Adjustments for better URL formatting
+\urlstyle{same} % Use the same font for URLs
+
+% Margin note settings
+\setlength{\marginparwidth}{1.75in}
+\setlength{\marginparsep}{0.1in}
+
+% Adjustments for better justification and hyphenation
+\sloppy
+\setlength{\emergencystretch}{3em}
+
+% Adjust paragraph indentation and spacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5\baselineskip}
+
+% Settings for code listings
+\lstset{
+    basicstyle=\ttfamily\small,
+    frame=single,
+    breaklines=true,
+    breakatwhitespace=false,
+    postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\space},
+    showstringspaces=false,
+    tabsize=2,
+    xleftmargin=0pt,
+    xrightmargin=0pt,
+    language=Python,
+    captionpos=b,
+    morekeywords={self},
+}
+
+% Add numbers to chapters, sections, subsections
+\setcounter{secnumdepth}{2}
+
+% Include sections and subsections in the TOC
+\setcounter{tocdepth}{2}
+
+% Hyperref package (load it here)
+\usepackage[]{hyperref}
+
+
+\makeatletter
+\renewcommand{\maketitle}{%
+  \begin{fullwidth}%
+    \thispagestyle{empty}
+    \vspace*{\fill}
+    \begin{center}
+      {\fontsize{28pt}{28pt}\selectfont\textcolor{DarkSlateGray}{\@title}}\par
+      \vspace{1em}
+      % {\fontsize{18pt}{22pt}\selectfont\textcolor{DarkSlateGray}{\@subtitle}}\par
+      \vspace{2em}
+      {\fontsize{14pt}{18pt}\selectfont\textcolor{DarkSlateGray}{\textit{\@author}}}\par
+      \vspace{2em}
+      {\fontsize{12pt}{15pt}\selectfont\textcolor{DarkSlateGray}{\@date}}\par
+    \end{center}
+    \vspace*{\fill}
+  \end{fullwidth}
+  \clearpage
+}
+\makeatother
+
+% Title formatting
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries}{\chaptername\ \thechapter}{20pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+% --- Begin Additions for List of Problems (LOP) ---
+\makeatletter
+% Define a new counter for problems, resetting every chapter
+\newcounter{problem}[chapter]
+\renewcommand{\theproblem}{\thechapter.\arabic{problem}}
+% Define how 'problementry' entries are formatted in the List of Problems
+\newcommand{\l@problementry}[2]{%
+  \@dottedtocline{1}{1.5em}{2.3em}{#1}{#2}%
+}
+% Command to generate the List of Problems
+\newcommand{\listofproblems}{%
+  \chapter*{List of Problems}% Title of the LOP
+  \addcontentsline{toc}{chapter}{List of Problems}% Add LOP to TOC
+  \@starttoc{lop}% Start reading the .lop file
+}
+% Command for numbered problem sections with "Problem" prefix in text but not in LOP
+\newcommand{\problemsection}[1]{%
+  \refstepcounter{problem}% Increment the problem counter
+  \section*{Problem \theproblem\quad #1}% Section heading with "Problem" prefix
+  \addcontentsline{lop}{problementry}{\protect\numberline{\theproblem}#1}% LOP entry without "Problem" prefix
+}
+\makeatother
+% --- End of Additions for List of Problems ---
+
+\newlength{\mywidth}
+\setlength{\mywidth}{0.8\textwidth} % Adjust the multiplier as needed

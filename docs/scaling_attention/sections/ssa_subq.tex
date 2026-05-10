@@ -1,0 +1,34 @@
+\chapter{Subquadratic Sparse Attention (SSA)}
+
+\section{Public framing}
+
+Subquadratic markets \emph{Subquadratic Sparse Attention} (SSA) as an attention mechanism whose cost scales
+favorably with context length by avoiding fully dense all-pairs attention \cite{subq2026ssa}.
+Their technical article states that SSA uses \emph{content-dependent selection}: for each query, the model
+chooses which positions receive attention, then applies attention on that subset rather than on every pair.
+They claim exact attention on selected positions (not a softmax surrogate), with proprietary selection rules.
+
+\section{A tradeoff taxonomy}
+
+Efficient long-context modeling faces a recurring tension:
+\begin{itemize}
+  \item \textbf{Fixed-pattern sparse masks} (sliding windows, strided patterns): cheap, but routing is chosen
+    by position in advance; relevant tokens outside the pattern may be unreachable.
+  \item \textbf{Recurrent / compressed states}: linear-time updates, but finite state may lose verbatim access
+    to distant tokens.
+  \item \textbf{Hybrid stacks}: combine efficient layers with occasional dense attention; dense layers may
+    still dominate cost at extreme $n$.
+\end{itemize}
+
+\section{Reported throughput and benchmarks (vendor-reported)}
+
+Subquadratic publishes wall-clock prefill speedups versus FlashAttention-2 on NVIDIA B200 GPUs at multiple
+context lengths, e.g.\ $7.2\times$ at 128K through $52.2\times$ at 1M tokens \cite{subq2026ssa}. They also report
+accuracy figures on long-context retrieval benchmarks (e.g.\ RULER, MRCR v2) alongside coding benchmarks (e.g.\
+SWE-Bench Verified). Readers should treat headline tables as vendor-reported until independent reproductions and
+full model cards are available.
+
+\paragraph{Caveat.}
+Media coverage has highlighted demand for independent verification of extreme efficiency claims
+\cite{venturebeat2026subq}. This document is educational material aligned with the LLMs repository's research
+notes; it is not an endorsement of every numerical claim.

@@ -1,0 +1,15 @@
+\chapter{FlashAttention and systems mitigations}
+
+\section{FlashAttention}
+
+FlashAttention \cite{dao2022flashattention} improves the \emph{implementation} of exact attention on GPUs by
+tiling blocks into fast on-chip memory and reducing traffic to high-bandwidth memory. The asymptotic cost of
+forming dense attention remains $\Theta(n^2 d)$ per head per layer in the usual analysis; FlashAttention changes
+constants (and memory usage), not the scaling exponent.
+
+\section{Other engineering responses}
+
+Common mitigations include multi-query / grouped-query attention (fewer KV tensors per head group),
+paged KV caches, sliding-window attention, and positional extrapolation tricks. These measures stretch
+what fits on hardware but do not remove quadratic pairwise scoring unless the \emph{algorithmic}
+attention pattern itself becomes sparse or subquadratic.

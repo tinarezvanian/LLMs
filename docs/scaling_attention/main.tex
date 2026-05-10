@@ -1,0 +1,48 @@
+\input{preamble}
+
+\title{Scaling Laws, Quadratic Attention, and Subquadratic Sparse Attention}
+\author{Tina Rezvanian \quad (companion to the SubQ Manim demo, \texttt{LLMs} repo)}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\chapter*{Abstract}
+This note collects the mathematics and systems reasoning behind long-context language models:
+Kaplan/Chinchilla scaling laws, the $\bigO(n^2)$ cost of dense self-attention, the KV cache wall,
+engineering mitigations (FlashAttention, sparse masks, hybrids), and the public framing of
+Subquadratic's SSA mechanism.\footnote{Companion source material lives in
+\texttt{research/notes.md} in the LLMs repository; citations here mirror that file.}
+
+\tableofcontents
+\clearpage
+
+\mainmatter
+
+\part{Scaling laws}
+
+\input{sections/scaling_laws}
+
+\part{The quadratic wall}
+
+\input{sections/quadratic_attention}
+
+\part{Efficient attention without changing the asymptote}
+
+\input{sections/flash_kv}
+
+\part{Subquadratic sequence modeling}
+
+\input{sections/subquadratic_landscape}
+
+\part{Subquadratic Sparse Attention (SSA) and SubQ}
+
+\input{sections/ssa_subq}
+
+\backmatter
+
+\chapter*{References}
+\input{sections/references}
+
+\end{document}

@@ -254,7 +254,13 @@ media/
 texcache/
 .tex_cache/
 
-# DaVinci Resolve project caches
-edit/*.drp.bk
-edit/CacheClip/
+# LaTeX build artifacts (science companion PDF — sources only in git; run pdflatex locally)
+docs/scaling_attention/*.aux
+docs/scaling_attention/*.log
+docs/scaling_attention/*.out
+docs/scaling_attention/*.toc
+docs/scaling_attention/*.synctex.gz
+docs/scaling_attention/*.fdb_latexmk
+docs/scaling_attention/*.fls
+docs/scaling_attention/main.pdf
 

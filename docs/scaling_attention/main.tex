@@ -1,14 +1,25 @@
+% Structure aligned with Algorithmic Adventures \texttt{main.tex}:
+% \texttt{preamble} $\rightarrow$ \texttt{maketitle} $\rightarrow$ \texttt{copyright}
+% $\rightarrow$ \texttt{frontmatter} / \texttt{tableofcontents} $\rightarrow$ \texttt{mainmatter}.
+%
+% Build with \textbf{XeLaTeX} (same toolchain as the source book).
+
 \input{preamble}
 
 \title{Scaling Laws, Quadratic Attention, and Subquadratic Sparse Attention}
-\author{Tina Rezvanian \quad (companion to the SubQ Manim demo, \texttt{LLMs} repo)}
+\author{Tina Rezvanian}
 \date{\today}
 
 \begin{document}
 
 \maketitle
 
+\input{sections/copyright}
+
+\frontmatter
+
 \chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
 This note collects the mathematics and systems reasoning behind long-context language models:
 Kaplan/Chinchilla scaling laws, the $\bigO(n^2)$ cost of dense self-attention, the KV cache wall,
 engineering mitigations (FlashAttention, sparse masks, hybrids), and the public framing of
@@ -43,6 +54,7 @@ Subquadratic's SSA mechanism.\footnote{Companion source material lives in
 \backmatter
 
 \chapter*{References}
+\addcontentsline{toc}{chapter}{References}
 \input{sections/references}
 
 \end{document}

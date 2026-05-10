@@ -1,38 +1,46 @@
-# Scaling laws and attention (LaTeX)
+# Scaling laws and attention (LaTeX, XeLaTeX + tufte-book)
 
-Companion write-up to the SubQ Manim demo in the parent `LLMs` repository. Content is distilled from
-`LLMs/research/notes.md`.
+Companion write-up to the SubQ Manim demo; science content from `LLMs/research/notes.md`.
 
-## Build (minimal TeX)
+## Template
 
-From this directory:
+This directory mirrors **Algorithmic Adventures** (`Algorithmic_Adventures/main.tex` + `preamble.tex`):
+
+- **`preamble.tex`** — same as `Algorithmic_Adventures/preamble.tex`, plus these lines at the top/bottom:
+  `\PassOptionsToPackage{numbers,sort&compress}{natbib}` (before `\documentclass`),
+  `\usepackage{amssymb}`, and `\newcommand{\bigO}{\mathcal{O}}`.
+- **`main.tex`** — same shell as the source book: `\maketitle` → `sections/copyright` → `\frontmatter` →
+  abstract + `\tableofcontents` → `\mainmatter` → `\part` / `\input{sections/...}` → `\backmatter` / references.
+- **`fonts/`** — EB Garamond TTFs (see `fonts/README.md`) matching the `\setmainfont[Path=./fonts/]{EB Garamond}` block.
+
+## Build (XeLaTeX)
+
+Requires a TeX distribution with **tufte-latex** and **fontspec** (TeX Live / MacTeX / full MiKTeX).
+
+On a minimal MiKTeX install you may need extra packages (dependencies pulled in by tufte), for example:
+`tufte-latex`, `sauerj` (provides `optparams.sty`), `xifthen`, `ifmtarg`, `xltxtra`, `changepage`, `paralist`, `textcase`, `natbib`, `placeins`, `multirow`, `siunitx`, `mdwtools`, etc.
+Use `mpm --install=<packagename>` when the log reports a missing `.sty` file.
 
 ```bash
-pdflatex main.tex
-pdflatex main.tex
+cd docs/scaling_attention
+./compile.sh
 ```
 
-Produces `main.pdf` (pdfLaTeX + Latin Modern; no `tufte-book`, `fontspec`, or `biblatex` required).
-
-## Optional: EB Garamond (XeLaTeX, closer to Algorithmic Adventures)
-
-The parent project's `Algorithmic_Adventures/preamble.tex` expects EB Garamond under `./fonts/`.
-If you copy the TTF files into `fonts/` here, you can adapt `preamble.tex` to use `fontspec` again
-(tufte-book optional).
+Or manually: `xelatex main.tex` twice.
 
 ## Files
 
 | File | Role |
 |------|------|
-| `main.tex` | Document shell |
-| `preamble.tex` | Packages (derived from `Algorithmic_Adventures/preamble.tex`, simplified for portability) |
+| `main.tex` | Document shell (Algorithmic Adventures structure) |
+| `preamble.tex` | Same as `Algorithmic_Adventures/preamble.tex` + minor math package lines |
+| `sections/copyright.tex` | Copyright / attribution page |
 | `sections/*.tex` | Chapters |
-| `sections/references.tex` | Manual `\bibitem` bibliography (no BibTeX pass required) |
-| `upstream_preamble_algorithmic_adventures.tex` | Exact copy of `Algorithmic_Adventures/preamble.tex` for typography reference (tufte-book + EB Garamond path). Default build uses portable `preamble.tex` instead. |
-| `aux/science.bib` | Optional BibTeX mirror of the same references |
-| `compile.sh` | Two-pass `pdflatex` |
+| `sections/references.tex` | `\bibitem` bibliography |
+| `aux/science.bib` | Optional BibTeX mirror |
+| `compile.sh` | Two-pass XeLaTeX |
 
 ## Provenance
 
-- Layout and package choices trace to `Algorithmic_Adventures/main.tex` + `Algorithmic_Adventures/preamble.tex`.
-- Science content traces to `LLMs/research/notes.md`.
+- Layout, class, fonts, and list-of-problems macros: **Algorithmic Adventures** (Ehsan Shah-Hosseini).
+- Scientific content: **`LLMs/research/notes.md`**.

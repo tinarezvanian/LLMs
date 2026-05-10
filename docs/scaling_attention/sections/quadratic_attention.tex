@@ -11,7 +11,7 @@ are matrices $Q,K,V \in \mathbb{R}^{n\times d}$ \cite{vaswani2017attention}. Att
 and the output is $A V$. Thus each head performs $\Theta(n^2 d)$ work to form $QK^\top$ and multiply by $V$
 (or equivalent fused kernels).
 
-\section{Why $n^2$ hurts}
+\section{Why \texorpdfstring{$n^2$}{n\textsuperscript{2}} hurts}
 
 The matrix $A$ has $n^2$ entries per head per layer. At $n = 10^6$, that is $10^{12}$ scalars per head per layer.
 Materializing $A$ in high-precision floating point is prohibitive at scale.

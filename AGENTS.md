@@ -23,7 +23,7 @@ scripts/teaser.md              ~155-word teaser script with [ANIM] cues
 scripts/deepdive.md            ~1700-word deep-dive script with [ANIM]/[ON-CAM]/[SCREEN] cues
 vid/                           Manim Python package (NOTE: directory is `vid/` to avoid clashing with the `manim` PyPI package)
   theme.py                     palette, type sizes, pacing constants, equation()/text_equation() helpers
-  lib/mobjects.py              reusable mobjects (AttentionGrid, GPUOutline, KVCacheBar, ScalingCurve, PostTransformerTree, SubQWordmark)
+  lib/mobjects.py              reusable mobjects (AttentionGrid, GPUOutline, KVCacheBar, ScalingCurve, PostTransformerTree, QuadrantMap, SubQWordmark)
   scenes/teaser/scene_0N_*.py  6 teaser scenes, one Manim Scene class per file
   scenes/deepdive/scene_0N_*.py 11 deep-dive scenes (some are placeholders with SKIP_RENDER = True for camera/screen segments)
 companion/

@@ -4,6 +4,8 @@ Keep anything that appears in more than one scene here. Scene-specific one-offs
 should live next to the scene that uses them.
 """
 
+from __future__ import annotations
+
 from manim import *
 import numpy as np
 
@@ -15,6 +17,7 @@ from vid.theme import (
     SUBQ_RED,
     SUBQ_BLUE,
     SUBQ_YELLOW,
+    SUBQ_CYAN,
     GOOD,
     BAD,
     NEUTRAL,
@@ -60,6 +63,37 @@ class AttentionGrid(VGroup):
 
     def highlight_cell(self, i: int, j: int, color: str = SUBQ_YELLOW, opacity: float = 0.8):
         return self.cells[(i, j)].animate.set_fill(color, opacity=opacity)
+
+    def illuminate_causal(self, color: str = SUBQ_BLUE, opacity: float = 0.65):
+        """Fill lower-triangle (causal) cells — typical dense self-attention mask."""
+        for i in range(self.n):
+            for j in range(self.n):
+                if j <= i:
+                    self.cells[(i, j)].set_fill(color, opacity=opacity)
+
+    def dim_sparse_pattern(
+        self,
+        dim_color: str = SUBQ_BG,
+        dim_opacity: float = 0.92,
+        bright_color: str = SUBQ_YELLOW,
+        bright_opacity: float = 0.85,
+        rng: np.random.Generator | None = None,
+        keep_fraction: float = 0.07,
+    ):
+        """Fade most causal cells to near-black; keep a sparse subset bright per row.
+
+        Illustrates 'wastefully quadratic' intuition: most weights are negligible.
+        """
+        rng = rng or np.random.default_rng(0)
+        for i in range(self.n):
+            cols = list(range(i + 1))
+            n_keep = max(1, int(len(cols) * keep_fraction))
+            keep = set(rng.choice(cols, size=n_keep, replace=False).tolist())
+            for j in cols:
+                if j in keep:
+                    self.cells[(i, j)].set_fill(bright_color, opacity=bright_opacity)
+                else:
+                    self.cells[(i, j)].set_fill(dim_color, opacity=dim_opacity)
 
     def cell_count_label(self) -> Text:
         return Text(f"n² = {self.n * self.n}", font=FONT_MONO, font_size=32, color=SUBQ_MUTED)
@@ -177,3 +211,65 @@ class PostTransformerTree(VGroup):
             self.branches.append((node, line))
             self.add(line, node)
         self.add(root)
+
+
+class QuadrantMap(VGroup):
+    """Routing × scaling 2×2 frame (script Scene 9 / Manim scene_10).
+
+    Axes: horizontal = routing (left: position-fixed → right: content-dependent).
+          vertical = scaling (top: quadratic → bottom: linear).
+    """
+
+    def __init__(
+        self,
+        width: float = 6.8,
+        height: float = 4.6,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.w = width
+        self.h = height
+        hw, hh = width / 2, height / 2
+
+        frame = Rectangle(width=width, height=height, stroke_color=SUBQ_MUTED, stroke_width=2)
+        v_mid = Line(UP * hh, DOWN * hh, stroke_color=SUBQ_MUTED, stroke_width=2)
+        h_mid = Line(LEFT * hw, RIGHT * hw, stroke_color=SUBQ_MUTED, stroke_width=2)
+        glow = VGroup(frame, v_mid, h_mid)
+
+        # Faint quadrant tint (Tufte-style separation)
+        tl = Rectangle(width=hw, height=hh, stroke_width=0, fill_color=SUBQ_RED, fill_opacity=0.06).shift(LEFT * hw / 2 + UP * hh / 2)
+        tr = Rectangle(width=hw, height=hh, stroke_width=0, fill_color=SUBQ_GREEN, fill_opacity=0.06).shift(RIGHT * hw / 2 + UP * hh / 2)
+        bl = Rectangle(width=hw, height=hh, stroke_width=0, fill_color=SUBQ_YELLOW, fill_opacity=0.06).shift(LEFT * hw / 2 + DOWN * hh / 2)
+        br = Rectangle(width=hw, height=hh, stroke_width=0, fill_color=SUBQ_CYAN, fill_opacity=0.08).shift(RIGHT * hw / 2 + DOWN * hh / 2)
+
+        self.axes_lines = glow
+        self.quadrant_bg = VGroup(tl, tr, bl, br)
+        self.cross = VGroup(self.quadrant_bg, glow)
+
+        # Axis endpoint hints (slide-in targets for scenes)
+        self.label_pf = Text("position-fixed", font=FONT_SANS, font_size=20, color=SUBQ_MUTED)
+        self.label_pf.move_to(np.array([-hw * 0.65, -hh - 0.55, 0]))
+        self.label_cd = Text("content-dependent", font=FONT_SANS, font_size=20, color=SUBQ_MUTED)
+        self.label_cd.move_to(np.array([hw * 0.65, -hh - 0.55, 0]))
+
+        self.label_quad = Text("quadratic", font=FONT_SANS, font_size=20, color=SUBQ_MUTED)
+        self.label_quad.move_to(np.array([-hw - 0.85, hh * 0.65, 0]))
+        self.label_lin = Text("linear", font=FONT_SANS, font_size=20, color=SUBQ_MUTED)
+        self.label_lin.move_to(np.array([-hw - 0.85, -hh * 0.65, 0]))
+
+        self.routing_title = Text(
+            "routing",
+            font=FONT_SANS_DISPLAY,
+            font_size=22,
+            color=SUBQ_FG,
+            weight=BOLD,
+        ).move_to(np.array([0, -hh - 1.05, 0]))
+        self.scaling_title = Text(
+            "scaling",
+            font=FONT_SANS_DISPLAY,
+            font_size=22,
+            color=SUBQ_FG,
+            weight=BOLD,
+        ).move_to(np.array([-hw - 1.35, 0, 0])).rotate(PI / 2)
+
+        self.add(self.cross, self.routing_title, self.scaling_title, self.label_pf, self.label_cd, self.label_quad, self.label_lin)

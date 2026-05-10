@@ -1,4 +1,4 @@
-# Deep-dive script — "Why every frontier lab is quietly betting against the transformer" (~11 min, ~1700 words)
+# Deep-dive script — "Why every frontier lab is quietly betting against the transformer" (~13 min, ~2050 words)
 
 > Hybrid: Tina on-camera intro + Manim core + on-camera outro + live SubQ Code demo.
 > Pacing target: ~150 wpm.
@@ -95,7 +95,11 @@ VO: "Now, smart people have been chipping at this wall for years. The big one is
 
 [ANIM: The original red parabola reappears. FlashAttention shifts it down by a constant factor, but the shape is unchanged. The asymptote stays.]
 
-VO: "FlashAttention is brilliant. It buys you about an order of magnitude. But the asymptotic complexity is *still* `n` squared. Sliding window attention, multi-query attention, paged KV — they're all band-aids on the same wound. The patient survives. The disease is still there."
+VO: "FlashAttention is brilliant. It buys you about an order of magnitude on a modern GPU. But the asymptotic complexity is *still* `n` squared. Sliding window attention, multi-query attention, paged KV — they're all band-aids on the same wound. The patient survives. The disease is still there."
+
+[ANIM: Inside the n×n grid, most cells dim until they're near-black; only a sparse, scattered set of cells stays bright per row. A small caption: "in trained models, most attention weights are ~0".]
+
+VO: "Here's the part that's important for what comes next. In a *trained* transformer, most of the entries in this matrix are essentially zero. The model still computes the full n-squared work to get them. Dense attention isn't just quadratic. It's wastefully quadratic. Hold that thought."
 
 ---
 
@@ -123,23 +127,81 @@ VO: "And the current frontier consensus, before SubQ, has been hybrids — inter
 
 ---
 
-## Scene 9 — Where SubQ fits (7:30 - 8:30)
+## Scene 9 — Where SubQ fits (7:30 - 10:30)
 
-[ANIM: A new branch grows on the tree, labeled "Subquadratic Sparse Attention (SubQ)". It sits between "linear attention" and "hybrids".]
+[ANIM: A 2x2 grid materializes. X-axis label slides in: "routing — position-fixed → content-dependent". Y-axis label slides in: "scaling — quadratic → linear". Quadrants empty, gridlines glowing.]
 
-VO: "Here is where Subquadratic — the company — fits. They launched five days ago. They call their architecture Subquadratic Sparse Attention. The internals are proprietary, so I can't show you the math. What I can show you is the *shape* of the claim."
+VO: "So here's the actual problem the field has been chasing for ten years. Forget the tree of architectures for a second. There are really two axes that matter."
 
-[ANIM: Three benchmark callouts appear, sourced and dated.]
+[ANIM: X-axis highlights. "Position-fixed" lights up on the left, "Content-dependent" on the right.]
 
-VO: "Linear scaling with context length. One million tokens in production, twelve million in research. Fifty-two times faster than FlashAttention at one million tokens. Ninety-five percent on the RULER 128K benchmark."
+VO: "On one axis: how does the model decide which tokens to attend to? You can decide in advance, by position — sliding window, strided patterns, dilated masks. That's *position-fixed* routing. Or you can let the model decide for each query, after it sees the meaning — that's *content-dependent* routing."
 
-[ANIM: A small footnote: "Source: subq.ai/introducing-subq, May 5 2026. Independent verification pending."]
+[ANIM: Y-axis highlights. "Quadratic" lights up at top, "Linear" at bottom.]
 
-VO: "Now, those are SubQ's own numbers. Independent benchmarks are still coming. So instead of taking their word for it, let's just go run it."
+VO: "On the other axis: how does cost grow with context? Quadratic, like every transformer you've used. Or linear, like state space models."
+
+[ANIM: Markers populate the grid. Top-right (quadratic + content-dependent): "Standard transformers · FlashAttention · DeepSeek Sparse Attention*" — green dot for transformers, orange dots for the sparse-but-still-quadratic variants. A small asterisk footnote appears: "*indexer is itself O(n²)."]
+
+VO: "Standard attention is in the top right. Quadratic, fully content-dependent — every query sees every key. FlashAttention lives here too: same scaling, faster constant. Even DeepSeek's recent sparse-attention paper is still up here, because the indexer they use to pick keys is itself n-squared. They moved the cost. They didn't remove it."
+
+[ANIM: Bottom-left fills (linear + position-fixed): "Sliding window · Longformer · BigBird · Mistral SWA". Color: amber.]
+
+VO: "Bottom left: efficient, but the routing is fixed by position. The model decides where to look before it knows what it's looking for. When the relevant token sits outside the window, it literally cannot see it."
+
+[ANIM: Bottom-right fills part way (linear + content-dependent): "Mamba / SSM*", with footnote "*lossy fixed-capacity state". A faded grey marker.]
+
+VO: "Bottom right: linear *and* content-dependent. Mamba and the state-space family live here, but with a caveat. They achieve linear scaling by compressing everything that came before into a fixed-size state. Strong on gist, weak on retrieving a specific fact from eight hundred thousand tokens ago. The state can't hold it all."
+
+[ANIM: A bright SubQ-cyan dot drops into the bottom right with a small flash. Label: "SSA — Subquadratic Sparse Attention".]
+
+VO: "The whole point of SubQ's bet is that quadrant — linear, content-dependent, *and* able to recover a specific token from arbitrarily far back. Their architecture is called Subquadratic Sparse Attention, SSA. The internals are proprietary, but the shape of the mechanism is public, and it's worth understanding."
+
+[ANIM: Zoom into a representative attention pattern. Standard dense attention shows as a fully-filled n-by-n grid. Then a transition: most cells fade to near-black, leaving a sparse, scattered-but-pointed pattern of bright cells per row.]
+
+VO: "Here's the intuition. In a trained transformer, most of the entries in the attention matrix are essentially zero. The model still does the full n-squared work to compute them. SubQ's framing: dense attention isn't just quadratic, it's *wastefully* quadratic. SSA does content-dependent selection — for each query, the model picks which positions to actually attend to, and computes attention exactly over just that subset. Not an approximation. Real attention, on a chosen subset."
+
+[ANIM: A small inset of the SSA quote, attributed: "subq.ai/how-ssa-makes-long-context-practical, May 5 2026."]
+
+VO: "What's proprietary is *how* the selection is made. I'm not the architect — I can't tell you the routing algorithm. What I *can* tell you is what they claim it buys."
+
+[ANIM: A wall-clock speedup table animates row-by-row, B200 GPU silhouette in the corner.]
+
+VO: "On B200 GPUs, prefill speedup over FlashAttention-2: seven point two times at 128K, thirteen at 256K, twenty-three at 512K, fifty-two at 1M. Linear scaling means the gap *widens* as context grows."
+
+| Context | Prefill speedup vs FlashAttention-2 (B200) |
+| ------- | ------------------------------------------ |
+| 128K | 7.2× |
+| 256K | 13.2× |
+| 512K | 23.0× |
+| 1M | 52.2× |
+
+[ANIM: Pivot to the "but does it actually work" beat. Two benchmark callouts surface, paired with a small portrait grid of comparable models.]
+
+VO: "Speed is the easy part. The harder claim is that this is still as good a model as the dense ones. On RULER at 128 thousand tokens — multi-hop retrieval, aggregation, variable tracking — SSA scores 95.0%. Claude Opus 4.6 scores 94.8%. Tied, basically."
+
+[ANIM: MRCR v2 leaderboard slides in, full table, SubQ highlighted but not at the top.]
+
+VO: "On MRCR v2 — multi-hop reasoning over fragmented evidence — SSA scores 65.9%. Opus 4.6 is at 78. GPT 5.5 at 74. SubQ is *not* the leader on this one. They're behind two frontier models, and ahead of three. Including, weirdly, Opus 4.7 at 32."
+
+| Model | MRCR v2 |
+| ----- | ------- |
+| Opus 4.6 | 78.3% |
+| GPT 5.5 | 74.0% |
+| **SSA / SubQ** | **65.9%** |
+| GPT 5.4 | 36.6% |
+| Opus 4.7 | 32.2% |
+| Gemini 3.1 Pro | 26.3% |
+
+VO: "I'm leaving that table on the screen because it's the most useful slide in this video. SubQ isn't claiming to be the world's best model. They're claiming to be in the conversation with frontier dense-attention models, while running fifty-two times faster at a million tokens. If that holds up under independent reproduction, that is enough to change what every developer building agents is doing this year."
+
+[ANIM: A small footnote: "Source: subq.ai/how-ssa-makes-long-context-practical, May 5 2026. SubQ states benchmarks are 'third-party verified'; full model card pending."]
+
+VO: "Those are still SubQ's reported numbers. The independent reproduction work is just starting. So instead of taking their word — or mine — let's go run it."
 
 ---
 
-## Scene 10 — Live demo (8:30 - 10:15)
+## Scene 10 — Live demo (10:30 - 12:15)
 
 [SCREEN: Tina opens the `subq-quickstart` repo (the one shipping with this video). She runs `subq-code load .` on a real codebase — let's pick something hairy, like a 300-file Python monorepo.]
 
@@ -159,13 +221,13 @@ VO: "I also put together a small needle-in-a-haystack benchmark in the repo so y
 
 ---
 
-## Scene 11 — On-camera close (10:15 - 11:00)
+## Scene 11 — On-camera close (12:15 - 13:00)
 
 [ON-CAM: Tina back on camera. Slightly warmer framing.]
 
-"So that's the pitch. Scaling laws got us here. The transformer's `n` squared problem stopped us. The post-transformer research has been ready for a couple of years. Subquadratic is the first team to put a credible 1M-token model in front of developers and say 'go build.' Whether their numbers hold up under independent scrutiny is the most interesting question in AI infrastructure this year. And if they do, every developer building agents has a new tool that costs an order of magnitude less."
+"So that's the pitch. Scaling laws got us here. The transformer's `n` squared problem stopped us. The post-transformer research has been ready for a couple of years. Subquadratic is the first team to land in the quadrant we drew earlier — linear, content-dependent, exact retrieval — and put a 1-million-token model in front of developers and say 'go build.' Their published benchmarks say third-party verified. The full model card is still pending. Whether the prefill numbers and the MRCR score hold up under independent reproduction is the most interesting open question in AI infrastructure this year. And if they do, every developer building agents has a new tool that costs an order of magnitude less."
 
-"Repo, blog post, and the math derivations are linked below. If you build something with SubQ, send it to me. I'd love to see it."
+"Repo, blog post, the SSA paper, and the math derivations are all linked below. If you build something with SubQ, send it to me. I'd love to see it."
 
 [ANIM: End card. Subscribe + repo link + Tina's handles. Hold 3s.]
 

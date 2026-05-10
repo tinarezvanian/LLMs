@@ -112,6 +112,12 @@ If `python -c "import typer"` fails inside the env, run `pip install "typer>=0.1
 
 - [x] **TASK 4.8** Generate 1:1 (1080×1080) and 9:16 (1080×1920) cuts of the teaser concat: `make socials`. **Done when** `edit/renders/teaser/_concat/teaser-1x1-1080.mp4` and `teaser-9x16-1080.mp4` exist. *(Automated 2026-05-09. Outputs are silent — VO is layered in DaVinci. The 9:16 cut letterboxes on the SubQ background and reserves the upper third for CTA per [DESIGN.md §7](DESIGN.md).)*
 
+### Script-driven Manim follow-ups (queued by the 2026-05-09 deep-dive Scene 9 rewrite)
+
+- [ ] **TASK 4.9** Redesign [`vid/scenes/deepdive/scene_10_subq_position.py`](vid/scenes/deepdive/scene_10_subq_position.py) from a **tree branch** to the **2×2 quadrant** visual now described in [scripts/deepdive.md](scripts/deepdive.md) Scene 9. Axes: routing (position-fixed → content-dependent) × scaling (quadratic → linear). Markers: top-right = transformers / FlashAttention / DeepSeek SA*; bottom-left = sliding-window family; bottom-right = Mamba/SSM* (lossy state caveat) + SSA / SubQ (the highlighted drop-in). Source for every claim on screen: [research/notes.md §3.5–3.6](research/notes.md), citation [13]. **Done when** the rendered scene matches the [ANIM] cues in the script and `make deepdive` still passes at `-qh`. *(Will likely need a new `QuadrantMap` mobject in `vid/lib/mobjects.py` — keep `PostTransformerTree` around for Scene 8.)*
+- [ ] **TASK 4.10** Add an [ANIM] beat to [`vid/scenes/deepdive/scene_07_flashattention.py`](vid/scenes/deepdive/scene_07_flashattention.py) showing the n×n grid with **most cells dimmed to near-black** to set up the "wastefully quadratic" intuition the new script Scene 7 closes on. Should reuse `AttentionGrid` from `vid/lib/mobjects.py`. **Done when** the new beat sits before `self.wait()` at scene end and the production render still ≤ ~10s. *(Source: [research/notes.md §3.5](research/notes.md), citation [13].)*
+- [ ] **TASK 4.11** Add a benchmarks-table beat to [`vid/scenes/deepdive/scene_11_benchmarks.py`](vid/scenes/deepdive/scene_11_benchmarks.py) covering the **MRCR v2 leaderboard** verbatim from the script (Opus 4.6 78.3%, GPT 5.5 74.0%, **SubQ 65.9%**, GPT 5.4 36.6%, Opus 4.7 32.2%, Gemini 3.1 Pro 26.3%). The point is the *honest framing* — SubQ in the conversation, not at the top. **Done when** the table renders legibly at 1080p and the source footnote cites `subq.ai/how-ssa-makes-long-context-practical, May 5 2026`.
+
 ---
 
 ## Phase 5 — Shoot day

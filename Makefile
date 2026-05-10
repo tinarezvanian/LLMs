@@ -34,7 +34,9 @@ DEEPDIVE_SCENES := \
 
 STILLS_DIR := $(OUT_DIR)/stills
 
-.PHONY: all teaser deepdive stills setup setup-latex check clean help
+RES ?= 1080p60
+
+.PHONY: all teaser deepdive stills concat socials setup setup-latex check clean help
 
 help:
 	@echo "Targets:"
@@ -42,8 +44,10 @@ help:
 	@echo "  setup-latex - print platform-specific commands for LaTeX 'preview' package"
 	@echo "  check       - smoke-test that manim + ffmpeg work"
 	@echo "  teaser      - render all teaser scenes (override QUALITY=-qh for HD)"
-	@echo "  deepdive    - render all deep-dive scenes (needs LaTeX 'preview')"
+	@echo "  deepdive    - render all deep-dive scenes"
 	@echo "  stills      - export final PNG frame of every scene (override QUALITY=-qh for HD)"
+	@echo "  concat      - glue scene MP4s into single previews (RES=1080p60 by default)"
+	@echo "  socials     - 1:1 + 9:16 cuts of the teaser concat (for X / Shorts / Reels / TikTok)"
 	@echo "  all         - render teaser + deepdive"
 	@echo "  clean       - remove edit/renders and __pycache__"
 
@@ -86,6 +90,13 @@ stills:
 	  $(ACTIVATE) && manim $(QUALITY) -s --format png --media_dir $(STILLS_DIR) $$file $$klass; \
 	done
 	@echo "==> stills written under $(STILLS_DIR)/images/"
+
+concat:
+	@bash $(ROOT)/scripts/concat_scenes.sh teaser   $(RES)
+	@bash $(ROOT)/scripts/concat_scenes.sh deepdive $(RES)
+
+socials:
+	@bash $(ROOT)/scripts/social_cuts.sh
 
 setup-latex:
 	@echo "Manim's MathTex needs the LaTeX 'preview' package."

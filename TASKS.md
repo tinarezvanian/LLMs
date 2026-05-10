@@ -106,6 +106,11 @@ If `python -c "import typer"` fails inside the env, run `pip install "typer>=0.1
 - [x] **TASK 4.4** Smoke render: `QUALITY=-ql make deepdive` exits 0; 12 MP4s under `edit/renders/deepdive/videos/scene_*/480p15/`. (Scenes 02 + 13 do not render — that's expected.)
 - [x] **TASK 4.5** Production render: `QUALITY=-qh make deepdive`. **Done when** 12 MP4s exist at 1080p60. *(Automated 2026-05-09 — verify on device.)*
 - [x] **TASK 4.6** **Decision (locked):** keep **`text_equation()`** (JetBrains Mono Unicode) for all shipped formula beats — portable, no TeX install. Optional upgrade path: install LaTeX `preview` (`make setup-latex`) and swap specific lines to `equation()` only if a scene needs true fractions/stacked radicals; none of the current scenes require it.
+- [x] **TASK 4.7** Stitch per-track preview MP4s: `make concat` writes `edit/renders/{teaser,deepdive}/_concat/{teaser,deepdive}-1080p60.mp4` via ffmpeg's concat demuxer (no re-encode). *(Automated 2026-05-09 — teaser 29.2s, deepdive 79.2s. Lengths are short of the script targets because Manim is B-roll only; on-cam + screencap fill the gap at edit time.)*
+
+### Aspect-ratio prep
+
+- [x] **TASK 4.8** Generate 1:1 (1080×1080) and 9:16 (1080×1920) cuts of the teaser concat: `make socials`. **Done when** `edit/renders/teaser/_concat/teaser-1x1-1080.mp4` and `teaser-9x16-1080.mp4` exist. *(Automated 2026-05-09. Outputs are silent — VO is layered in DaVinci. The 9:16 cut letterboxes on the SubQ background and reserves the upper third for CTA per [DESIGN.md §7](DESIGN.md).)*
 
 ---
 
@@ -130,11 +135,11 @@ Runbook: [scripts/runbook_edit_and_ship.md](scripts/runbook_edit_and_ship.md). D
 - [ ] **TASK 6.2** Color (warm grade on on-cam only; do not regrade Manim).
 - [ ] **TASK 6.3** Sound mix: dialog -18 LUFS, music bed -22 LUFS under VO.
 - [ ] **TASK 6.4** Captions: Whisper-large transcribe → hand-fix `α`, `√`, `n²`, `FlashAttention`, `RULER`, `SSA`, model names per [DESIGN.md §6](DESIGN.md).
-- [ ] **TASK 6.5** Render delivery masters per [DESIGN.md §3](DESIGN.md):
+- [ ] **TASK 6.5** Render delivery masters per [DESIGN.md §3](DESIGN.md). Animation-only previews are already shipped from `make concat` + `make socials` (`edit/renders/teaser/_concat/`); the editor uses those as the picture lock and adds VO + on-cam.
   - 4K H.265 archive (16:9, deep-dive)
   - 1080p H.264 (16:9, YouTube)
-  - 1080×1080 teaser (X / Instagram)
-  - 1080×1920 teaser (Shorts / Reels / TikTok) — **CTA text in upper third**, see safe-area table
+  - 1080×1080 teaser (X / Instagram) — start from `teaser-1x1-1080.mp4`
+  - 1080×1920 teaser (Shorts / Reels / TikTok) — start from `teaser-9x16-1080.mp4`; **CTA text in upper third**, see safe-area table
 
 ---
 

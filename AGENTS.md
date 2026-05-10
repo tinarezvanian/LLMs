@@ -44,7 +44,7 @@ audio/  video/  demo/  edit/   pipeline dirs (.gitkeep'd) — large media gitign
 bin/                           project-local binaries (ffmpeg, micromamba); large files gitignored
 .venv/  .micromamba/           gitignored Python toolchains
 LICENSE                        MIT (project root)
-Makefile                       `make setup` / `make check` / `make teaser` / `make deepdive` / `make stills` / `make all` / `make clean` / `make setup-latex` / `make help`
+Makefile                       `make setup` / `make check` / `make teaser` / `make deepdive` / `make stills` / `make concat` / `make socials` / `make all` / `make clean` / `make setup-latex` / `make help`
 environment.yml                conda-forge env spec (canonical install path)
 ```
 
@@ -108,13 +108,13 @@ Day 4 of the 10-day sprint. Reasoning: launches plant flags. Even a 75-second pu
 
 ## How to continue the work
 
-Current state: **`make setup` + `make check` work; `-ql` smoke and `-qh` production renders for teaser + deep-dive Manim scenes both pass without LaTeX** (formulas use `text_equation` where needed). MP4s land in `edit/renders/` (gitignored). **`QUALITY=-qh make stills`** + [`scripts/export_x_thread_stills.sh`](scripts/export_x_thread_stills.sh) refreshes `assets/x_thread_stills/` at production resolution.
+Current state: **`make setup` + `make check` work; `-ql` smoke and `-qh` production renders for teaser + deep-dive Manim scenes both pass without LaTeX** (formulas use `text_equation` where needed). MP4s land in `edit/renders/` (gitignored). **`QUALITY=-qh make stills`** + [`scripts/export_x_thread_stills.sh`](scripts/export_x_thread_stills.sh) refreshes `assets/x_thread_stills/` at production resolution. **`make concat`** stitches each track into a single preview MP4 under `edit/renders/<track>/_concat/`, and **`make socials`** writes `teaser-1x1-1080.mp4` (square) + `teaser-9x16-1080.mp4` (portrait, letterboxed on the SubQ background) — both silent, since the editor lays VO on top in DaVinci.
 
 Next steps, in order:
 
-1. **TASK 4.3** — Tina watches `-qh` teaser clips against [scripts/teaser.md](scripts/teaser.md) pacing (human).
-2. Optional **4K archive**: `QUALITY=-qk make teaser` / `make deepdive` once picture is locked.
-3. Lock VO + edit per [`scripts/runbook_edit_and_ship.md`](scripts/runbook_edit_and_ship.md); export **16:9, 1:1, and 9:16** (see [DESIGN.md §3, §7](DESIGN.md)).
+1. **TASK 4.3** — Tina watches the teaser concat (`edit/renders/teaser/_concat/teaser-1080p60.mp4`) against [scripts/teaser.md](scripts/teaser.md) pacing (human).
+2. Optional **4K archive**: `QUALITY=-qk make teaser` / `make deepdive` once picture is locked, then re-run `make concat RES=2160p60`.
+3. Lock VO + edit per [`scripts/runbook_edit_and_ship.md`](scripts/runbook_edit_and_ship.md); export **16:9, 1:1, and 9:16** masters using the concat outputs as the picture lock (see [DESIGN.md §3, §7](DESIGN.md)).
 4. Shoot day ([`scripts/runbook_shoot_day.md`](scripts/runbook_shoot_day.md)): camera + SubQ Code capture + final VO — needs SubQ beta for live demo.
 5. Primary-source reading for interviews: [`research/PAPER_CHECKLIST.md`](research/PAPER_CHECKLIST.md).
 

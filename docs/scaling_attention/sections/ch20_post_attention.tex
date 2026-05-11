@@ -85,25 +85,31 @@ position — for engineers, not marketers — is to bet on whichever
 architecture serves the customer cheapest at the quality the customer
 needs, and to keep reading the papers.}
 
-\fillme{FILL-20-01}{Sidebar: diffusion language models for text people}{%
-  ${\sim}400$-word sidebar walking a transformer-trained engineer through
-  discrete diffusion: forward process (corrupt tokens with masking or
-  uniform noise), reverse process (learn to denoise), the trade-off vs
-  autoregression (parallel decoding but harder training objective). Cite
-  Lou et al.\ 2024 and Hoogeboom et al.\ 2021 (multinomial diffusion).
-  End with one sentence on Inception Labs / Mercury demos as the 2025
-  proof-of-concept that this works at deployable speed.}{%
-  Lou et al.\ 2024; Hoogeboom et al.\ 2021; Inception Labs Mercury blog.}{%
-  ${\sim}400$ words; one schematic equation OK; no figure required.}
+\paragraph{Diffusion language models (for transformer natives).}
+Discrete diffusion treats generation as an iterative \emph{denoising} process: a
+forward corruption (mask tokens, replace with uniform noise, or jump between
+states) destroys the string, and a learned reverse kernel restores plausible text
+\citep{hoogeboom2021multinomial,lou2024discrete}.
+Unlike autoregressive left-to-right models, many diffusion steps can be
+parallelised or scheduled adaptively, which is attractive for latency when the
+number of steps is small.
+The trade-off is training difficulty: the reverse process must approximate a
+highly multi-modal denoising distribution, and likelihood evaluation is less
+straightforward than next-token negative log-likelihood.
+By 2025--2026 several ``Mercury / Inception-style'' demos showed that discrete
+diffusion can reach deployable speeds on GPUs for chat-shaped workloads, but the
+ecosystem (tool use, streaming UX, KV-style caching) still lags autoregressive
+stacks---watch this space as objectives and schedulers mature.
 
-\fillme{FILL-20-02}{Sidebar: what JEPA actually predicts}{%
-  ${\sim}400$-word sidebar with a clear word-picture of the JEPA training
-  objective: encoder \(f\) maps an input to a latent embedding; predictor
-  \(g\) takes a context view's latent and predicts a target view's latent;
-  loss is in latent space, not pixel / token space. Contrast with
-  autoregressive next-token loss. End with one sentence on V-JEPA
-  (video-JEPA) results and one on the open question of whether JEPA-style
-  objectives transfer to text.}{%
-  LeCun 2022 position paper; Assran et al.\ 2023 I-JEPA; Bardes et al.\
-  2024 V-JEPA.}{%
-  ${\sim}400$ words; one schematic equation; no figure required.}
+\paragraph{What JEPA predicts.}
+JEPA \citep{lecun2022jepa} trains an encoder \(f\) to map views of data into a
+latent space where a small predictor \(g\) can forecast \emph{representations}
+of masked regions from representations of visible context---without reconstructing
+pixels or tokens directly.
+Image-JEPA \citep{assran2023ijepa} and V-JEPA \citep{bardes2024vjepa} showed this
+objective learns semantically meaningful video representations for downstream
+tasks while ignoring high-frequency noise the way contrastive losses struggle to.
+For text, the open research question is whether latent prediction can replace
+next-token CE without losing the easy compositional semantics of autoregressive
+Transformers; as of 2026 the commercial stack remains token-autoregressive, but
+JEPA-style objectives are a credible research path beyond ``attention only.''

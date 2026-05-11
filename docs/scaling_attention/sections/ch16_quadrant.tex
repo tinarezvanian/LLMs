@@ -102,21 +102,43 @@ bottom-right quadrant: content-dependent routing at linear cost. Every
 major architecture in Part~V occupies a different quadrant; SSA / SubQ
 explicitly aims for the bottom-right.}
 
-\fillme{FILL-16-01}{Sidebar: where does DeepSeek Sparse Attention sit?}{%
-  ${\sim}300$-word sidebar placing DeepSeek Sparse Attention (DSA) on the
-  quadrant. Argue that DSA is content-dependent (selection is data-driven
-  via a learned router) but its computational cost remains roughly
-  $\bigO(n^2)$ in the worst case because the routing structure is denser
-  than e.g.\ SSA's. Cite DeepSeek's 2024 technical report.}{%
-  DeepSeek 2024 technical report; the company's blog post.}{%
-  ${\sim}300$ words; no equations.}
+\paragraph{Where DeepSeek Sparse Attention sits.}
+DeepSeek's DSA \citep{deepseek2024dsa} routes tokens through learned sparse patterns
+so each query scores a \emph{subset} of keys, restoring some content-dependence of
+full attention while cutting \emph{average} FLOPs.
+Because the router can still admit many pairs in adversarial patterns---and
+because GPU kernels often densify irregular sparsity---worst-case behaviour can
+remain much closer to quadratic than the clean \(\mathcal{O}(n)\) story of fixed
+windows or convolutions.
+On the Chapter~\ref{ch:quadrant} map, DSA sits in the upper half: data-driven
+routing without the guaranteed-linear guarantee of a bottom-right SSA ideal.
 
-\fillme{FILL-16-02}{Worked example: cost curves overlaid for \(n \in \{10^3, 10^4, 10^5, 10^6\}\)}{%
-  Produce a single \texttt{pgfplots} figure with four curves on the same
-  log-log axes: dense \(\bigO(n^2)\), sliding-window \(\bigO(n w)\) at
-  \(w = 4096\), Mamba \(\bigO(n)\), and SSA \(\bigO(n \log n)\).
-  Normalise so all four curves coincide at \(n = 10^3\). Caption: this is
-  the picture that motivates the entire bottom row of the quadrant.}{%
-  Asymptotics from Chapters~\ref{ch:why-quadratic}, \ref{ch:sparse},
-  \ref{ch:ssm}, \ref{ch:ssa}.}{%
-  One small \texttt{pgfplots} figure + 3 sentences caption.}
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.95\textwidth,
+  height=6.2cm,
+  xmode=log,
+  ymode=log,
+  xmin=1e3,
+  xmax=1e6,
+  ymin=5e-2,
+  ymax=2e3,
+  xlabel={sequence length $n$},
+  ylabel={normalised cost (unity at $n=10^3$)},
+  legend style={at={(0.02,0.98)}, anchor=north west, font=\scriptsize},
+  grid=major,
+]
+  \addplot[thick, blue, domain=1000:1e6, samples=60] {(x/1000)^2};
+  \addplot[thick, orange, dashed, domain=1000:1e6, samples=60] {(x*4096)/(1000*4096)};
+  \addplot[thick, green!60!black, dotted, domain=1000:1e6, samples=60] {x/1000};
+  \addplot[thick, red, domain=1000:1e6, samples=60] { x * ln(x) / (1000*ln(1000)) };
+  \legend{Dense, SWA, Mamba, SSA}
+\end{axis}
+\end{tikzpicture}
+\caption{Normalised asymptotic shapes: sliding-window and SSM mixers share
+\(\Theta(n)\) after rescaling (orange dashed and green dotted overlap). Dense
+attention separates upward; an \(n\log n\) selector sits between.}
+\label{fig:cost-curves}
+\end{figure}

@@ -140,37 +140,106 @@ defining problem of the field. Chapter~\ref{ch:why-quadratic} derives the
 \(n^2\) cost carefully; Part~IV documents the engineering response;
 Part~V covers the architectures that try to escape it.
 
-\fillme{FILL-04-01}{Code listing: a single transformer block in PyTorch}{%
-  ${\sim}50$-line listing implementing pre-LN block from
-  Figure~\ref{fig:block}: \texttt{LayerNorm \texttt{->} MultiHeadAttention
-  \texttt{->} residual \texttt{->} LayerNorm \texttt{->} MLP \texttt{->}
-  residual}. Use only \texttt{torch.nn.Linear},
-  \texttt{torch.nn.LayerNorm}, and \texttt{torch.nn.functional.softmax} —
-  no \texttt{nn.MultiheadAttention} shortcut. Annotate tensor shapes on every
-  line that reshapes. End with one paragraph mapping each line to the
-  prose in this chapter.}{%
-  This chapter; Vaswani et al.\ 2017 Algorithm~1; nanoGPT \texttt{model.py}
-  for cross-checking.}{%
-  ${\sim}50$ lines of code + one paragraph.}
+\begin{lstlisting}[caption={Pre-LN decoder block matching Figure~\ref{fig:block} and equation~\ref{eq:block}.}]
+import math
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-\fillme{FILL-04-02}{Worked example: parameter accounting for Llama-3 8B}{%
-  Tabulate, for the published Llama-3 8B configuration (\(L = 32\),
-  \(\dmodel = 4096\), \(\heads = 32\), \(\dhead = 128\), GQA with 8 KV heads,
-  \(d_{\text{ff}} = 14\,336\), SwiGLU, \(V = 128\,000\)): the parameter
-  count of (i) embeddings, (ii) attention QKV+O per layer, (iii) FFN per
-  layer, (iv) norms, (v) total. Confirm it sums to ${\sim}8.0\text{B}$.
-  One footnote on what tied vs untied embeddings would change.}{%
-  Llama-3 model card; configuration in HuggingFace
-  \texttt{meta-llama/Meta-Llama-3-8B} repo.}{%
-  Single 5-row \texttt{tabular} + 3 sentences of commentary.}
+class CausalSelfAttention(nn.Module):
+    # x: [B, T, d] -> same; one softmax attention over past tokens (causal).
+    def __init__(self, d_model: int, n_heads: int):
+        super().__init__()
+        assert d_model % n_heads == 0
+        self.d_model, self.n_heads = d_model, n_heads
+        self.d_head = d_model // n_heads
+        self.q_proj = nn.Linear(d_model, d_model)   # [B,T,d]@[d,d]
+        self.k_proj = nn.Linear(d_model, d_model)
+        self.v_proj = nn.Linear(d_model, d_model)
+        self.o_proj = nn.Linear(d_model, d_model)
 
-\fillme{FILL-04-03}{Sidebar: rotary position embeddings (RoPE) in 5 lines of math}{%
-  Tufte sidenote-length sidebar that derives why
-  \(q_i^{\text{rot}} \cdot k_j^{\text{rot}}\) depends only on \(j - i\) when
-  query and key vectors are rotated in 2D subspaces by an angle proportional
-  to position. End with one sentence on why this is the modern default
-  (Llama, Mistral, Gemma) and one on what YaRN extends.}{%
-  Su et al.\ 2021 (RoPE); Peng et al.\ 2023 (YaRN);
-  \texttt{research/notes.md \S 4}.}{%
-  ${\sim}150$ words; 1 small equation; render as a margin-width text block
-  via \texttt{marginnote} or a regular paragraph.}
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        B, T, d = x.shape
+        q = self.q_proj(x).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
+        k = self.k_proj(x).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
+        v = self.v_proj(x).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
+        scores = (q @ k.transpose(-2, -1)) / math.sqrt(self.d_head)  # [B,nh,T,T]
+        mask = torch.triu(torch.ones(T, T, device=x.device), diagonal=1).bool()
+        scores = scores.masked_fill(mask, float("-inf"))
+        attn = F.softmax(scores, dim=-1)
+        y = attn @ v                                          # [B,nh,T,dh]
+        y = y.transpose(1, 2).contiguous().view(B, T, d)      # [B,T,d]
+        return self.o_proj(y)
+
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model: int, n_heads: int, d_ff: int):
+        super().__init__()
+        self.ln1 = nn.LayerNorm(d_model)
+        self.attn = CausalSelfAttention(d_model, n_heads)
+        self.ln2 = nn.LayerNorm(d_model)
+        self.fc1 = nn.Linear(d_model, d_ff)
+        self.fc2 = nn.Linear(d_ff, d_model)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        h = self.ln1(x)
+        h = self.attn(h)
+        x = x + h
+        h = self.ln2(x)
+        h = self.fc2(F.gelu(self.fc1(h)))
+        x = x + h
+        return x
+\end{lstlisting}
+
+\noindent
+\texttt{LayerNorm} precedes each sub-layer; the residual adds skip connections
+around attention and around the two-layer FFN, matching equation~\ref{eq:block}.
+\texttt{CausalSelfAttention} instantiates the \(Q/K/V\) projections and head-wise
+\(QK^{\mathsf T}\) softmax map described in prose; the causal mask encodes
+decoder-only masking over sequence length \(T\).
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Component & Formula (Llama-3 8B symbols) & Parameters \\
+\midrule
+Token embeddings & \(V \cdot d\) & \(128{,}256 \cdot 4{,}096 \approx 0.526\text{B}\) \\
+Per-layer attention & \(2 d^{2}\) (Q, O) \(+\;2\,d\,(n_{\text{kv}} d_{\text{head}})\) (K, V) &
+  \(\approx 4.19\times 10^{7}\) \\
+Per-layer SwiGLU FFN & \(3\,d\,d_{\text{ff}}\) &
+  \(3\cdot 4{,}096\cdot 14{,}336 \approx 1.76\times 10^{8}\) \\
+Per-layer RMSNorm & \(2d\) (input to attn + FFN) & \(8{,}192\) (negligible) \\
+All \(L=32\) layers & \(32 \times (\text{attn}+\text{ffn}+\text{norm})\) &
+  \(\approx 6.98\text{B}\) \\
+LM head (untied) & \(V \cdot d\) & \(\approx 0.526\text{B}\) \\
+Final norm & \(d\) & \(4{,}096\) \\
+\midrule
+Total (rounded) & & \(\mathbf{\approx 8.03\text{B}}\) \\
+\bottomrule
+\end{tabular}
+\caption{Parameter accounting for \texttt{Meta-Llama-3-8B}-style shapes:
+\(d=4{,}096\), \(L=32\), \(\heads=32\), \(n_{\text{kv}}=8\),
+\(d_{\text{ff}}=14{,}336\), \(V=128{,}256\), SwiGLU MLP, separate embedding and
+LM head matrices.}
+\label{tab:llama8b-params}
+\end{table}
+
+\noindent
+The largest slices are the SwiGLU triple (\(\approx 176\)M parameters per layer)
+and the untied embedding plus LM head (\(\approx 1.05\)B combined). If embeddings
+were \emph{tied} with the output projection, one would delete one \(V\!\cdot\!d\)
+matrix and reuse the input embedding table for logits, saving roughly half a
+billion parameters while forcing logits to remain linear functions of the same
+rows used at the input.
+
+\marginpar{\small\sffamily
+\textbf{RoPE in one breath.} Split each \(q\) and \(k\) into \(d_{\text{head}}/2\)
+plane pairs \((q_{2k}, q_{2k+1})\). Position \(m\) rotates that pair by angle
+\(m\theta_k\) with frequencies \(\theta_k\) spaced geometrically. Dot products
+\(q_i^{\text{rot}}\!\cdot k_j^{\text{rot}}\) then depend on \(q,k\) only through
+the \emph{difference} \(j-i\) because rotations compose additively in angle ---
+exactly the inductive bias decoder-only LMs want. That is why RoPE is the default
+in Llama, Mistral, and Gemma. YaRN \citep{peng2023yarn} rescales those frequencies
+(or interpolates bases) so the same checkpoints extrapolate to longer contexts
+without retraining from scratch.}

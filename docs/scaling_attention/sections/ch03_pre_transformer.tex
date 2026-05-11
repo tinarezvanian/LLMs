@@ -161,30 +161,64 @@ language model that could do arithmetic, write code, and pass standardised
 exams. The transformer ate the field. Part~II is the careful explanation
 of why.
 
-\fillme{FILL-03-01}{Code listing: vanilla RNN forward pass in PyTorch}{%
-  ${\sim}20$-line PyTorch listing implementing equation~\ref{eq:rnn} as a
-  loop over time, returning the per-step hidden states. Use the
-  \texttt{lstlisting} environment. Include shape comments on every line that
-  manipulates a tensor. Below the listing, add a one-paragraph note that
-  this is correct but slow because of the time-axis loop, foreshadowing the
-  parallelism advantage of attention in Chapter~\ref{ch:transformer}.}{%
-  PyTorch \texttt{nn.RNNCell} source as a reference; equation~\ref{eq:rnn}.}{%
-  ${\sim}20$ lines of code + one paragraph.}
+\begin{lstlisting}[caption={Vanilla RNN over time (matches equation~\ref{eq:rnn}, one step at a time).}]
+import torch
 
-\fillme{FILL-03-02}{Code listing: LSTM cell forward pass in PyTorch}{%
-  Same shape as FILL-03-01, but for a single LSTM cell. Render the four
-  gates explicitly so the reader can map every line to one row of the
-  derivation in this chapter. Comment which lines correspond to ``forget'',
-  ``input'', ``output'', and ``cell update''. Don't use the built-in
-  \texttt{nn.LSTMCell} — write the linear algebra by hand.}{%
-  Hochreiter \& Schmidhuber 1997; PyTorch source for sanity-check.}{%
-  ${\sim}25$ lines of code + 2 sentence caption.}
+def rnn_forward(e, W_h, W_x, b_h, W_o, b_o, h0=None):
+    # e: [T, B, d_in] token embeddings; W_h: [h, h]; W_x: [d_in, h]; b_h: [h]
+    # W_o: [h, V]; b_o: [V]; returns logits per step [T, B, V] and final h [B, h]
+    T, B, d_in = e.shape
+    h_dim = W_h.shape[0]
+    h = torch.zeros(B, h_dim, device=e.device, dtype=e.dtype) if h0 is None else h0
+    logits_steps = []
+    for t in range(T):
+        # [B,h] = tanh([B,h]@[h,h] + [B,d_in]@[d_in,h] + [h])
+        h = torch.tanh(h @ W_h + e[t] @ W_x + b_h)   # hidden state
+        logits_steps.append(h @ W_o + b_o)          # [B, V] softmax-ready logits
+    return torch.stack(logits_steps, dim=0), h
+\end{lstlisting}
 
-\fillme{FILL-03-03}{Worked example: parameter count of an LSTM cell}{%
-  Derive symbolically the parameter count of an LSTM cell with input
-  dimension \(d\) and hidden dimension \(h\). Show the answer is
-  \(4 \cdot (d \cdot h + h \cdot h + h)\). Plug in \(d = h = 1024\) for a
-  numeric. Then compare to a transformer block of comparable hidden
-  dimension (forward-pointer to Chapter~\ref{ch:transformer}).}{%
-  Standard LSTM derivation; equation block from this chapter.}{%
-  Half a page; one symbolic equation, one numeric.}
+\noindent
+This is faithful to the math but forces a Python loop over \(T\): the GPU
+cannot fuse the time axis, which is why seq2seq training on LSTMs never
+matched transformer throughput once attention could be parallelised across
+positions (Chapter~\ref{ch:transformer}).
+
+\begin{lstlisting}[caption={One LSTM step with explicit gates (same layout as the equations above).}]
+import torch
+
+def lstm_cell(h_prev, c_prev, e_t, W_i, W_f, W_o, W_c, b_i, b_f, b_o, b_c):
+    # h_prev: [B, h]; c_prev: [B, h]; e_t: [B, d]; each W_* : [d + h, h]
+    x = torch.cat([h_prev, e_t], dim=1)           # [B, d+h] — concat for one linear
+    i = torch.sigmoid(x @ W_i + b_i)              # input gate
+    f = torch.sigmoid(x @ W_f + b_f)            # forget gate
+    o = torch.sigmoid(x @ W_o + b_o)            # output gate
+    c_tilde = torch.tanh(x @ W_c + b_c)           # candidate cell content
+    c = f * c_prev + i * c_tilde                  # cell state (additive path)
+    h = o * torch.tanh(c)                         # hidden output
+    return h, c
+\end{lstlisting}
+
+\noindent
+Mapping to the prose derivation: \texttt{f} is forget, \texttt{i} is input,
+\texttt{o} is output, and the line updating \texttt{c} is the cell update;
+\texttt{c\_tilde} is \(\tilde c_t\).
+
+\paragraph{Parameter count for one LSTM cell.}
+Each gate is an affine map \(\R^{d+h} \to \R^{h}\): matrix \((d+h)\times h\)
+and bias \(h\), i.e.\ \((d+h)h + h = dh + h^{2} + h\) parameters. Four gates
+give
+\begin{equation}
+  4\,(dh + h^{2} + h).
+\end{equation}
+With \(d = h = 1024\) this is \(4 \cdot (2\cdot 1024^{2} + 1024) \approx 8.39\)~million trainable parameters \emph{per cell}. A depth-\(L\) stacked LSTM
+multiplies that by \(L\).
+
+For comparison, a transformer block at hidden width \(d\) carries attention
+plus feed-forward weights scaling as \(\bigO(d^{2})\) with a much larger
+coefficient (multiple matrices of size \(d \times d\) plus the FFN upswing to
+\(4d^{2}\)-ish in the usual \(\mathrm{GeLU}\) configuration). Chapter~\ref{ch:transformer}
+works the accounting for a full block; the qualitative point here is that a
+\emph{single} LSTM cell is compact, but depth-\(L\) recurrence cannot escape
+sequential steps at runtime, whereas a transformer layer pays more parameters
+per layer yet trains with full time-parallelism.

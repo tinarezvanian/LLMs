@@ -58,11 +58,13 @@
     BoldItalicFont = AlegreyaSans-MediumItalic.ttf,
 ]{Alegreya Sans}
 
-% A display weight for chapter / part titles.
+% Display titles: Medium reads clearly at large sizes without the heaviness of Black.
 \newfontfamily\AlegreyaDisplay[
     Path = ./fonts/,
-    UprightFont = AlegreyaSans-Black.ttf,
-    ItalicFont = AlegreyaSans-BlackItalic.ttf,
+    UprightFont = AlegreyaSans-Medium.ttf,
+    ItalicFont = AlegreyaSans-MediumItalic.ttf,
+    BoldFont = AlegreyaSans-Bold.ttf,
+    BoldItalicFont = AlegreyaSans-BoldItalic.ttf,
 ]{Alegreya Sans}
 
 % --- Math + tables + graphics ---
@@ -148,10 +150,10 @@
 % --- Heading typography (display weight + a touch of color) ---
 \usepackage{titlesec}
 \titleformat{\part}[display]
-  {\AlegreyaDisplay\Huge\bfseries\color{DarkSlateGray}}
+  {\AlegreyaDisplay\Huge\color{DarkSlateGray}}
   {\partname\ \thepart}{20pt}{\Huge}
 \titleformat{\chapter}[display]
-  {\AlegreyaDisplay\huge\bfseries\color{DarkSlateGray}}
+  {\AlegreyaDisplay\huge\color{DarkSlateGray}}
   {\chaptername\ \thechapter}{16pt}{\Huge}
 \titleformat{\section}
   {\normalfont\Large\bfseries\color{DarkSlateGray}}{\thesection}{1em}{}

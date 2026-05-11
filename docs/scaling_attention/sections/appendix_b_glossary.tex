@@ -4,35 +4,150 @@
 A one-line definition for every term-of-art that appears in the book.
 Alphabetical. Cross-referenced to the chapter where it is introduced.
 
-\fillme{FILL-B-01}{Glossary entries A--D}{%
-  \texttt{description} list with one-line definitions. Required entries (add
-  more if the prose uses them): activation memory, ANN (approximate nearest
-  neighbour), attention head, attention matrix, autoregressive, BPE,
-  Bahdanau attention, Chinchilla, Chinchilla-optimal, content-dependent
-  routing, convolutional view of SSMs, cross-entropy, dense attention,
-  decoder-only, diffusion language model, dropout (mention only).}{%
-  This book's chapters; the original papers cited.}{%
-  ${\sim}15$ entries; one line each.}
+\subsection*{A--D}
 
-\fillme{FILL-B-02}{Glossary entries E--L}{%
-  Required: emergent abilities, embedding matrix, FFN, FlashAttention,
-  GQA (grouped-query attention), Hyena, JEPA, Kaplan power law, kernel
-  feature map, KV cache, latent dirichlet allocation (mention only),
-  LayerNorm, linear attention, lost-in-the-middle, LSTM.}{%
-  This book; the original papers.}{%
-  ${\sim}15$ entries; one line each.}
+\begin{description}\itemsep0.25em
+\item[activation memory] GPU \textsc{hbm} occupied by activations (not weights)
+  during a forward/backward pass; for attention, the \(n \times n\) buffers
+  often dominate (Chapter~\ref{ch:why-quadratic}).
+\item[ANN (approximate nearest neighbour)] data structure for finding near
+  neighbours in embedding space in sub-linear time; used in some long-context
+  proposals that route tokens to a subset of past keys.
+\item[attention head] one parallel low-rank slice of multi-head attention: own
+  \(Q_h,K_h,V_h\) projections and one softmax map (Chapter~\ref{ch:self-attention}).
+\item[attention matrix] row-softmax of logits \(QK^{\mathsf T}/\sqrt{d_{\text{head}}}\);
+  row \(i\) is how token \(i\) mixes values from all positions.
+\item[autoregressive] model that factors \(p(x_{1:n}) = \prod_t p(x_t \mid x_{<t})\)
+  and is trained to predict the next token (Chapter~\ref{ch:what-lm}).
+\item[BPE (byte pair encoding)] greedy merge tokenizer that builds a vocabulary
+  of frequent substrings (Chapter~\ref{ch:tokens}).
+\item[Bahdanau attention] encoder--decoder soft alignment: decoder step attends
+  over all encoder states (Chapter~\ref{ch:pre-transformer}).
+\item[Chinchilla] the compute-optimal scaling recipe from
+  \citet{hoffmann2022training}: fix compute budget, prefer smaller models with
+  more tokens than Kaplan-style ``big model, fewer tokens'' (Chapter~\ref{ch:chinchilla}).
+\item[Chinchilla-optimal] training point on the iso-compute frontier where
+  parameters \(N\) and tokens \(D\) satisfy \(D \approx 20 N\) at large scale
+  (Chapter~\ref{ch:chinchilla}).
+\item[content-dependent routing] letting network inputs decide which weights or
+  memories to use (e.g.\ selective SSMs, MoE gates).
+\item[convolutional view of SSMs] interpreting linear recurrence as a depth-wise
+  convolution along time when parameters are input-independent (Chapter~\ref{ch:ssm}).
+\item[cross-entropy] loss \(-\log p_\theta(x_t \mid x_{<t})\) summed over tokens;
+  minimising it is maximum likelihood (Chapter~\ref{ch:what-lm}).
+\item[dense attention] every token attends to every other token in the layer's
+  window (full \(n \times n\) pattern).
+\item[decoder-only] transformer stack with causal masking, trained as an LM
+  (GPT-style); contrast encoder-only (BERT) and encoder--decoder (T5).
+\item[diffusion language model] generative model over tokens or latents that
+  reverses a noise process rather than left-to-right factorisation
+  (Chapter~\ref{ch:post-attention}).
+\item[dropout] stochastic zeroing of activations during training as regularisation
+  (mentioned only where training stability matters).
+\end{description}
 
-\fillme{FILL-B-03}{Glossary entries M--R}{%
-  Required: Mamba, Mistral, MoE (mixture of experts), MQA (multi-query
-  attention), n-gram, nucleus sampling, paged attention, perplexity,
-  position-fixed routing, Performer, pre-LN, RMSNorm, RNN, RoPE, RULER.}{%
-  This book; the original papers.}{%
-  ${\sim}15$ entries; one line each.}
+\subsection*{E--L}
 
-\fillme{FILL-B-04}{Glossary entries S--Z}{%
-  Required: SAMBA, SentencePiece, sliding-window attention, softmax,
-  sparse attention, SSA (subquadratic sparse attention), state-space
-  model, subword, top-\(k\) sampling, top-\(p\) sampling, transformer,
-  WordPiece, YaRN.}{%
-  This book; the original papers.}{%
-  ${\sim}15$ entries; one line each.}
+\begin{description}\itemsep0.25em
+\item[emergent abilities] sharp capability jumps at scale seen only in large
+  models \citep{wei2022emergent}; disputed how ``emergent'' vs metric-dependent
+  (Chapter~\ref{ch:kaplan}).
+\item[embedding matrix] lookup table \(E \in \R^{V \times d}\) mapping token ids
+  to vectors (Chapter~\ref{ch:tokens}).
+\item[FFN (feed-forward network)] per-position MLP after attention, usually two
+  linear layers with a non-linearity (Chapter~\ref{ch:transformer}).
+\item[FlashAttention] IO-aware tiling algorithm for attention that reduces
+  \textsc{hbm} traffic \citep{dao2022flashattention,dao2023fa2,shah2024fa3}
+  (Chapter~\ref{ch:flashattention}).
+\item[GQA (grouped-query attention)] multiple query heads share one key/value
+  head each group, cutting KV-cache footprint \citep{ainslie2023gqa}
+  (Chapter~\ref{ch:kv-cache}).
+\item[Hyena] long-convolution / implicit global filter stack alternative to
+  attention \citep{poli2023hyena} (Chapter~\ref{ch:linattn}).
+\item[JEPA (Joint Embedding Predictive Architecture)] representation learning by
+  predicting latent embeddings from context \citep{lecun2022jepa}, not next-token
+  logits (Chapter~\ref{ch:post-attention}).
+\item[Kaplan power law] empirical scaling trend \(L \propto N^{-\alpha}\) etc.\
+  from \citet{kaplan2020scaling}; superseded for compute-optimal trade-offs by
+  Chinchilla (Chapter~\ref{ch:kaplan}).
+\item[kernel feature map] \(\phi\) such that \(k(x,y)=\langle \phi(x),\phi(y)\rangle\);
+  used by Performer to approximate softmax kernels (Chapter~\ref{ch:linattn}).
+\item[KV cache] stored past key/value tensors during autoregressive inference so
+  earlier tokens are not recomputed (Chapter~\ref{ch:kv-cache}).
+\item[latent Dirichlet allocation] classical Bayesian topic model (mentioned only
+  as contrast with neural LMs).
+\item[LayerNorm] normalise activations across the feature dimension before each
+  sub-layer (Chapter~\ref{ch:transformer}).
+\item[linear attention] kernelised or reformulated attention whose recurrence is
+  \(\bigO(n)\) in sequence length \citep{katharopoulos2020linear}
+  (Chapter~\ref{ch:linattn}).
+\item[lost-in-the-middle] phenomenon where models under-use tokens in the middle
+  of long prompts \citep{liu2024lostmiddle} (Chapter~\ref{ch:what-scaling-omits}).
+\item[LSTM] gated RNN cell with separate cell and hidden states to mitigate
+  vanishing gradients \citep{hochreiter1997lstm} (Chapter~\ref{ch:pre-transformer}).
+\end{description}
+
+\subsection*{M--R}
+
+\begin{description}\itemsep0.25em
+\item[Mamba] selective state-space sequence model with hardware-efficient scan
+  \citep{gu2023mamba} (Chapter~\ref{ch:ssm}).
+\item[Mistral] open-weight LM family from Mistral AI \citep{jiang2023mistral7b};
+  often cited for sliding-window + sparse patterns.
+\item[MoE (mixture of experts)] feed-forward layer replaced by routed experts so
+  parameter count \(\gg\) compute per token.
+\item[MQA (multi-query attention)] all query heads share a single key head and
+  single value head \citep{shazeer2019mqa} (Chapter~\ref{ch:kv-cache}).
+\item[n-gram model] tabulated conditional distributions over fixed-length token
+  histories (Chapter~\ref{ch:pre-transformer}).
+\item[nucleus sampling] sample from smallest token set whose cumulative mass \(\ge p\)
+  (Chapter~\ref{ch:what-lm}).
+\item[paged attention] non-contiguous KV blocks managed like OS pages to serve
+  many sequences efficiently \citep{kwon2023vllm} (Chapter~\ref{ch:kv-cache}).
+\item[perplexity] \(\exp\) of average cross-entropy; lower is better (Chapter~\ref{ch:what-lm}).
+\item[position-fixed routing] attention or convolution pattern chosen by schedule,
+  not input content (Chapter~\ref{ch:sparse}).
+\item[Performer] attention approximation via random features \citep{choromanski2021performer}
+  (Chapter~\ref{ch:linattn}).
+\item[pre-LN] apply LayerNorm before each sub-layer for stabler optimisation
+  (Chapter~\ref{ch:transformer}).
+\item[RMSNorm] root-mean-square normalisation without mean centering; common in
+  Llama-class models.
+\item[RNN] recurrent hidden state updated each step; \(\bigO(1)\) memory per step
+  but sequential (Chapter~\ref{ch:pre-transformer}).
+\item[RoPE (rotary position embedding)] multiply \(Q,K\) by position-dependent
+  rotations \citep{su2021rope} (Chapter~\ref{ch:transformer}).
+\item[RULER] synthetic long-context benchmark suite \citep{hsieh2024ruler}
+  (Chapter~\ref{ch:benchmarks}).
+\end{description}
+
+\subsection*{S--Z}
+
+\begin{description}\itemsep0.25em
+\item[SAMBA] state-space + attention hybrid architecture \citep{ren2024samba}
+  (Chapter~\ref{ch:hybrids}).
+\item[SentencePiece] unsupervised tokenizer framework using BPE or unigram;
+  shipped with Llama checkpoints \citep{kudo2018sentencepiece} (Chapter~\ref{ch:tokens}).
+\item[sliding-window attention] each token attends only to nearby predecessors
+  \citep{beltagy2020longformer} (Chapter~\ref{ch:sparse}).
+\item[softmax] normalise logits into a probability vector; row-softmax for attention
+  weights (Chapter~\ref{ch:self-attention}).
+\item[sparse attention] fixed or learned patterns with sub-\(n^{2}\) pairs per layer
+  \citep{child2019sparse,beltagy2020longformer} (Chapter~\ref{ch:sparse}).
+\item[SSA (subquadratic sparse attention)] marketing umbrella for routing tokens
+  to a sparse subset for approximate full attention \citep{subq2026ssa}
+  (Chapter~\ref{ch:ssa}).
+\item[state-space model (SSM)] linear dynamical system with structured transitions,
+  sometimes input-selective (Chapter~\ref{ch:ssm}).
+\item[subword] tokenizer output unit smaller than a word (BPE/WordPiece/SentencePiece).
+\item[top-\(k\) sampling] sample only from the \(k\) largest logits after optional
+  temperature (Chapter~\ref{ch:what-lm}).
+\item[top-\(p\) sampling] nucleus sampling: sample from smallest mass-\(\ge p\) set
+  (Chapter~\ref{ch:what-lm}).
+\item[transformer] stack of self-attention and FFN blocks with residual paths
+  \citep{vaswani2017attention} (Chapter~\ref{ch:transformer}).
+\item[WordPiece] subword tokenizer used by BERT with continuation tokens marking
+  word pieces \citep{devlin2019bert} (Chapter~\ref{ch:tokens}).
+\item[YaRN] RoPE scaling variant for longer contexts \citep{peng2023yarn}
+  (Chapter~\ref{ch:kv-cache}).
+\end{description}

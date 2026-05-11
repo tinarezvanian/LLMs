@@ -134,24 +134,45 @@ layer. For \(n = 10^6\) and 32 heads and 32 layers, that is
 byte per cell that is a petabyte of intermediate state. The next chapter
 spells out the consequences.
 
-\fillme{FILL-05-01}{Code listing: scaled dot-product attention from scratch}{%
-  ${\sim}15$-line PyTorch listing implementing
-  equation~\ref{eq:attn-mat}: input \([n, d]\); produce \(Q, K, V\); compute
-  \(QK\T / \sqrt{\dhead}\); apply causal mask; row-wise softmax; multiply
-  by \(V\). Annotate every shape. Add an \texttt{assert} for the causal
-  mask shape. Don't use \texttt{nn.MultiheadAttention} — write the matmul
-  by hand.}{%
-  This chapter; Vaswani et al.\ 2017 \S 3.2; nanoGPT for sanity-check.}{%
-  ${\sim}15$ lines of code + 2 sentences.}
+\begin{lstlisting}[caption={Single-head scaled dot-product attention (equation~\ref{eq:attn-mat}), causal LM variant.}]
+import math
+import torch
+import torch.nn.functional as F
 
-\fillme{FILL-05-02}{Sidebar: what does an attention head actually learn?}{%
-  Half-page sidebar walking through one well-documented example of head
-  specialisation — e.g.\ a syntactic-role head from BERT (Clark et al.\
-  2019), a positional / "previous-token" head from GPT-2 (Olsson et al.\
-  2022 induction heads), or a copy / retrieval head from a small LM. Pick
-  one, describe what the attention pattern looks like (text description, no
-  figure required), and connect it back to why we use multi-head attention
-  in the first place.}{%
-  Clark et al.\ ``What does BERT look at?''; Olsson et al.\ ``In-context
-  Learning and Induction Heads''; Anthropic interpretability blog.}{%
-  ${\sim}300$ words.}
+def sdpa_single_head(x, W_q, W_k, W_v, causal=True):
+    # x: [n, d]; W_q,W_k,W_v: [d, d_head] -> output [n, d_head]
+    n, d = x.shape
+    d_head = W_q.shape[1]
+    q = x @ W_q                     # [n, d_head]
+    k = x @ W_k                     # [n, d_head]
+    v = x @ W_v                     # [n, d_head]
+    scores = (q @ k.T) / math.sqrt(d_head)   # [n, n]
+    if causal:
+        mask = torch.triu(torch.ones(n, n, dtype=torch.bool), diagonal=1)
+        assert mask.shape == (n, n)
+        scores = scores.masked_fill(mask, float("-inf"))
+    attn = F.softmax(scores, dim=-1)         # row-wise; rows sum to 1
+    return attn @ v                           # [n, d_head]
+\end{lstlisting}
+
+\noindent
+This is exactly ``\(QK^{\mathsf T}\), mask, softmax, multiply by \(V\)'' with
+no fused kernels; production training stacks heads and batches \(B\) leading
+axes.
+
+\paragraph{What does an attention head actually learn?}
+Interpretability work on small transformers shows heads are not interchangeable:
+many behave like fixed positional routes or shallow circuits rather than
+generic similarity.\sidenote{See \emph{e.g.}\ ``What Does BERT Look At?''
+\citep{clark2019whatbert} for encoder self-attention and Olsson et al.\ on
+\emph{induction heads} in small LMs.} A canonical decoder example is an
+\emph{induction head}: when the context repeats a pattern \texttt{A B \ldots\
+A}, this head attends from the second \texttt{A} back to \texttt{B} so the
+model can predict the token that followed the first \texttt{A} --- supporting
+in-context copying and small algorithmic steps. The attention matrix is
+sparse and structured (previous-token + source match), not a diffuse softmax
+over everything. Multi-head attention exists precisely so several such
+low-rank circuits can coexist: some heads gate syntax-like agreement, others
+implement retrieval-like jumps, others approximate positional offsets. Width
+\(d\) split into \(\heads\) heads trades parameter efficiency for a \emph{bank}
+of parallel routing patterns.

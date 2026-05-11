@@ -89,22 +89,52 @@ Part~IV (next) is Camp 1. Part~V is Camp 2. Part~VI is the 2$\times$2
 frame that makes the whole landscape make sense, and the careful read of
 SubQ's bet inside it.
 
-\fillme{FILL-09-01}{Sidebar: ``lost in the middle''}{%
-  ${\sim}300$-word sidebar on Liu et al.\ 2023 ``Lost in the Middle: How
-  Language Models Use Long Contexts''. Convey: nominal context window is
-  not the same as functional context; LLMs put more attention on the
-  beginning and end of the prompt; prompt-engineering implication.
-  Connect to the RULER and MRCR benchmarks introduced later.}{%
-  Liu et al.\ 2023; Hsieh et al.\ 2024 (RULER).}{%
-  ${\sim}300$ words; no equations.}
+\paragraph{``Lost in the middle'' is a useability fact, not a scaling law.}
+\citet{liu2024lostmiddle} showed that long-context models do not treat all
+positions equally: needle-in-a-haystack style tasks often succeed when the
+needle sits near the start or end of the prompt, and degrade when it sits in
+the middle---even when the total length is within the advertised context window.
+Nominal ``128k context'' is therefore a \emph{hardware} statement (how many
+tokens fit in KV) more than a \emph{reliability} statement about uniform
+reasoning quality across positions.
+The practical takeaway for prompt design is to place instructions, tools, and
+critical facts where models empirically attend more strongly (often boundaries),
+and to distrust ``just stuff everything in context'' workflows for retrieval.
+Synthetic suites such as RULER \citep{hsieh2024ruler} and conversational stress
+tests such as MRCR \citep{chen2025mrcr} exist partly because smooth training
+loss curves do not reveal these positional failure modes.
 
-\fillme{FILL-09-02}{Worked example: 1M-token agent TCO over 1B requests}{%
-  Total cost of ownership for a hypothetical agent that serves 1B sessions
-  per year, each averaging 200k tokens of context plus 5k tokens of
-  generation. Assume Llama-3 70B class model on H100. Show: serving FLOPs,
-  KV-cache memory pressure, GPU-hours, and \$ per session at on-demand
-  pricing. Then re-do the row for a 10$\times$ cheaper architecture
-  (foreshadow Part~V). End with one sentence on what this implies for
-  pricing pages of frontier APIs in 2026.}{%
-  KV-cache equation from Chapter~\ref{ch:kv-cache}; current cloud pricing.}{%
-  Half a page; 2-row table + 3 sentences.}
+\paragraph{Illustrative agent TCO (order-of-magnitude).}
+Suppose a product serves \(10^{9}\) sessions per year, each averaging
+\(2\times 10^{5}\) prompt tokens (KV must be retained or recomputed) plus
+\(5\times 10^{3}\) generated tokens.
+That is \(\mathcal{O}(10^{14})\) served tokens per year before counting system
+prompts, retries, or tool transcripts.
+On a Llama-3 70B-class stack, attention and KV traffic dominate at these lengths:
+even with FlashAttention-class kernels, prefill and decode FLOPs scale
+super-linearly in the prompt, and KV resident set scales linearly in prompt
+length per active session (Chapter~\ref{ch:kv-cache}).
+A dense-attention row in a back-of-the-envelope table might show ``billions of
+GPU-hours / year'' class spend at frontier per-token economics, whereas a
+\(\sim\!10\times\) cheaper long-context architecture (Part~V: fixed sparse,
+state-space, or routed attention) buys headroom by cutting the dominant term in
+\(n\) or in pairs scored.
+Frontier API pricing in 2026 therefore mixes \emph{per-token} list rates with
+\emph{context-tier} surcharges: the meter reflects memory and quadratic-ish
+work, not parameter count alone.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Deployment sketch & Dominant cost driver (long prompt) & Qualitative annual order \\
+\midrule
+Dense attention + full KV on H100-class GPUs & KV \(\propto n\); attention \(\propto n^{2}\) prefill & \(\mathcal{O}(10^{8})\)--\(10^{9}\) GPU-h / yr class \\
+Part~V-style stack (same quality target, subquadratic or smaller state) & Linear / near-linear mixers + smaller KV & \(\sim\!10\times\) lower GPU-h / yr (illustrative) \\
+\bottomrule
+\end{tabular}
+\caption{Two-row sanity check: long-context agents tax memory and attention far
+more than Chinchilla-style training-loss curves suggest.}
+\label{tab:agent-tco}
+\end{table}

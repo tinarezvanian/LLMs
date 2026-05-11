@@ -119,22 +119,53 @@ fed more tokens than Kaplan recommended. It does not say anything about
 how to spend inference compute on long contexts. The latter is the entire
 problem this book exists to discuss.}
 
-\fillme{FILL-08-01}{Worked example: applying 20:1 to a 100B model}{%
-  Show: at \(D = 20 N\), what training compute does a 100B-parameter model
-  require (use \(C = 6 N D\))? Convert to GPU-hours on H100 (assume sustained
-  ${\sim}500$ TFLOP/s effective per H100, state assumption explicitly).
-  Convert to dollars at on-demand cloud pricing. End with one sentence
-  comparing this to a published frontier model's training cost.}{%
-  Equation~\ref{eq:flops}; Hoffmann et al.\ 2022; H100 spec sheet.}{%
-  Half a page; arithmetic chain + 1-row summary table.}
+\paragraph{Worked example: Chinchilla tokens for a 100B model.}
+The Chinchilla recipe recommends \(D \approx 20 N\) tokens for \(N\) non-embedding
+parameters. Taking \(N = 10^{11}\) (100B) gives \(D \approx 2\times 10^{12}\)
+tokens---two trillion tokens seen during training.
+Equation~\ref{eq:flops} yields
+\[
+  C \;\approx\; 6 \cdot (10^{11}) \cdot (2\times 10^{12})
+  \;=\; 1.2\times 10^{24}\ \text{FLOPs}.
+\]
+At an assumed sustained \(500\)~TFLOP/s per H100 on mixed-precision transformer
+workloads (\(5\times 10^{14}\) FLOP/s), one device delivers
+\(5\times 10^{14}\times 3600 \approx 1.8\times 10^{18}\) FLOPs per hour, so
+\(C\) corresponds to roughly \(1.2\times 10^{24} / 1.8\times 10^{18} \approx
+6.7\times 10^{5}\) GPU-hours---order \(10^{6}\) device-hours before counting
+failed runs, checkpoint restarts, and evaluation.
+At a stylised \(\$\,3\) per GPU-hour, that training phase alone is multiple
+millions of dollars in \emph{rental} cost; frontier runs additionally amortise
+clusters across thousands of GPUs and engineer-years. Published frontier budgets
+(e.g.\ nine-figure estimates discussed alongside GPT-4-class systems) aggregate
+hardware, power, networking, and iteration overhead beyond this toy multiply.
 
-\fillme{FILL-08-02}{Sidebar: ``inference-Chinchilla'' worked through}{%
-  ${\sim}300$-word sidebar showing why a deployment-bound model (lots of
-  inference traffic, fixed quality target) should over-train relative to
-  Chinchilla. Pick numbers: ``serve 10B requests of 1k input tokens'' and
-  ``train once''. Show that, beyond some threshold, training extra tokens
-  on a smaller model amortises across all those requests and beats training
-  Chinchilla-optimal. Cite Sardana \& Frankle 2023 (``Beyond Chinchilla-Optimal'')
-  if useful; add \texttt{\textbackslash bibitem} if not present.}{%
-  Sardana \& Frankle 2023; Llama-3 model card (15T tokens / 8B params).}{%
-  ${\sim}300$ words; one inline arithmetic.}
+\begin{table}[htbp]
+\centering
+\begin{tabular}{@{}lr@{}}
+\toprule
+Quantity & Value \\
+\midrule
+Tokens \(D = 20N\) & \(2\times 10^{12}\) \\
+Training FLOPs \(C \approx 6ND\) & \(1.2\times 10^{24}\) \\
+Single-GPU-hours @ \(500\)~TFLOP/s & \(\approx 6.7\times 10^{5}\) \\
+Stylised rental @ \(\$\,3/\mathrm{hr}\) & \(\mathcal{O}(\$\,\mathrm{millions})\) \\
+\bottomrule
+\end{tabular}
+\caption{Illustrative Chinchilla-optimal budget for a 100B-parameter dense LM.}
+\label{tab:chinchilla-100b}
+\end{table}
+
+\paragraph{``Inference-Chinchilla'' (deployment-bound training).}
+Chinchilla fixes \((N,D)\) given a \emph{training} compute envelope.
+\citet{sardana2024beyond} observe that serving dominates lifetime spend for many
+products: train once, answer billions of queries.
+Imagine \(10^{10}\) requests each carrying \(10^{3}\) input tokens---\(10^{13}\)
+decode tokens at inference versus \(2\times 10^{12}\) training tokens above.
+Even tiny per-token savings from a slightly smaller, slightly longer-trained model
+compound across those \(10^{10}\) calls; past a breakpoint, extra training data on
+the smaller checkpoint buys cheaper inference forever.
+The arithmetic is qualitative---exact crossover depends on quality constraints,
+hardware margins, and routing---but it explains why deployment-first teams may
+``over-train'' relative to textbook Chinchilla when \(N^{2}\) attention at long
+context dominates serving bills (Part~IV--V).

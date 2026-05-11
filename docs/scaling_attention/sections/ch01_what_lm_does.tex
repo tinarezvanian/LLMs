@@ -109,29 +109,124 @@ Chapter~\ref{ch:pre-transformer}). For a dense transformer it grows
 \emph{quadratically} with context length (Chapter~\ref{ch:why-quadratic}).
 That last fact is what the second half of the book is about.
 
-\fillme{FILL-01-01}{Worked example: cross-entropy on a toy vocabulary}{%
-  Construct a 4-token vocabulary \(\{a, b, c, d\}\) and a 5-token training
-  sequence (e.g.\ \texttt{a b a c d}). Show by hand the negative
-  log-likelihood under (i) the uniform distribution, (ii) the empirical
-  unigram distribution from the sequence, and (iii) a perfect bigram model
-  fit to the sequence. Discuss in two sentences why (iii) trivially wins on
-  in-distribution data and why this overfits. End with a note on what
-  per-token cross-entropy means in nats vs bits.}{%
-  Cover and Thomas, \emph{Elements of Information Theory}, ch.~5;
-  \texttt{research/notes.md \S 1}.}{%
-  Half a page including the table of probabilities; one short equation per
-  case.}
+\section{Worked example: cross-entropy on a toy vocabulary}
 
-\fillme{FILL-01-02}{Code listing: a 30-line next-token sampler}{%
-  Provide a self-contained Python listing (no PyTorch, no transformers
-  library) that takes a function
-  \texttt{logits\_fn(prefix: list[int]) -> list[float]} as an oracle and
-  implements: (a) greedy decoding, (b) temperature sampling, (c) top-\(k\),
-  (d) nucleus / top-\(p\). Use the \texttt{lstlisting} environment with
-  \texttt{language=Python}. Comment each function with one line on \emph{when}
-  to use it. Don't import \texttt{numpy} — keep it pure Python so the listing
-  reads as runnable pseudocode.}{%
-  Equation~\ref{eq:softmax}; the Holtzman et al.\ nucleus-sampling paper if
-  citing top-\(p\).}{%
-  ${\sim}30$ lines of code, plus 2 sentences of intro and 1 sentence of
-  outro.}
+Take \(V = \{a,b,c,d\}\) and the five-token sequence \(x =\) \texttt{a b a c d}.
+Count symbols for an empirical unigram: \(a{:}2, b{:}1, c{:}1, d{:}1\) out of
+five draws, so \(\hat p(a)=\frac{2}{5}\), \(\hat p(b)=\hat p(c)=\hat p(d)=\frac{1}{5}\).
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Model & \(p(\texttt{a b a c d})\) & \(-\log p\) (nats) & per-token CE \\
+\midrule
+(i) Uniform \(p=\frac14\) everywhere &
+  \( (\frac14)^5 = 2^{-10}\approx 0.000977\) &
+  \(10\log 2 \approx 6.93\) &
+  \(1.386\) \\
+(ii) Unigram \(\hat p\) above &
+  \(\frac25\cdot\frac15\cdot\frac25\cdot\frac15\cdot\frac15 \approx 3.2\times 10^{-4}\) &
+  \(\approx 8.15\) &
+  \(1.63\) \\
+(iii) Bigram fit \emph{only} on this sentence (zero elsewhere) &
+  \(1\cdot\frac12\cdot 1\cdot 1\cdot 1\) &
+  \(0\) &
+  \(0\) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For (iii) we stored enough parameters to memorise the single training string:
+after seeing \texttt{a}, the next token is always \texttt{b}; after \texttt{b},
+always \texttt{a}; and so on. The likelihood is maximised trivially on this one
+example — and would be catastrophic on any held-out text where those bigrams
+never appeared.\sidenote{This is the cartoon version of \emph{overfitting}: the
+flexible model nails the training loss but does not compress structure that
+generalises. Real LMs smooth counts or use neural masses instead of tables,
+precisely to avoid this collapse.}
+
+\textbf{Nats vs bits.} ``Cross-entropy'' is reported in either \emph{nats}
+(natural logarithm, this table) or \emph{bits} (base-2 logarithm). One nat equals
+\(\log_2 e \approx 1.443\) bits; divide nats by \(\log 2\) to convert.
+
+\section{A minimal next-token sampler (pure Python)}
+
+The softmax in equation~\eqref{eq:softmax} is the only non-linearity you need
+to implement decoding strategies against any oracle that returns logits.
+
+\begin{lstlisting}[caption={Greedy, temperature, top-$k$, and nucleus sampling share one softmax routine.}]
+import math
+import random
+
+def softmax(logits, temperature=1.0):
+    m = max(logits)
+    exps = [math.exp((x - m) / temperature) for x in logits]
+    s = sum(exps)
+    return [e / s for e in exps]
+
+def sample_token(probs):
+    r = random.random()
+    c = 0.0
+    for i, p in enumerate(probs):
+        c += p
+        if r <= c:
+            return i
+    return len(probs) - 1
+
+def decode_greedy(logits_fn, prompt_ids, max_new=32):
+    """Use when you want deterministic, locally optimal extensions."""
+    out = list(prompt_ids)
+    for _ in range(max_new):
+        p = softmax(logits_fn(out))
+        out.append(max(range(len(p)), key=lambda i: p[i]))
+    return out
+
+def decode_temperature(logits_fn, prompt_ids, tau=0.8, max_new=32):
+    """tau<1 sharpens; tau>1 increases diversity."""
+    out = list(prompt_ids)
+    for _ in range(max_new):
+        probs = softmax(logits_fn(out), temperature=tau)
+        out.append(sample_token(probs))
+    return out
+
+def decode_top_k(logits_fn, prompt_ids, k=40, max_new=32):
+    """Truncate mass to the k largest logits — stable workhorse in APIs."""
+    out = list(prompt_ids)
+    for _ in range(max_new):
+        z = logits_fn(out)
+        idx = sorted(range(len(z)), key=lambda i: z[i], reverse=True)[:k]
+        sub_z = [z[i] for i in idx]
+        probs = softmax(sub_z)
+        pick = sample_token(probs)
+        out.append(idx[pick])
+    return out
+
+def decode_top_p(logits_fn, prompt_ids, p_mass=0.9, max_new=32):
+    """Nucleus / top-p: renormalise over the smallest high-probability set (Holtzman+19)."""
+    out = list(prompt_ids)
+    for _ in range(max_new):
+        z = logits_fn(out)
+        probs = softmax(z)
+        order = sorted(range(len(probs)), key=lambda i: probs[i], reverse=True)
+        cum, keep = 0.0, []
+        for i in order:
+            cum += probs[i]
+            keep.append(i)
+            if cum >= p_mass:
+                break
+        sp = [probs[i] for i in keep]
+        s = sum(sp)
+        sp = [p / s for p in sp]
+        r = random.random()
+        t = 0.0
+        for j, pj in enumerate(sp):
+            t += pj
+            if r <= t:
+                out.append(keep[j])
+                break
+    return out
+\end{lstlisting}
+
+\noindent
+These functions intentionally omit batched tensor code so the control flow
+remains obvious; production stacks fuse softmax sampling on the GPU.

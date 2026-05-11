@@ -228,6 +228,10 @@ vid/lib/__pycache__/
 # Personal IDE / editor workspace files (per-user, not project canon).
 *.code-workspace
 
+# macOS Finder metadata
+.DS_Store
+**/.DS_Store
+
 # Project-local toolchains and large binaries (kept out of git, set up via README).
 .venv/
 .micromamba/

@@ -122,22 +122,44 @@ sparsity pattern in advance, based only on position. Routing is content-
 blind. The asymptote is gorgeous; the failure mode is missing the one
 sentence in a million-token document that actually matters.}
 
-\fillme{FILL-12-01}{Worked example: Longformer's effective receptive field after \(L\) layers}{%
-  For sliding-window-only attention with window \(w\) and \(L\) layers,
-  derive the effective receptive field of the top layer (it composes
-  approximately like a convolution: \(L \cdot w\)). Plug in Mistral 7B
-  numbers (\(w = 4096\), \(L = 32\)) and compute. Then explain in one
-  paragraph why ``effective'' is a friendly word here: information from
-  position 0 has to be relayed through 32 LayerNorms to reach the top
-  layer, and quality decays.}{%
-  Beltagy et al.\ 2020; Jiang et al.\ 2023 (Mistral 7B).}{%
-  Half a page; one inline equation.}
+\paragraph{Effective receptive field of stacked sliding windows.}
+If each layer only mixes tokens within a causal radius of roughly \(w\)
+positions (window length), then---ignoring residual shortcuts---information
+from \(t\) reaches \(t + L(w-1)\) after \(L\) layers in the worst case along
+the causal chain.\sidenote{Residual connections provide shortcuts so this
+geometric bound is optimistic for \emph{representation} quality; it is still
+the right scaling intuition for how far local attention ``smears'' content.}
+For Mistral-7B-style stacks (\(L = 32\), \(w = 4096\)), a back-of-the-envelope
+reach is \(\mathcal{O}(L w) \approx 1.3\times 10^{5}\) tokens---far beyond a
+single layer's window, yet still not true global attention.
+The word ``effective'' matters: every hop passes LayerNorm, nonlinearities, and
+other heads, so distant mass is attenuated even when a linear path exists on
+paper. That is why production models pair sliding windows with a few global or
+attention-heavy layers (Chapter~\ref{ch:hybrids}).
 
-\fillme{FILL-12-02}{Code listing: sliding-window attention in PyTorch}{%
-  ${\sim}25$-line listing implementing causal sliding-window attention with
-  window \(w\), without materialising the full \(n \times n\) score matrix.
-  Use \texttt{torch.nn.functional.unfold} or a chunked loop. Comment on
-  shape at every line. Below: one paragraph noting that \texttt{flash-attn}'s
-  built-in sliding-window kernel is the production version.}{%
-  Mistral 7B paper; \texttt{flash-attn} library docs.}{%
-  ${\sim}25$ lines of code + one paragraph.}
+\begin{lstlisting}[caption={Causal sliding-window attention without a full \(n\times n\) score matrix (illustrative \texttt{for} loops).}]
+import math
+import torch
+import torch.nn.functional as F
+
+def sliding_window_attention(q, k, v, causal=True, window=512):
+    # q,k,v: [n, d_h] single head; returns [n, d_h]
+    n, dh = q.shape
+    out = torch.empty_like(q)
+    for t in range(n):
+        s_lo = max(0, t - window + 1)
+        s_hi = t + 1
+        scores = (q[t:t+1] @ k[s_lo:s_hi].T) / math.sqrt(dh)  # [1, span]
+        if causal:
+            # already causal because s_hi = t+1
+            pass
+        attn = F.softmax(scores, dim=-1)
+        out[t] = attn @ v[s_lo:s_hi]
+    return out
+\end{lstlisting}
+
+\noindent
+This is \(\mathcal{O}(n w)\) time and \(\mathcal{O}(w)\) temporary score width
+per step---never materialising an \(n\times n\) matrix. Production stacks use
+\texttt{flash-attn}'s fused sliding-window kernels (and related block-sparse
+paths) so the inner loop lives on GPU warps rather than in Python.

@@ -98,24 +98,61 @@ behave as we make it bigger? The 2020 paper that answered that question
 turned LM training from research into engineering. Part~III is about that
 paper and its 2022 correction.
 
-\fillme{FILL-06-01}{Code listing: KV-cache size calculator}{%
-  10-line Python function \texttt{kv\_cache\_bytes(n, L, H, d\_head, dtype\_bytes=2)}
-  that returns the total KV-cache size in bytes for an MHA model. Then
-  variants \texttt{kv\_cache\_bytes\_gqa(...)} and \texttt{kv\_cache\_bytes\_mqa(...)}.
-  Print a 4-row table for the Llama-3 8B configuration at
-  \(n \in \{8\text{K}, 128\text{K}, 1\text{M}, 10\text{M}\}\) with all three
-  schemes. Caption: which row crosses 80~GB (one H100) first?}{%
-  KV-cache equation in this chapter; Llama-3 config from FILL-04-02.}{%
-  ${\sim}10$ lines of code + 4-row output table.}
+\begin{lstlisting}[caption={KV-cache footprint (\textsc{fp16}); multiply by batch size if distinct sequences each carry their own cache.}]
+def kv_cache_bytes_mha(n, L, H, d_head, dtype_bytes=2):
+    """Multi-head attention: store full K,V per head."""
+    return L * n * 2 * H * d_head * dtype_bytes
 
-\fillme{FILL-06-02}{Worked example: dollars per query at \(n = 128\text{k}\)}{%
-  Order-of-magnitude estimate of the cost to do a single forward pass on a
-  70B-parameter dense transformer at 128k tokens with FlashAttention-2 on
-  H100s. Show: total FLOPs, per-GPU tokens/s ballpark, GPU-seconds, GPU-hours
-  at on-demand cloud pricing (state assumption explicitly: \$3/GPU-hr).
-  Repeat at \(n = 1\text{M}\) and note where the answer becomes
-  uncomfortable. End with one sentence on why this is the entire reason
-  Part~V exists.}{%
-  Llama-3 70B paper for FLOP/token; H100 spec sheet (${\sim}2$ PFLOP/s
-  bf16); current cloud pricing pages.}{%
-  Half a page; one inline arithmetic chain; one short table.}
+def kv_cache_bytes_gqa(n, L, n_kv, d_head, dtype_bytes=2):
+    """Grouped-query attention: only n_kv key/value heads are materialised."""
+    return L * n * 2 * n_kv * d_head * dtype_bytes
+
+def kv_cache_bytes_mqa(n, L, d_head, dtype_bytes=2):
+    return kv_cache_bytes_gqa(n, L, 1, d_head, dtype_bytes)
+\end{lstlisting}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\(n\) (tokens) & MHA (\(\mathrm{GiB}\)) & GQA-8 (\(\mathrm{GiB}\)) & MQA (\(\mathrm{GiB}\)) \\
+\midrule
+\(8{,}192\) & \(4.0\) & \(1.0\) & \(0.13\) \\
+\(131{,}072\) & \(64\) & \(16\) & \(2.0\) \\
+\(10^{6}\) & \(488\) & \(122\) & \(15.3\) \\
+\(10\)M (\(10^{7}\)) & \(4{,}883\) & \(1{,}221\) & \(153\) \\
+\bottomrule
+\end{tabular}
+\caption{Llama-3 8B shapes (\(L{=}32\), \(\heads{=}32\), \(\dhead{=}128\));
+\textsc{mha} stores all \(\heads\) KV heads; \textsc{gqa} stores \(n_{\text{kv}}{=}8\).
+Which sequence length (among these rows) first pushes KV alone past one \(80\,\mathrm{GiB}\)
+H100? \textsc{mha} and \textsc{gqa} do so at \(n{=}10^{6}\) (\(488\,\mathrm{GiB}\) and
+\(122\,\mathrm{GiB}\)); \textsc{mqa} still fits at \(n{=}10^{6}\) and only approaches
+\(\sim\!150\,\mathrm{GiB}\) at \(n{=}10^{7}\).}
+\label{tab:kv-calculator}
+\end{table}
+
+\noindent
+The closed-form expressions above agree with the three \texttt{kv\_cache\_bytes\_*} helpers (modulo rounding to table digits).
+
+\paragraph{Dollars per long-context forward (order of magnitude).}
+Take a Llama-3 70B-class dense decoder with \(\dmodel{\approx}8192\),
+\(L{=}80\), causal attention, and a forward pass over the full prompt (prefill).
+The quadratic attention terms contribute very roughly
+\(4 L n^{2} \dmodel\) multiply-adds---plugging \(n = 128\cdot1024\) yields about
+\(4.5\times 10^{16}\) FLOPs (\(\approx\)45~PFLOPs) from the \(Q\!K^{\mathsf T}\)
+and \(\mathrm{softmax}(Q\!K^{\mathsf T})V\) contractions alone, before FFN matmuls.
+An H100-class GPU sustains perhaps \(\mathcal{O}(10^{2})\)~TFLOP/s on dense bf16
+attention with FlashAttention-2; treating \(\approx\)400~TFLOP/s as an optimistic
+effective rate gives \(\approx\)100--150~GPU-s (\(\approx\)0.03--0.04~GPU-h) for
+that attention slab alone at \(128\)k---real stacks spend extra time on FFNs,
+memory bandwidth, and kernels, so full-wall-clock prefill is often higher.
+
+Scaling to \(n = 10^{6}\) grows the quadratic term by \(\approx (10^{6}/1.3\times
+10^{5})^{2} \!\approx\! 58\times\), pushing the same accounting toward multi-hour
+GPU territory unless batching, clustering, or sparse/subquadratic layers intervene.
+Using illustrative on-demand pricing of \(\$\,3\) per GPU-hour (exact vendor quotes vary),
+even fractions of a GPU-hour per multi-million-token prefill quickly imply dollars to tens
+of dollars \emph{per query class} at long context, which is why Part~V treats
+\(n^{2}\) as an architectural problem, not only an implementation one.

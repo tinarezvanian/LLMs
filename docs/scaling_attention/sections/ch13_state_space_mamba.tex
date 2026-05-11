@@ -109,32 +109,44 @@ that the state is a fixed-size summary regardless of what it has seen.
 Their honest trade-off is the one we will see again and again: cheap, but
 \emph{lossy}, in a way that depends on the task.
 
-\fillme{FILL-13-01}{Code listing: Mamba selective scan in PyTorch (illustrative)}{%
-  ${\sim}30$-line PyTorch listing for the \emph{conceptual} selective scan:
-  per-step \(\bar A_t, \bar B_t, \bar C_t\) computed from \(u_t\); recurrence
-  for \(h_t\); output \(y_t\). Don't try to be hardware-efficient or
-  associative-scan-parallel — that's the whole point of the real CUDA
-  kernel and is out of scope here. Comment that the production version
-  parallelises across the time axis with an associative scan, citing
-  Gu \& Dao 2023.}{%
-  Gu \& Dao 2023; \texttt{state-spaces/mamba} reference implementation.}{%
-  ${\sim}30$ lines of code + one paragraph caveat.}
+\begin{lstlisting}[caption={Selective scan \emph{shape} (sequential Python); real Mamba fuses this into a parallel associative scan on GPU \citep{gu2023mamba}.}]
+import torch
+import torch.nn.functional as F
 
-\fillme{FILL-13-02}{Sidebar: HiPPO initialisation in plain English}{%
-  ${\sim}300$-word sidebar explaining what HiPPO is for: a particular choice
-  of \(A\) matrix that, in the continuous-time limit, makes the state
-  optimally remember a recent window of the input under a specific
-  measure (Legendre, Laguerre, Fourier). Convey the intuition that this is
-  why S4 worked at long range when generic linear RNNs did not. Cite Gu et al.\
-  2020 (HiPPO); add bibitem if missing.}{%
-  Gu et al.\ 2020 ``HiPPO''; Gu et al.\ 2021 (S4).}{%
-  ${\sim}300$ words; one tiny equation if helpful.}
+def selective_scan_demo(u, delta, B, C, A):
+    # u, delta, B, C: [T, N]; A: [N]; returns per-step scalars [T] (readout demo)
+    T, N = u.shape
+    h = torch.zeros(N, dtype=u.dtype)
+    ys = []
+    for t in range(T):
+        decay = torch.exp(-F.softplus(delta[t]) * torch.exp(A))
+        h = decay * h + B[t] * u[t]
+        ys.append((C[t] * h).sum())
+    return torch.stack(ys, dim=0)
+\end{lstlisting}
 
-\fillme{FILL-13-03}{Worked example: associative-recall failure mode}{%
-  Construct a synthetic associative-recall task (``key-value pairs scattered
-  through a 100-token sequence; query for one key''). Argue informally why
-  a fixed-size state \(h_t \in \R^N\) struggles when the number of keys
-  exceeds \(N\)'s effective storage. Cite Mamba's reported numbers on
-  Multi-Query Associative Recall (MQAR) if available.}{%
-  Arora et al.\ ``Zoology'' 2024 (MQAR analysis); Gu \& Dao 2023.}{%
-  Half a page; no code.}
+\noindent
+Production code vectorises channels, fuses the scan, and never runs a Python
+loop per timestep; this listing only shows why ``selective'' means
+\(\Delta_t\) (here via \texttt{softplus}) modulates how much past state survives.
+
+\paragraph{HiPPO in plain English.}
+Classical RNNs pick dynamics at random and hope gradients survive. HiPPO
+\citep{gu2020hippo} instead constructs a continuous-time \(A\) matrix so the
+state stores coefficients of the \emph{best} low-degree polynomial approximation
+to the recent input under a chosen measure (Legendre, Laguerre, \ldots). That is
+why S4-style layers \citep{gu2021s4} propagate smooth signals across tens of
+thousands of steps when vanilla linear RNNs forget almost everything: the
+recurrence is biased to act like a rolling orthogonal projection of history.
+
+\paragraph{Associative recall vs.\ fixed state.}
+Imagine \(K\) random \texttt{key=value} pairs sprinkled through a \(T\)-token
+sequence, then a query token repeating one key; the model must emit the matching
+value. A transformer can route the query to the correct position in one softmax
+attention hop. A selective SSM must funnel the entire prefix through a vector
+\(h_t \in \R^{N}\): once \(K\) exceeds the effective degrees of freedom in that
+state, collisions and averaging erase exact key--value bindings---the regime
+studied systematically by MQAR / ``Zoology'' analyses \citep{arora2024zoology}.
+Mamba improves earlier SSMs but does not restore unconstrained
+\(\mathcal{O}(n)\) addressable memory; hybrids that retain a few attention layers
+(Chapter~\ref{ch:hybrids}) exist partly to cover this blind spot.

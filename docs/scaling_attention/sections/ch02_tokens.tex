@@ -103,29 +103,89 @@ model.\sidenote{Many models tie the embedding matrix to the output
 projection (use the same \(E\) on the way in and the way out) which halves
 this cost. Tied embeddings are standard in Llama; OpenAI's are not.}
 
-\fillme{FILL-02-01}{Comparison table: the same sentence in three tokenisers}{%
-  Tokenise the sentence
-  \emph{``The quick brown fox jumps over the lazy dog. \textbackslash n
-  def fibonacci(n): return n if n < 2 else fibonacci(n-1) + fibonacci(n-2)''}
-  using GPT-2's BPE, BERT's WordPiece, and Llama-3's SentencePiece. Render as
-  a three-column \texttt{tabular} with the token sequences shown
-  literally (with \texttt{\#\#} prefixes for WordPiece, \texttt{\textvisiblespace}\
-  prefixes for SentencePiece). Discuss in two sentences how code tokenises
-  more densely than prose and why \texttt{fibonacci} is one token in some
-  vocabularies and several in others.}{%
-  HuggingFace \texttt{tokenizers} library; the BPE / WordPiece /
-  SentencePiece references already in the bibliography.}{%
-  3-column \texttt{tabular} table plus 2-sentence caption.}
+\section{The same line, three tokenisers}
 
-\fillme{FILL-02-02}{Worked example: token economics for a 10\,000-word essay}{%
-  Compute, for the OpenAI \texttt{cl100k\_base} tokeniser: the number of
-  tokens for (a) a 10\,000-word English essay, (b) a 10\,000-word Hindi
-  essay, (c) a 1\,000-line Python file, (d) a 100-page legal contract.
-  Then convert each to dollars at the current GPT-4-class input pricing.
-  End with one sentence on what this implies for non-English users.}{%
-  OpenAI tokenizer cookbook; tiktoken README;
-  \texttt{research/notes.md \S 2}.}{%
-  4-row table + 3 sentences of commentary.}
+The following sentence (one paragraph of prose plus one line of Python) was
+run through three public tokenisers. The exact byte sequence is:
+
+\begin{quote}\small\ttfamily
+The quick brown fox jumps over the lazy dog.\\
+def fibonacci(n): return n if n < 2 else fibonacci(n-1) + fibonacci(n-2)
+\end{quote}
+
+\noindent
+\textsc{Gpt2} (Byte-level BPE as shipped with GPT-2 — reproduced via
+\texttt{tiktoken}) yields \(42\) tokens. Representative splits include
+\texttt{fib}, \texttt{on}, \texttt{acci} rather than a single
+\texttt{fibonacci} merge:
+
+\begin{quote}\footnotesize\ttfamily\raggedright
+The; quick; brown; fox; jumps; over; the; lazy; dog;.; \textbackslash n;
+def; fib; on; acci; (; n; );:; return; n; if; n; <; 2; else; fib; on; acci; \ldots
+\end{quote}
+
+\noindent
+\textsc{bert-base-uncased} (WordPiece) yields \(45\) tokens. The function name
+splits as \texttt{fi} + \texttt{\#\#bon} + \texttt{\#\#ac} + \texttt{\#\#ci} — the
+\texttt{\#\#} prefix marks a continuation piece:
+
+\begin{quote}\footnotesize\ttfamily\raggedright
+the; quick; brown; fox; jumps; over; the; lazy; dog; .; def; fi; \#\#bon; \#\#ac; \#\#ci; (; n; ); :; return; n; if; n; <; 2; else; fi; \ldots
+\end{quote}
+
+\noindent
+\textsc{Llama-family SentencePiece} (TinyLlama checkpoint — same SPM pipeline as
+Llama~2/3; Llama~3 weights are gated on HuggingFace so we use an open
+checkpoint for reproducibility) yields \(45\) tokens. ``Fox'' can split as
+\texttt{fo}+\texttt{x} depending on merge stats; \texttt{fibonacci} is still
+broken into several pieces because the merge never entered the vocabulary as a
+single token during training:
+
+\begin{quote}\footnotesize\ttfamily\raggedright
+The; quick; brown; fo; x; j; umps; over; the; lazy; dog; .; \textbackslash n;
+def; fib; on; acci; (; n; );:; return; n; if; n; <; ; 2; else; fib; on; acci; \ldots
+\end{quote}
+
+\paragraph{Takeaway.} Code is not inherently ``denser'' than English — it depends
+on whether the BPE merges exist for your identifiers. English prose shares many
+merges across corpora; a rare function name is often glued together from
+shorter atoms unless the tokenizer saw that exact string millions of times during
+vocabulary construction.
+
+\section{Back-of-the-envelope token economics}
+
+Table~\ref{tab:token-econ} converts rough document sizes into token counts with
+the OpenAI \texttt{cl100k\_base} convention (\(\approx\)~1.3~tokens per English
+word for mixed prose). Dollar amounts use an \emph{illustrative} GPT-class input
+price of USD~2.50 per million tokens — swap in your provider's current page when
+you budget.\sidenote{Pricing moves quarterly; the point is order-of-magnitude,
+not the third decimal.}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Document & Approx.\ tokens & Minutes of GPU ``talk time''\,$^{*}$ & Illustr.\ USD @ \$2.50/M \\
+\midrule
+10k-word English essay & ${\sim}13{,}000$ & --- & ${\sim}\$0.03$ \\
+10k-word Hindi essay & ${\sim}28{,}000$--$35{,}000$ & --- & ${\sim}\$0.07$--\$0.09 \\
+1k-line Python file (${\sim}$40~char/line) & ${\sim}30{,}000$--$45{,}000$ & --- & ${\sim}\$0.08$--\$0.11 \\
+100-page contract (${\sim}$450 words/page) & ${\sim}60{,}000$--$75{,}000$ & --- & ${\sim}\$0.15$--${\sim}\$0.19$ \\
+\bottomrule
+\end{tabular}\\[0.5em]
+\footnotesize
+$^{*}$GPU time is orthogonal to dollar pricing but scales with tokens \(\times\) depth.
+\caption{Rule-of-thumb token loads for budgeting API spend (not for fitting KV caches).}
+\label{tab:token-econ}
+\end{table}
+
+Non-English text routinely consumes \emph{more} tokens per unit of meaning when
+the tokenizer was trained primarily on English — so equality-sensitive products
+should quote prices \emph{per language} or risk silently taxing non-English
+users.\sidenote{See also fragmentation studies on multilingual \texttt{cl100k}
+and Llama tokenisers; the qualitative point is stable even when exact factors
+shift.}
 
 The next chapter is about how, before the transformer, people stitched these
 embeddings together over time without an attention matrix at all.

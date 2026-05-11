@@ -60,22 +60,27 @@ look right.}
 \newthought{A note on the amber boxes.} The book is a draft. Many places
 where a worked example, code listing, comparison table, or extended sidebar
 \emph{would} be useful are marked with an amber \textsc{To fill} box like
-the one immediately below. Each box has a stable ID (\texttt{FILL-XX-NN}),
-a short brief, the source material to draw on, and a target length. The
-intent is that any subsequent author — human or LLM — can grep the source
-tree, pick a stub, fill it, and the book gets a little better.
+the one that used to sit below this paragraph. Each box had a stable ID
+(\texttt{FILL-XX-NN}), a brief, sources, and a target length; contributors
+replace the whole \verb|\fillme| block with finished prose. What follows is
+the executive summary that stub asked for.
 
-\fillme{FILL-PRE-01}{Worked example: read this preface as if it were the only thing in the book}{%
-  Write a 200-word \emph{tl;dr} that someone with a single afternoon could read
-  instead of the rest of the book and still walk away with the central
-  argument: dense attention is \(\bigO(n^2)\); the engineering response is
-  the FlashAttention / KV-cache stack; the architectural response is the
-  bottom-right quadrant of Chapter~\ref{ch:quadrant} where SSA lives.
-  Done when a non-expert can repeat back ``this book is about why long
-  context is expensive and what people are doing about it''.}{%
-  This preface, plus Chapters~\ref{ch:why-quadratic}, \ref{ch:quadrant},
-  and \ref{ch:ssa}.}{%
-  ~200 words, single paragraph, no equations.}
+\paragraph{tl;dr (read this if you read nothing else).}
+Language models are next-token predictors; training fits their parameters so
+that real text looks likely under that factorisation. Transformers implement
+the conditional \(p(x_t \mid x_{<t})\) with dense self-attention, which scores
+every query against every key — \(\bigO(n^2)\) work per layer in the sequence
+length \(n\). FlashAttention and the KV-cache tricks in Part~IV shrink constants
+and memory traffic dramatically, but they do \emph{not} remove the asymptote:
+at million-token contexts the bill breaks budgets anyway. Everything in Part~V
+is an attempt to change the curve itself — sliding windows, state-space models,
+linear attention, hybrids — each trading away something (usually routing by
+position or lossy state). The organising picture is the routing\,\(\times\)\,scaling
+quadrant in Chapter~\ref{ch:quadrant}: Subquadratic Sparse Attention is a bet
+on the bottom-right cell — linear cost \emph{and} content-dependent routing —
+with public benchmarks that deserve scrutiny like any vendor-reported numbers.
+This book is about why long context was expensive, how engineers cope today,
+and where the architecture might go next.
 
 \paragraph{Workflow for filling stubs.}
 The recipe for any future LLM picking off a \texttt{FILL-XX-NN}:

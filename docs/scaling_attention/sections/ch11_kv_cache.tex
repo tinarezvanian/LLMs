@@ -127,34 +127,66 @@ At sufficiently large \(n\), or sufficiently demanding quality bars, you
 have to change the algorithm — which is what the rest of the book is
 about.}
 
-\fillme{FILL-11-01}{Worked example: KV-cache for Llama-3 70B at \(n = 1\)M}{%
-  Compute KV-cache memory for Llama-3 70B (\(L = 80\), \(\heads = 64\),
-  \(\dhead = 128\), GQA-8) at \(n = 1\)M tokens, in fp16. Compare against
-  hypothetical MHA (\(g = 64\)) and MQA (\(g = 1\)) variants. Add a row
-  for an H100 (80 GB) and a B200 (192 GB) and answer: how many concurrent
-  1M-token requests fit per device for each scheme? Render as a 4-row
-  table.}{%
-  KV-cache equation in this chapter; Llama-3 70B model card; H100/B200
-  spec sheets.}{%
-  4-row \texttt{tabular} table + one paragraph of commentary.}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+KV layout & KV total (\(\mathrm{GiB}\), \textsc{fp16}) & H100 \(80\,\mathrm{GiB}\) req.\ / GPU & B200 \(192\,\mathrm{GiB}\) req.\ / GPU \\
+\midrule
+MHA (64 KV heads) & \(\approx 2{,}441\) & 0 & 0 \\
+GQA-8 (Llama-3 70B) & \(\approx 305\) & 0 & 0 \\
+MQA (1 KV head) & \(\approx 38.1\) & \(\le 2\)\textsuperscript{*} & \(\le 5\)\textsuperscript{*} \\
+\bottomrule
+\end{tabular}
+\caption{KV cache only for one concurrent request at \(n=10^{6}\) tokens,
+\(L{=}80\), \(\dhead{=}128\), \(\heads{=}64\). Numbers scale as
+\(2 L n\, n_{\text{kv}}\, \dhead\) half-precision bytes.
+\textsuperscript{*}Concurrent count is \(\lfloor \mathrm{GPU\ memory} / \mathrm{KV}\rfloor\) ignoring weights, activations, and fragmentation---real serving fits fewer.}
+\label{tab:kv-70b-1m}
+\end{table}
 
-\fillme{FILL-11-02}{Sidebar: PagedAttention in pictures}{%
-  ${\sim}300$-word sidebar describing how vLLM's PagedAttention works as if
-  explaining virtual memory to someone who hasn't taken an OS course. Cover:
-  page size, page table per sequence, the copy-on-write trick for parallel
-  sampling. Optionally a small \texttt{tikz} figure of two sequences sharing
-  a page pool, but a clear word-picture is fine. Cite Kwon et al.\ 2023.}{%
-  Kwon et al.\ 2023 (vLLM SOSP paper).}{%
-  ${\sim}300$ words, optional small TikZ.}
+\noindent
+GQA-8 is why production 70B models are servable at 128k--1M on \emph{pods} of
+GPUs rather than on a single device: KV alone already exceeds one H100 for
+million-token \emph{single-sequence} residency. MQA trades representational
+freedom for capacity; Jamba-class hybrids (Chapter~\ref{ch:hybrids}) attack the
+same wall by mixing in linear-time blocks.
 
-\fillme{FILL-11-03}{Sidebar: RoPE, NTK-aware, YaRN, and how extrapolation works}{%
-  ${\sim}400$-word sidebar going beyond the in-text mention. Show the
-  intuition: RoPE rotations at high frequencies wrap around quickly, so
-  extrapolating beyond training length puts the model in unfamiliar
-  rotational territory; NTK-aware scaling and YaRN compress the frequency
-  ladder so the same rotations apply over longer sequences. Mention
-  position-interpolation for completeness. End on the honest note that
-  these are no substitute for training at the target length.}{%
-  Su et al.\ 2021 (RoPE); Peng et al.\ 2023 (YaRN); kaiokendev /
-  bloc97 NTK-aware writeups for context.}{%
-  ${\sim}400$ words; one small equation.}
+\paragraph{PagedAttention = virtual memory for KV blocks.}
+\citet{kwon2023vllm} treat KV tensors as fixed-size \emph{pages} (blocks of
+tokens) allocated from a GPU-wide pool. A sequence's logical token order maps
+through a small indirection table to physical pages, just as virtual addresses
+map to physical frames in an OS.
+Non-contiguous physical placement avoids the classic ``reserve one giant
+rectangle of memory for the worst-case prompt length'' fragmentation problem:
+different sequences grow by allocating new pages; short sequences do not waste
+holes sized for someone else's 1M-token tail.
+Parallel sampling from a shared prompt is handled copy-on-write: child beams
+share read-only prompt pages until a branch diverges, then duplicate only the
+suffix pages that differ---analogous to \texttt{fork} + COW in Unix kernels.
+The net effect is higher batching on the same hardware without changing model
+math.
+
+\paragraph{RoPE, NTK-aware scaling, YaRN, and position extrapolation.}
+RoPE \citep{su2021rope} injects position by rotating \(Q\) and \(K\) in paired
+planes with frequencies \(\theta_k\) spaced across a geometric ladder.
+Short training lengths mean high-frequency components complete many cycles over
+the training horizon; when inference extends far beyond that horizon, those
+components enter \emph{unseen} phases, so attention behaves as if it left the
+training manifold.
+\emph{NTK-aware} rescaling (popularised in community writeups by kaiokendev,
+bloc97, and others) borrows the Neural Tangent Kernel intuition: shrink effective
+frequencies so rotations advance more slowly at long positions, trading some
+fine local discrimination for stability.
+YaRN \citep{peng2023yarn} generalises this idea with learned or hand-tuned
+stretching of the frequency ladder (sometimes mixing ``attention sinks'' and
+temperature-like scaling) so checkpoints trained at \(L\) tokens reach \(2L\),
+\(8L\), or more with less perplexity blow-up.
+\emph{Position interpolation} (linearly rescaling position indices) is the
+simplest baseline in the same family.
+None of these tricks changes \(\Theta(n^{2})\) attention cost or KV linear
+growth; they only stretch the \emph{usable} portion of the context window after
+training. The honest recipe for a new length regime remains: train (or at least
+adapt) there, then evaluate on long benchmarks such as RULER/MRCR, not just
+PPL on held-out slices.

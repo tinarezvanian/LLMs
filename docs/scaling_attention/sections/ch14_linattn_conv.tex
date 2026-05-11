@@ -74,23 +74,44 @@ written.
 softmax attention. They tend to live in hybrids rather than as pure
 replacements.}
 
-\fillme{FILL-14-01}{Code listing: linear attention as a recurrence}{%
-  ${\sim}20$-line PyTorch listing implementing the recurrence
-  \(S_t = S_{t-1} + \phi(k_t)\, v_t\T\),
-  \(o_t = \phi(q_t)\T S_t / (\phi(q_t)\T z_t)\) (with \(z_t = z_{t-1} + \phi(k_t)\)
-  for the normaliser). Use \(\phi = \mathrm{ELU} + 1\) as in
-  \citet{katharopoulos2020linear}. Annotate shapes; emphasise that the
-  state \(S_t\) is fixed-size — that's the whole win.}{%
-  Katharopoulos et al.\ 2020.}{%
-  ${\sim}20$ lines of code + 2 sentences.}
+\begin{lstlisting}[caption={Linear attention via kernel feature map \(\phi\) \citep{katharopoulos2020linear}; state \(S_t\) has fixed rank.}]
+import torch
+import torch.nn.functional as F
 
-\fillme{FILL-14-02}{Sidebar: the Performer kernel approximation, sketched}{%
-  ${\sim}300$-word sidebar on Performers: random Fourier features applied
-  to the softmax kernel, FAVOR+ unbiased estimator, accuracy bounds. End
-  with the honest note that, while the theory is clean, in practice
-  Performers underperform full softmax attention on language modelling at
-  scale, which is why pure linear attention has not displaced standard
-  attention.}{%
-  Choromanski et al.\ 2021 (Performer); Rahimi \& Recht 2007 (random
-  features) for context.}{%
-  ${\sim}300$ words; one inline equation OK.}
+def phi(x):
+    return F.elu(x) + 1.0
+
+def linear_attention_recurrence(q, k, v):
+    # q,k,v: [T, d]; returns y [T, d] (single-head toy)
+    S = torch.zeros(d, d)
+    z = torch.zeros(d)
+    ys = []
+    for t in range(q.shape[0]):
+        qt, kt, vt = phi(q[t]), phi(k[t]), v[t]          # [d]
+        S = S + torch.ger(kt, vt)                       # [d,d] += k v^T
+        z = z + kt
+        num = S.T @ qt                                  # [d]
+        den = (qt * z).sum() + 1e-6
+        ys.append(num / den)
+    return torch.stack(ys, dim=0)
+\end{lstlisting}
+
+\noindent
+The win is entirely that \(S_t \in \R^{d\times d}\) stays constant size while
+softmax attention would carry an ever-growing \(t\times t\) map; the loss is
+that \(\phi(q)^\top \phi(k)\) is only a positive-feature approximation to the
+full dot-product routing of softmax attention.
+
+\paragraph{Performer / FAVOR+ in one pass.}
+The Performer \citep{choromanski2021performer} rewrites
+\(\softmax(QK^{\mathsf T}/\sqrt{d})V\) as an expectation over random features
+\(\omega\) so that
+\(\exp(q^{\mathsf T}k) \approx \mathbb{E}_\omega[\phi(q,\omega)^{\mathsf T}\phi(k,\omega)]\)
+with positive features \(\phi\), then applies the same linear-time recurrence
+trick as above.
+FAVOR+ reduces variance versus naive random Fourier features and comes with
+finite-sample guarantees, which is rare among ``fast attention'' heuristics.
+In language modelling at scale, however, the estimator still undermatches the
+expressivity of the exact softmax kernel on associative recall and long-range
+copying, which is why Performers and other pure kernel linearisations remain
+niche compared to hybrids that keep a few dense attention layers.

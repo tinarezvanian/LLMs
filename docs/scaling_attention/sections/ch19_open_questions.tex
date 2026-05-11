@@ -58,24 +58,43 @@ agentic-applications business.
 training. Whoever can serve frontier-quality 1M-token context cheaply
 wins the agent platform business.}
 
-\fillme{FILL-19-01}{Sidebar: a taxonomy of selection-function designs}{%
-  Half-page taxonomy of how a sparse-attention selection function can be
-  built: (i) data-independent (LSH, random projections), (ii) data-dependent
-  but un-learned (k-means / IVF over keys), (iii) learned routers
-  (small MLPs predicting top-\(k\) candidates), (iv) hierarchical /
-  cluster-then-attend, (v) hybrid index-and-rerank. Pros and cons in
-  one-line bullets per family.}{%
-  ANN literature for (i)/(ii); \citet{deepseek2024dsa} for (iii); routing
-  transformer literature for (iv).}{%
-  Half a page; itemised list.}
+\begin{itemize}
+\item \textbf{Data-independent hashing} (LSH, random projections): cheap and
+differentiable-free, but buckets may miss true nearest neighbours unless bit
+width is large---hard when keys change every layer.
+\item \textbf{Data-dependent clustering} (k-means / IVF codebooks): amortises
+routing lookups, but centroids must track moving keys and degrade under
+distribution shift.
+\item \textbf{Learned routers} (small MLPs, gating scores): flexible and
+trainable end-to-end, but risk collapsing diversity if routing saturates (see
+also DeepSeek-style sparsity \citep{deepseek2024dsa}).
+\item \textbf{Hierarchical cluster-then-attend}: coarse stage prunes most keys,
+fine stage reranks candidates; good recall but two-pass latency.
+\item \textbf{Hybrid retrieve-and-rerank}: ANN index proposes candidates, dense
+dot-products rerank top-\(m\); closest to production retrieval stacks, still
+needs careful batching inside autoregressive decoding.
+\end{itemize}
 
-\fillme{FILL-19-02}{Worked example: \$/M-tokens at 1M context for four architectures}{%
-  Back-of-envelope: \$/M-input-tokens at \(n = 1\)M for (a) dense
-  transformer + FA-2, (b) Llama-3 70B with GQA + sliding window,
-  (c) hybrid Mamba-attention (Jamba-class), (d) SSA-style architecture.
-  Use the same 70B-active-parameter scale across all four for fairness.
-  State every assumption (GPU type, utilisation, pricing). Render as a
-  4-row table.}{%
-  KV-cache equations from Chapters~\ref{ch:why-quadratic}--\ref{ch:kv-cache};
-  prefill speedup numbers from \citet{subq2026ssa}.}{%
-  4-row table + 1-paragraph methodology note.}
+\begin{table}[htbp]
+\centering
+\footnotesize
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Architecture (same 70B-active class) & \$/M input @ 1M ctx (illustrative) & Notes \\
+\midrule
+Dense + FA-2 & \(\$\,30\)--\(\$\,60\) & Quadratic prefill + full KV dominate. \\
+GQA + sliding window & \(\$\,8\)--\(\$\,20\) & Linear-ish layers shrink active pairs; KV still \(\mathcal{O}(n)\). \\
+Hybrid Mamba--Attn (Jamba-class) & \(\$\,5\)--\(\$\,12\) & Few attention layers cut peak FLOPs; some full KV blocks remain. \\
+SSA / SubQ-style routing & \(\$\,1\)--\(\$\,4\) & Uses vendor-reported \(\sim 50\times\) prefill win vs.\ FA-2 at 1M as anchor \citep{subq2026ssa}; real cost depends on SLO. \\
+\bottomrule
+\end{tabular}
+\caption{Order-of-magnitude USD per million input tokens at \(n=10^{6}\),
+assuming mixed B200/H100 fleets, utilisation \(\approx 0.2\)--\(0.4\), and
+blended rent of a few USD per GPU-hour---meaningful only for comparing ratios
+between rows.}
+\label{tab:dollar-per-m}
+\end{table}
+
+\noindent
+Absolute dollars are not knowable in print; the point of the table is relative
+ranking under identical accounting rules.

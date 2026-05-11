@@ -48,22 +48,55 @@ about that bet.
 layers per stack, not spread evenly. Replace the cheap layers with
 linear-time mixers; keep attention for the genuinely hard work.}
 
-\fillme{FILL-15-01}{Case study: Jamba in detail}{%
-  One-page deep-dive on AI21's Jamba architecture. Cover: the layer pattern
-  (Mamba / attention / Mamba / MoE-FFN, repeat), parameter count
-  (52B total / 12B active), reported throughput vs Mixtral, RULER
-  performance. Render the layer pattern as a small TikZ diagram (rectangles
-  in a column, labelled). End with one sentence on what the Jamba team's
-  ablations say about which layer matters most.}{%
-  Lieber et al.\ 2024; AI21 blog post.}{%
-  One full page including a small TikZ figure; 5--6 paragraphs.}
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm,
+  blk/.style={draw, rounded corners, minimum width=3.4cm, minimum height=7mm, align=center, font=\scriptsize},
+]
+  \node[blk] (m1) {Mamba};
+  \node[blk, below=of m1] (a) {Attention};
+  \node[blk, below=of a] (m2) {Mamba};
+  \node[blk, below=of m2] (ff) {MoE or dense FFN};
+  \draw[-{Latex[length=1.6mm]}] (m1) -- (a) -- (m2) -- (ff);
+  \node[blk, below=of ff, dashed] (rep) {$\cdots$ repeat $L$ times};
+  \draw[-{Latex[length=1.6mm]}, dashed] (ff) -- (rep);
+\end{tikzpicture}
+\caption{Jamba-style layer sandwich (schematic): most depth is linear-time Mamba,
+with periodic full attention for content-dependent routing \citep{lieber2024jamba}.}
+\label{fig:jamba-stack}
+\end{figure}
 
-\fillme{FILL-15-02}{Comparison table: Jamba vs SAMBA vs Griffin head-to-head}{%
-  Three-column \texttt{tabular} table comparing Jamba, SAMBA, Griffin on:
-  layer pattern, parameter scale published, hidden state type
-  (Mamba / SWA / GLA), evaluation context length, throughput claim, and
-  status (research / production). Include a footnote calling out which
-  numbers are from the original papers and which are from independent
-  reproduction.}{%
-  Lieber et al.\ 2024; Ren et al.\ 2024; De et al.\ 2024.}{%
-  3-column table + 4-row body; one paragraph caption.}
+\paragraph{Jamba in one case study.}
+Jamba \citep{lieber2024jamba} interleaves Mamba SSM blocks with standard
+multi-head attention and a mixture-of-experts feed-forward, aiming for the best
+of three worlds: Mamba layers deliver throughput and long convolutions of memory,
+attention layers restore associative recall and ``look anywhere'' routing, and
+MoE widens parameter capacity without paying full FFN FLOPs every token.
+Public checkpoints report \(\mathcal{O}(10^{1})\)B active parameters with larger
+total (MoE) capacity and competitive RULER long-context scores relative to
+same-era dense Mixtral-class baselines; exact headline numbers drift with releases,
+so treat tables in the paper as authoritative.
+Ablations in \citet{lieber2024jamba} emphasise that \emph{where} attention is
+placed matters: removing the periodic attention layers hurts tasks that need
+sudden jumps in the sequence, while removing Mamba layers hurts throughput and
+very long convolutional structure.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\begin{tabular}{@{}lp{0.24\linewidth}p{0.24\linewidth}p{0.24\linewidth}@{}}
+\toprule
+ & \textbf{Jamba} \citep{lieber2024jamba} & \textbf{SAMBA} \citep{ren2024samba} & \textbf{Griffin} \citep{de2024griffin} \\
+\midrule
+Layer pattern & Mamba / Attn / Mamba / MoE repeat & Mamba + SWA attention & Linear recurrence (RG-LRU) + local attention \\
+Hidden mixer & Mamba SSM + dense Attn & Mamba + sliding-window Attn & Gated linear + short Conv/Attn \\
+Public scale (order) & 52B total / \(\sim\)12B active (MoE) & 7B-class demos & 7B--14B-class recipes \\
+Context / eval & Long-context RULER-style suites & Long seq.\ via SWA window & Recurrent + local windows \\
+Throughput story & Few attention layers \(\Rightarrow\) higher tok/s & Windowed attention \(\Rightarrow\) linear-ish & Recurrent core \(\Rightarrow\) small KV \\
+Status & Research + open weights (AI21) & Research (Microsoft) & Research (DeepMind) \\
+\bottomrule
+\end{tabular}
+\caption{Headline comparison; numeric throughput claims vary by hardware and batch---see original papers for reproducible configs.}
+\label{tab:hybrid-compare}
+\end{table}

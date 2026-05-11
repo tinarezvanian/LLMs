@@ -3,34 +3,94 @@
 
 A single-page reference for the tensor shapes you'll see in any transformer
 or transformer-adjacent code. Use it when reading other people's
-implementations.
+implementations. \emph{Bytes} are for fp16 (2~bytes/element) with batch
+\(B=1\); multiply by \(B\) for larger batches.
 
-\fillme{FILL-A-01}{Master cheat sheet table for transformer shapes}{%
-  Build a single \texttt{tabular} table with columns:
-  \emph{Tensor name}, \emph{Symbol}, \emph{Shape}, \emph{Where it lives},
-  \emph{Bytes (fp16)}. Rows: input tokens (\(x\), \([B, n]\)), embedded
-  input (\(X\), \([B, n, d]\)), \(Q/K/V\) per head (\([B, n, \dhead]\)),
-  attention scores per head (\([B, n, n]\)), attention probs (same),
-  weighted values (\([B, n, \dhead]\)), MHA output (\([B, n, d]\)),
-  FFN hidden (\([B, n, d_{\text{ff}}]\)), final logits (\([B, n, V]\)),
-  KV cache per layer per head (\([B, n_{\text{cache}}, \dhead]\)). Use
-  Llama-3 8B numbers (\(B=1, n=8\text{K}, d=4096, \heads=32, \dhead=128,
-  d_{\text{ff}}=14336, V=128\text{k}\)) for the byte column. Caption: this
-  is the table to print and pin next to your monitor.}{%
-  This book's notation; Llama-3 8B model card.}{%
-  Single full-page \texttt{tabular} table.}
+\section*{Dense transformer (Llama-3 8B--class numerics for illustration)}
 
-\fillme{FILL-A-02}{Cheat sheet table for KV-cache variants}{%
-  Two-row variant of FILL-A-01 showing how MHA / GQA-8 / MQA differ in the
-  \emph{KV cache per layer} row. Per-token bytes for each scheme at the
-  Llama-3 70B configuration.}{%
-  Chapter~\ref{ch:kv-cache}; Llama-3 70B model card.}{%
-  Small 4-row \texttt{tabular}.}
+Take \(n = 8{,}192\) tokens, \(\dmodel = d = 4{,}096\), \(\heads = 32\),
+\(\dhead = 128\), \(d_{\text{ff}} = 14{,}336\), \(V = 128{,}256\). FlashAttention
+never materialises the full \(n\times n\) tensor in HBM; the shape still
+exists \emph{abstractly} for FLOP accounting.
 
-\fillme{FILL-A-03}{Cheat sheet table for state-space models (Mamba shapes)}{%
-  Companion table for the Mamba block: hidden state \(h_t\) shape;
-  per-token \(\bar A_t, \bar B_t, \bar C_t\) shapes; output shape; the
-  \emph{constant-memory at inference} note. Use Mamba-2.8B numbers if
-  available, otherwise illustrative.}{%
-  Gu \& Dao 2023; the \texttt{state-spaces/mamba} reference repo.}{%
-  Small 5-row \texttt{tabular}.}
+\begin{table*}[htbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llllr@{}}
+\toprule
+Tensor & Symbol & Shape & Where & Bytes (fp16) \\
+\midrule
+Token ids & \(x\) & \([B, n]\) & dataloader & \(B\cdot n\cdot 4\) (int32) \\
+Embedded tokens & \(X\) & \([B, n, d]\) & embed lookup & \(B\cdot n\cdot d\cdot 2\) \\
+\(Q\) (one head) & \(Q_h\) & \([B, n, \dhead]\) & projection & \(\approx 2.0\,\mathrm{MiB}\) \\
+\(K\) / \(V\) (one head) & \(K_h, V_h\) & \([B, n, \dhead]\) & projection & \(\approx 2.0\,\mathrm{MiB}\) each \\
+Attention logits & \(S_h\) & \([B, n, n]\) & matmul (often \emph{not} stored) & \(\approx 128\,\mathrm{MiB}\) if materialised \\
+Attention weights & \(A_h\) & \([B, n, n]\) & softmax output & same order \\
+Head output & \(O_h\) & \([B, n, \dhead]\) & \(A_h V_h\) & \(\approx 2.0\,\mathrm{MiB}\) \\
+MHA block output & --- & \([B, n, d]\) & concat\(+\)proj & \(B\cdot n\cdot d\cdot 2\) \\
+FFN up-projection & --- & \([B, n, d_{\text{ff}}]\) & SwiGLU intermediate & \(\approx 224\,\mathrm{MiB}\) \\
+Logits & \(Z\) & \([B, n, V]\) & lm\_head & \(\approx 2.0\,\mathrm{GiB}\) \\
+\midrule
+KV cache (1 layer, MHA) & --- & \(2 \times [n, d]\) & inference RAM & \(2\cdot n\cdot d\cdot 2\) \(\approx 128\,\mathrm{MiB}\) \\
+\bottomrule
+\end{tabular}
+\caption{Order-of-magnitude byte counts for one representative configuration.
+The attention \(n^{2}\) cells dominate \emph{activation} memory when stored;
+FlashAttention avoids storing \(S_h\) and \(A_h\) wholesale.}
+\label{tab:shape-master}
+\end{table*}
+
+\noindent
+The \(Q/K/V\) row lists \emph{per head}; multiply by \(\heads\) if you stack
+before viewing.
+
+\section*{KV-cache layout (Llama-3 70B snapshot)}
+
+Llama-3 70B uses \(L = 80\) layers, \(\heads = 64\), GQA with \(n_{\text{kv}} = 8\)
+repeated key/value heads, \(\dhead = 128\). Per-token KV footprint scales with
+\(2\,L\,n_{\text{kv}}\,\dhead\) rather than \(2\,L\,\heads\,\dhead\).
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Variant & Key dims / tok & Value dims / tok & fp16 B/tok \\
+\midrule
+MHA (hyp., 64 heads) & \(64 \cdot 128\) & \(64 \cdot 128\) & \(\approx 65{,}536\) \\
+GQA-8 (actual 70B) & \(8 \cdot 128\) & \(8 \cdot 128\) & \(\approx 8{,}192\) \\
+MQA (1 KV head) & \(128\) & \(128\) & \(\approx 1{,}024\) \\
+\bottomrule
+\end{tabular}
+\caption{Per-token KV footprint \emph{per layer} scales linearly with the
+number of KV heads. GQA sits between MHA and MQA; Llama-3 70B uses GQA-8.}
+\label{tab:kv-variants}
+\end{table}
+
+\noindent
+Multiply Table~\ref{tab:kv-variants} by \(L\) and by sequence length \(n\) to
+estimate total cache when serving a prompt.
+
+\section*{Selective SSM / Mamba (single stream)}
+
+Let state dimension \(N = 2048\), input \(u_t \in \R\) (per-channel after
+projection), batch \(B=1\). Tensors below omit batch axes when \(B=1\).
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Object & Shape & Note \\
+\midrule
+Hidden state \(h_t\) & \([N]\) & carried across time; constant memory \\
+Input-dependent \(\Delta_t, B_t, C_t\) & \([N]\) each & produced from \(u_t\) in selective SSM \\
+SSM output \(y_t\) & \([N]\) & typically projected to model width \(d\) \\
+Inference memory & \(\bigO(N)\) & no \(\bigO(n)\) KV tensor --- contrast with attention \\
+\bottomrule
+\end{tabular}
+\caption{Illustrative shapes for Mamba-style blocks; numeric \(N\) varies by
+checkpoint (e.g.\ Mamba-2.8B uses a different width than Mamba-130M).}
+\label{tab:mamba-shapes}
+\end{table}

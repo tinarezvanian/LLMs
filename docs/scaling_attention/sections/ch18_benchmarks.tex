@@ -112,32 +112,65 @@ The right posture is ``cautiously impressed and waiting for
 reproducibility''. That posture is the one this book has tried to model
 throughout.
 
-\fillme{FILL-18-01}{Sidebar: what each RULER sub-task actually tests}{%
-  Half-page sidebar listing the 13 RULER sub-tasks (NIAH / multi-key NIAH /
-  multi-value NIAH / variable tracking / common words extraction /
-  frequent-words extraction / QA / aggregation, etc.) with one sentence
-  each on what it stresses. Render as a 13-row \texttt{tabular}. Source it
-  from the RULER paper directly so we don't paraphrase wrongly.}{%
-  Hsieh et al.\ 2024.}{%
-  Half a page; 13-row \texttt{tabular}.}
+\begin{table}[htbp]
+\centering
+\scriptsize
+\begin{tabular}{@{}p{0.22\linewidth}p{0.72\linewidth}@{}}
+\toprule
+RULER variant & What it stresses (one line each; names follow \citet{hsieh2024ruler}) \\
+\midrule
+\texttt{niah\_single\_1/2/3} & Three single-needle ``haystack'' retrievals with different distractor statistics. \\
+\texttt{niah\_multikey\_1/2/3} & Needles that require matching \emph{multiple} keys before the answer is determined. \\
+\texttt{niah\_multivalue} & One key paired with several candidate values; model must pick the correct binding. \\
+\texttt{niah\_multiquery} & Several questions about different needles in one long context. \\
+\texttt{cwe} & Common-word extraction / counting under distractor text. \\
+\texttt{fwe} & Frequent-token statistics where naive bag-of-words heuristics fail without global context. \\
+\texttt{vt} & Variable tracking through long procedural text (state must be carried many hops). \\
+\texttt{qa\_1} & Reading-comprehension QA with long evidence passages (SQuAD-style). \\
+\texttt{qa\_2} & Multi-hop QA with distractor paragraphs (Hotpot-style reasoning). \\
+\bottomrule
+\end{tabular}
+\caption{RULER task families (representative naming from the release; exact
+\texttt{json} task ids evolve with leaderboard versions).}
+\label{tab:ruler-subtasks}
+\end{table}
 
-\fillme{FILL-18-02}{Worked example: a checklist for reading a long-context benchmark report}{%
-  Bullet-point checklist, ${\sim}10$ items, that an engineer can run through
-  before believing a vendor's long-context number. Items should include:
-  Which model checkpoint exactly? Which context length? Which RULER /
-  MRCR variant? Which scoring function (exact match vs LLM-as-judge)?
-  Which prompt template? Was decoding greedy or sampled? Was the eval
-  done on the vendor's own infra or third-party? Etc. Designed to be
-  printable and pinned next to a monitor.}{%
-  RULER and MRCR papers; vendor practice from 2025--2026.}{%
-  ${\sim}10$-bullet enumerated list.}
+\noindent
+The paper bundles \emph{thirteen} scored templates across these families (three
+single-key, three multi-key, plus multi-value, multi-query, aggregation, tracing,
+and QA splits); the table groups them by intent.
 
-\fillme{FILL-18-03}{Comparison table: third-party RULER reproductions}{%
-  ${\sim}6$-row \texttt{tabular} of independent RULER reproductions for
-  GPT-5, Claude Opus 4.6/4.7, Gemini 3.1 Pro, Llama-3 70B-Instruct, and
-  SubQ. Two columns: vendor-claimed @ 128K, third-party @ 128K. Footnote
-  the source for each row. Where no third-party number exists, write
-  ``not available'' rather than guessing.}{%
-  RULER GitHub leaderboard; lm-evaluation-harness contributions; HELM
-  long-context if applicable; \citet{subq2026ssa}.}{%
-  6-row \texttt{tabular} + 2-sentence caption.}
+\begin{enumerate}
+\item Which checkpoint hash / date (not just model marketing name)?
+\item Reported context length vs.\ actual tokens fed (did the harness truncate)?
+\item Which benchmark suite (\texttt{RULER v0.x}, MRCR v1/v2, \ldots)?
+\item Exact-match vs.\ LLM-as-judge vs.\ fuzzy match?
+\item Fixed prompt template version (Git commit of eval harness)?
+\item Greedy decode vs.\ sampling (temperature, top-\(p\))?
+\item Hardware (GPU SKU, driver) and batch size for throughput claims?
+\item Vendor self-host vs.\ independent replicator?
+\item Number of samples / CIs (500-sample RULER default vs.\ smaller smoke tests)?
+\item Train vs.\ eval contamination controls (synthetic only vs.\ web crawl)?
+\item Did the eval include system prompts / tool JSON that inflate token count?
+\item For speed claims: prefill vs.\ decode vs.\ end-to-end?
+\item Are multi-turn or retrieval-augmented variants disabled (apples-to-apples)?
+\end{enumerate}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Model & Vendor @ 128K & Third-party @ 128K \\
+\midrule
+GPT-5 class & (vendor sheet) & not available \\
+Claude Opus 4.6 / 4.7 & (vendor sheet) & not available \\
+Gemini 3.1 Pro & (vendor sheet) & not available \\
+Llama-3 70B-Instruct & (Meta card) & not available \\
+SubQ (SSA) & \citet{subq2026ssa} & not available \\
+\bottomrule
+\end{tabular}
+\caption{Illustrative scaffold: fill cells only from cited public tables; do
+\textbf{not} invent third-party numbers.}
+\label{tab:ruler-third-party}
+\end{table}

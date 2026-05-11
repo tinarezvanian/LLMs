@@ -39,7 +39,7 @@ Take logs of \(L(N) = (N_c/N)^{\alpha_N}\):
   \log L \;=\; \alpha_N \log N_c - \alpha_N \log N.
 \end{equation}
 Plot \(\log L\) against \(\log N\): a line with slope \(-\alpha_N\). For
-\(\alpha_N = 0.076\), every 10$\times$ in \(N\) buys roughly an
+\(\alpha_N = 0.076\), every \(10\times\) in \(N\) buys roughly an
 \(0.076\)-decade fall in loss, i.e.\ about a 16\% reduction in cross-entropy.
 That sounds tiny — and it is — but it compounds over many orders of
 magnitude, and small drops in cross-entropy translate into qualitatively
@@ -107,25 +107,36 @@ have. The numbers got refined; the framework is permanent.
 straight lines are why scaling up is a strategy. The exponents tell you
 how steeply.}
 
-\fillme{FILL-07-01}{Worked example: extrapolating Kaplan to GPT-4 scale}{%
-  Use \(L(N) = (N_c / N)^{\alpha_N}\) with \(\alpha_N = 0.076\) and a
-  fitted intercept calibrated to GPT-3 (175B parameters, reported
-  cross-entropy ${\sim}1.7$ on the OpenAI WebText test set). Predict the
-  loss at GPT-4 scale (assume some plausible \(N\), e.g.\ 1.7T MoE
-  ``effective''). Then disclaim: this is illustrative only — Chinchilla
-  showed Kaplan over-estimated parameters relative to data, and GPT-4 was
-  not trained Kaplan-style.}{%
-  Kaplan et al.\ 2020 \S 3.1; GPT-3 paper for the loss anchor;
-  Chapter~\ref{ch:chinchilla} for the disclaimer.}{%
-  Half a page; one equation chain; one paragraph of disclaimer.}
+\paragraph{Illustrative Kaplan extrapolation (with caveats).}
+Kaplan-style scaling posits that cross-entropy improves predictably with model
+size; one compact toy form is
+\begin{equation}
+  L(N) \;\approx\; L(N_{0})\,\left(\frac{N_{0}}{N}\right)^{\alpha_{N}},
+  \quad \alpha_{N} = 0.076,
+\end{equation}
+anchored to GPT-3 (\(N_{0} \approx 1.75\times 10^{11}\) parameters) with a reported
+WebText cross-entropy near \(1.7\)~nats.\sidenote{Actual frontier runs blend many
+datasets and recipes; treat \(L(N_{0})\) as an order-of-one anchor only.}
+Plugging an illustrative ``GPT-4-scale'' dense budget \(N \approx 1.7\times
+10^{12}\) (1.7T) gives
+\((N_{0}/N)^{0.076} \approx 0.10^{0.076} \approx 0.84\), so
+\(L(N) \approx 1.7 \times 0.84 \approx 1.4\)~nats---not a dramatic drop for a
+\(10\times\) parameter increase, which is why the exponent matters more than
+headline parameter counts.
+This story is \emph{illustrative only}: \citet{hoffmann2022training} moved the
+optimum toward many more tokens per parameter, real systems are often
+mixture-of-experts, and public loss numbers for later models are not
+comparable one-to-one to WebText nats. The point is structural: a smooth
+power law can make extrapolation look like deterministic forecasting while hiding that
+data and routing—not \(N\) alone—dominate production behaviour.
 
-\fillme{FILL-07-02}{Sidebar: emergent capabilities and what they're really about}{%
-  ${\sim}300$-word sidebar on Wei et al.\ 2022 ``Emergent Abilities of Large
-  Language Models'' and Schaeffer et al.\ 2023 ``Are Emergent Abilities a
-  Mirage?''. Convey: (a) the original claim of phase-transition-like
-  behaviour, (b) the counter-claim that emergence is mostly an artifact of
-  discontinuous metrics, (c) the honest middle ground that capability
-  surfaces nonlinearly even when loss does not. Cite both papers; add
-  \texttt{\textbackslash bibitem} entries to \texttt{references.tex}.}{%
-  Wei et al.\ 2022; Schaeffer et al.\ NeurIPS 2023.}{%
-  ${\sim}300$ words; no equations needed.}
+\paragraph{Emergent abilities: claims and corrections.}
+\citet{wei2022emergent} catalogued sharp jumps on benchmarks once models crossed
+scale thresholds—tasks look ``impossible'' until they suddenly aren't.
+\citet{schaeffer2023emergentmirage} argued many jumps disappear under smoother
+metrics or continuous skill measurements: perceived emergence tracks metric
+discontinuity more than mysterious phase transitions.
+The honest synthesis for scaling-law discourse is middle-ground: loss curves are
+smooth while downstream passes/failures sit on thresholds; nonlinear capability
+can surface without contradicting smooth optimisation dynamics---especially when
+evaluation is binarised.

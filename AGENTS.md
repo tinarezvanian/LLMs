@@ -11,6 +11,7 @@ The deliverables are:
 1. **Teaser** — ~75 second pure-Manim explainer of the quadratic-attention wall and why SubQ matters. Optimized for X / LinkedIn / Discord. Renders from `vid/scenes/teaser/`.
 2. **Deep-dive** — ~10-12 minute hybrid (Manim + on-camera + live SubQ Code demo) walking through scaling laws, the post-transformer landscape, and where SubQ fits. Renders from `vid/scenes/deepdive/`.
 3. **Companion package** — GitHub starter repo, blog post, X thread, cover letter. Lives under `companion/`.
+4. **LaTeX companion book (parallel)** — `docs/scaling_attention/`: a book-length XeLaTeX + `tufte-book` primer aligned with the deep-dive argument; tracked PDF at `docs/scaling_attention/main.pdf`. **Handoff order for any agent editing it:** read this `AGENTS.md`, then **[`TASKS.md` — Phase 9](TASKS.md)** (search for `Phase 9 — LaTeX companion`), then **[`docs/scaling_attention/README.md`](docs/scaling_attention/README.md)**. That chain has the build commands, file map, hard rules (no content after `\keyidea`, no `\fillme` stubs, cite discipline), and remaining TASK 9.x follow-ups.
 
 The full sprint plan is at [`.cursor/plans/subq_manim_demo_video_a7a5729c.plan.md`](.cursor/plans/subq_manim_demo_video_a7a5729c.plan.md). The live backlog is at [`TASKS.md`](TASKS.md). Visual + narrative principles are in [`DESIGN.md`](DESIGN.md).
 
@@ -21,6 +22,7 @@ The full sprint plan is at [`.cursor/plans/subq_manim_demo_video_a7a5729c.plan.m
 research/notes.md              primary-source notes; every claim in the videos traces back here
 scripts/teaser.md              ~155-word teaser script with [ANIM] cues
 scripts/deepdive.md            ~1700-word deep-dive script with [ANIM]/[ON-CAM]/[SCREEN] cues
+docs/scaling_attention/        LaTeX companion book (XeLaTeX + tufte-book); see TASKS.md Phase 9 + README.md in that directory
 vid/                           Manim Python package (NOTE: directory is `vid/` to avoid clashing with the `manim` PyPI package)
   theme.py                     palette, type sizes, pacing constants, equation()/text_equation() helpers
   lib/mobjects.py              reusable mobjects (AttentionGrid, GPUOutline, KVCacheBar, ScalingCurve, PostTransformerTree, QuadrantMap, SubQWordmark)
@@ -105,6 +107,7 @@ Day 4 of the 10-day sprint. Reasoning: launches plant flags. Even a 75-second pu
 9. **Tina doesn't yet have SubQ beta access.** The live demo at the end of the deep-dive depends on it. If access is denied by Day 8 of the sprint, the demo becomes a "what I'd build the day I get access" mock-up — still valuable but weaker. Apply for the waitlist immediately.
 10. **Three deep-dive scene files were intentionally deleted on 2026-05-09.** `scene_04_chinchilla.py`, `scene_05_attention_grid.py`, `scene_07_flash_attention.py` were duplicates of canonical scenes 04/05/07; their better bits were folded in. Don't restore them from git history without re-reading TASKS.md "Reconcile duplicate scene files".
 11. **Don't call bare `Text("foo")` in scene code.** It bypasses Inter / JetBrains Mono and lands as system sans, which reads inconsistent next to helper-rendered text. Always go through `body()` / `caption()` / `mono()` / `title()` / `heading()` / `text_equation()` from `vid/theme.py` (or pass `font=FONT_SANS` / `FONT_SANS_DISPLAY` / `FONT_MONO` explicitly). The fonts are auto-registered with Pango at theme import; ship a missing TTF and that single label silently falls back — diff scene PNGs against a known-good frame to catch this.
+12. **`docs/scaling_attention/` is LaTeX, not Manim.** On-screen formulas there are real `\(...\)` / `equation` environments, not `text_equation()` from `vid/theme.py` (that helper is Manim-only). When adding chapters or sidebars: never append material after a chapter's closing `\keyidea{...}`; merge into the body section above it; do not resurrect `\fillme` stubs; every `\citet`/`\citep` needs a `\bibitem` in `docs/scaling_attention/sections/references.tex`. Full rules and TASK 9.x backlog: [`TASKS.md`](TASKS.md) Phase 9 + [`docs/scaling_attention/README.md`](docs/scaling_attention/README.md).
 
 ## How to continue the work
 
@@ -127,3 +130,5 @@ Engineers, not marketing. Concrete numbers with sources. No "leverage", "unlock"
 ## Citations
 
 All sources for facts that appear in any video, blog post, or README live in [`research/notes.md`](research/notes.md). Every numeric claim should map to a footnote there. If you're adding a new claim, add the source to `research/notes.md` first.
+
+The LaTeX book cites via `natbib` keys backed by `\bibitem` entries in [`docs/scaling_attention/sections/references.tex`](docs/scaling_attention/sections/references.tex); keep those in sync with `research/notes.md` the same way you would for video copy.

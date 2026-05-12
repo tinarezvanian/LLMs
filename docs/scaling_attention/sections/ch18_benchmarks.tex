@@ -22,6 +22,34 @@ multi-key retrieval, multi-hop reasoning, and aggregation, all at
 configurable context lengths from 4K to 128K. Reported as average
 accuracy across the 13 tasks at a given length.
 
+\begin{table}[htbp]
+\centering
+\scriptsize
+\begin{tabular}{@{}p{0.22\linewidth}p{0.72\linewidth}@{}}
+\toprule
+RULER variant & What it stresses (one line each; names follow \citet{hsieh2024ruler}) \\
+\midrule
+\texttt{niah\_single\_1/2/3} & Three single-needle ``haystack'' retrievals with different distractor statistics. \\
+\texttt{niah\_multikey\_1/2/3} & Needles that require matching \emph{multiple} keys before the answer is determined. \\
+\texttt{niah\_multivalue} & One key paired with several candidate values; model must pick the correct binding. \\
+\texttt{niah\_multiquery} & Several questions about different needles in one long context. \\
+\texttt{cwe} & Common-word extraction / counting under distractor text. \\
+\texttt{fwe} & Frequent-token statistics where naive bag-of-words heuristics fail without global context. \\
+\texttt{vt} & Variable tracking through long procedural text (state must be carried many hops). \\
+\texttt{qa\_1} & Reading-comprehension QA with long evidence passages (SQuAD-style). \\
+\texttt{qa\_2} & Multi-hop QA with distractor paragraphs (Hotpot-style reasoning). \\
+\bottomrule
+\end{tabular}
+\caption{RULER task families (representative naming from the release; exact
+\texttt{json} task ids evolve with leaderboard versions).}
+\label{tab:ruler-subtasks}
+\end{table}
+
+\noindent
+The paper bundles \emph{thirteen} scored templates across these families
+(three single-key, three multi-key, plus multi-value, multi-query,
+aggregation, tracing, and QA splits); the table groups them by intent.
+
 \paragraph{MRCR v2.} \citet{chen2025mrcr} is the harder successor. Multi-
 document reasoning + retrieval. Tests whether a model can read multiple
 related documents at long context and answer a question requiring
@@ -87,6 +115,27 @@ is competitive with — but not yet beating — the best dense transformers
 at multi-document long-context reasoning. That is a credible architectural
 result.
 
+\section{A 13-point checklist for any long-context benchmark report}
+
+Before you take a vendor's RULER or MRCR number at face value, walk down
+this list:
+
+\begin{enumerate}
+\item Which checkpoint hash / date (not just model marketing name)?
+\item Reported context length vs.\ actual tokens fed (did the harness truncate)?
+\item Which benchmark suite (\texttt{RULER v0.x}, MRCR v1/v2, \ldots)?
+\item Exact-match vs.\ LLM-as-judge vs.\ fuzzy match?
+\item Fixed prompt template version (Git commit of eval harness)?
+\item Greedy decode vs.\ sampling (temperature, top-\(p\))?
+\item Hardware (GPU SKU, driver) and batch size for throughput claims?
+\item Vendor self-host vs.\ independent replicator?
+\item Number of samples / CIs (500-sample RULER default vs.\ smaller smoke tests)?
+\item Train vs.\ eval contamination controls (synthetic only vs.\ web crawl)?
+\item Did the eval include system prompts / tool JSON that inflate token count?
+\item For speed claims: prefill vs.\ decode vs.\ end-to-end?
+\item Are multi-turn or retrieval-augmented variants disabled (apples-to-apples)?
+\end{enumerate}
+
 \keyidea{Long-context benchmarks are a moving target. SubQ's strongest
 honest claim is that SSA is competitive with frontier proprietary
 transformers on RULER and MRCR v2 \emph{while running 50$\times$ faster
@@ -111,66 +160,3 @@ question).
 The right posture is ``cautiously impressed and waiting for
 reproducibility''. That posture is the one this book has tried to model
 throughout.
-
-\begin{table}[htbp]
-\centering
-\scriptsize
-\begin{tabular}{@{}p{0.22\linewidth}p{0.72\linewidth}@{}}
-\toprule
-RULER variant & What it stresses (one line each; names follow \citet{hsieh2024ruler}) \\
-\midrule
-\texttt{niah\_single\_1/2/3} & Three single-needle ``haystack'' retrievals with different distractor statistics. \\
-\texttt{niah\_multikey\_1/2/3} & Needles that require matching \emph{multiple} keys before the answer is determined. \\
-\texttt{niah\_multivalue} & One key paired with several candidate values; model must pick the correct binding. \\
-\texttt{niah\_multiquery} & Several questions about different needles in one long context. \\
-\texttt{cwe} & Common-word extraction / counting under distractor text. \\
-\texttt{fwe} & Frequent-token statistics where naive bag-of-words heuristics fail without global context. \\
-\texttt{vt} & Variable tracking through long procedural text (state must be carried many hops). \\
-\texttt{qa\_1} & Reading-comprehension QA with long evidence passages (SQuAD-style). \\
-\texttt{qa\_2} & Multi-hop QA with distractor paragraphs (Hotpot-style reasoning). \\
-\bottomrule
-\end{tabular}
-\caption{RULER task families (representative naming from the release; exact
-\texttt{json} task ids evolve with leaderboard versions).}
-\label{tab:ruler-subtasks}
-\end{table}
-
-\noindent
-The paper bundles \emph{thirteen} scored templates across these families (three
-single-key, three multi-key, plus multi-value, multi-query, aggregation, tracing,
-and QA splits); the table groups them by intent.
-
-\begin{enumerate}
-\item Which checkpoint hash / date (not just model marketing name)?
-\item Reported context length vs.\ actual tokens fed (did the harness truncate)?
-\item Which benchmark suite (\texttt{RULER v0.x}, MRCR v1/v2, \ldots)?
-\item Exact-match vs.\ LLM-as-judge vs.\ fuzzy match?
-\item Fixed prompt template version (Git commit of eval harness)?
-\item Greedy decode vs.\ sampling (temperature, top-\(p\))?
-\item Hardware (GPU SKU, driver) and batch size for throughput claims?
-\item Vendor self-host vs.\ independent replicator?
-\item Number of samples / CIs (500-sample RULER default vs.\ smaller smoke tests)?
-\item Train vs.\ eval contamination controls (synthetic only vs.\ web crawl)?
-\item Did the eval include system prompts / tool JSON that inflate token count?
-\item For speed claims: prefill vs.\ decode vs.\ end-to-end?
-\item Are multi-turn or retrieval-augmented variants disabled (apples-to-apples)?
-\end{enumerate}
-
-\begin{table}[htbp]
-\centering
-\footnotesize
-\begin{tabular}{@{}lcc@{}}
-\toprule
-Model & Vendor @ 128K & Third-party @ 128K \\
-\midrule
-GPT-5 class & (vendor sheet) & not available \\
-Claude Opus 4.6 / 4.7 & (vendor sheet) & not available \\
-Gemini 3.1 Pro & (vendor sheet) & not available \\
-Llama-3 70B-Instruct & (Meta card) & not available \\
-SubQ (SSA) & \citet{subq2026ssa} & not available \\
-\bottomrule
-\end{tabular}
-\caption{Illustrative scaffold: fill cells only from cited public tables; do
-\textbf{not} invent third-party numbers.}
-\label{tab:ruler-third-party}
-\end{table}

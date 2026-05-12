@@ -127,6 +127,8 @@
 
 % --- Custom title page ---
 \makeatletter
+\newcommand{\@subtitle}{}
+\newcommand{\subtitle}[1]{\renewcommand{\@subtitle}{#1}}
 \renewcommand{\maketitle}{%
   \begin{fullwidth}%
     \thispagestyle{empty}
@@ -134,10 +136,13 @@
     \begin{center}
       {\AlegreyaDisplay\fontsize{30pt}{34pt}\selectfont
        \textcolor{DarkSlateGray}{\@title}\par}
-      \vspace{2em}
-      {\fontsize{14pt}{18pt}\selectfont
-       \textcolor{DarkSlateGray}{\textit{\@author}}\par}
       \vspace{1.5em}
+      {\fontsize{14pt}{18pt}\selectfont
+       \textcolor{DarkSlateGray}{\textit{\@subtitle}}\par}
+      \vspace{2.5em}
+      {\AlegreyaDisplay\fontsize{16pt}{20pt}\selectfont
+       \textcolor{DarkSlateGray}{\@author}\par}
+      \vspace{1em}
       {\fontsize{11pt}{14pt}\selectfont
        \textcolor{DarkSlateGray}{\@date}\par}
     \end{center}

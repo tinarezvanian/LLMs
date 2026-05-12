@@ -33,9 +33,18 @@ to a linear RNN.\sidenote{In fact, if you set \(\bar A\) and \(\bar B\)
 to be arbitrary learnable matrices and add a non-linearity, you get back
 a vanilla RNN. The state-space framing buys two things the RNN didn't
 have: (i) a principled connection to continuous-time signal processing
-that gives you \emph{HiPPO} initialisations \citep{gu2021s4} that handle
-long-range dependencies stably, and (ii) the parallel-scan computation
-form, next.}
+that gives you \emph{HiPPO} initialisations that handle long-range
+dependencies stably, and (ii) the parallel-scan computation form, next.}
+
+\paragraph{HiPPO in plain English.}
+Classical RNNs pick recurrent dynamics at random and hope gradients
+survive. HiPPO \citep{gu2020hippo} instead constructs a continuous-time
+\(A\) matrix so the state stores coefficients of the \emph{best}
+low-degree polynomial approximation to the recent input under a chosen
+measure (Legendre, Laguerre, \ldots). That is why S4-style layers
+\citep{gu2021s4} propagate smooth signals across tens of thousands of
+steps when vanilla linear RNNs forget almost everything: the recurrence
+is biased to act like a rolling orthogonal projection of history.
 
 \section{The convolutional view}
 
@@ -83,32 +92,6 @@ selective recurrence as a hardware-efficient parallel scan that processes
 the sequence in $\bigO(n)$ work but $\bigO(\log n)$ depth on a GPU,
 keeping the state in SRAM throughout.
 
-\paragraph{What Mamba wins.} Linear-time training and inference
-($\bigO(n)$). Constant-memory generation: there is no growing KV cache,
-just the fixed-size \(h_t\). For very long sequences this is the entire
-ballgame.
-
-\paragraph{What Mamba gives up.} The hidden state \(h_t\) is finite. Every
-token's information has to be compressed into a vector of size \(N\)
-(typically a few hundred). For a needle-in-a-haystack task — find one
-specific fact among 100K tokens — a finite state struggles, because
-storing the full input losslessly is exactly the problem an attention
-matrix solves and a state vector cannot.
-
-\keyidea{Mamba is a linear-time, constant-memory sequence model. It is
-genuinely different from a transformer, not a faster transformer. Its
-benchmarks favour it on smooth signals and tasks with locally-relevant
-context, and it loses to transformers on tasks that require associative
-recall over arbitrary positions.}
-
-\section{Where this fits in the bigger picture}
-
-State-space models give us the bottom-left of the 2$\times$2 frame in
-Chapter~\ref{ch:quadrant}: linear-scaling, content-blind in the sense
-that the state is a fixed-size summary regardless of what it has seen.
-Their honest trade-off is the one we will see again and again: cheap, but
-\emph{lossy}, in a way that depends on the task.
-
 \begin{lstlisting}[caption={Selective scan \emph{shape} (sequential Python); real Mamba fuses this into a parallel associative scan on GPU \citep{gu2023mamba}.}]
 import torch
 import torch.nn.functional as F
@@ -126,27 +109,42 @@ def selective_scan_demo(u, delta, B, C, A):
 \end{lstlisting}
 
 \noindent
-Production code vectorises channels, fuses the scan, and never runs a Python
-loop per timestep; this listing only shows why ``selective'' means
-\(\Delta_t\) (here via \texttt{softplus}) modulates how much past state survives.
+Production code vectorises channels, fuses the scan, and never runs a
+Python loop per timestep; the listing only shows why ``selective'' means
+\(\Delta_t\) (here via \texttt{softplus}) modulates how much past state
+survives.
 
-\paragraph{HiPPO in plain English.}
-Classical RNNs pick dynamics at random and hope gradients survive. HiPPO
-\citep{gu2020hippo} instead constructs a continuous-time \(A\) matrix so the
-state stores coefficients of the \emph{best} low-degree polynomial approximation
-to the recent input under a chosen measure (Legendre, Laguerre, \ldots). That is
-why S4-style layers \citep{gu2021s4} propagate smooth signals across tens of
-thousands of steps when vanilla linear RNNs forget almost everything: the
-recurrence is biased to act like a rolling orthogonal projection of history.
+\paragraph{What Mamba wins.} Linear-time training and inference
+($\bigO(n)$). Constant-memory generation: there is no growing KV cache,
+just the fixed-size \(h_t\). For very long sequences this is the entire
+ballgame.
 
-\paragraph{Associative recall vs.\ fixed state.}
-Imagine \(K\) random \texttt{key=value} pairs sprinkled through a \(T\)-token
-sequence, then a query token repeating one key; the model must emit the matching
-value. A transformer can route the query to the correct position in one softmax
-attention hop. A selective SSM must funnel the entire prefix through a vector
-\(h_t \in \R^{N}\): once \(K\) exceeds the effective degrees of freedom in that
-state, collisions and averaging erase exact key--value bindings---the regime
-studied systematically by MQAR / ``Zoology'' analyses \citep{arora2024zoology}.
-Mamba improves earlier SSMs but does not restore unconstrained
-\(\mathcal{O}(n)\) addressable memory; hybrids that retain a few attention layers
-(Chapter~\ref{ch:hybrids}) exist partly to cover this blind spot.
+\paragraph{What Mamba gives up.} The hidden state \(h_t\) is finite.
+Every token's information has to be compressed into a vector of size
+\(N\) (typically a few hundred). The cleanest stress test is associative
+recall: imagine \(K\) random \texttt{key=value} pairs sprinkled through
+a \(T\)-token sequence, then a query token repeating one key — the model
+must emit the matching value. A transformer can route the query to the
+correct position in one softmax attention hop. A selective SSM has to
+funnel the entire prefix through a vector \(h_t \in \R^{N}\); once \(K\)
+exceeds the effective degrees of freedom in that state, collisions and
+averaging erase exact key–value bindings, the regime studied
+systematically by MQAR / ``Zoology'' analyses
+\citep{arora2024zoology}. Mamba improves earlier SSMs on this axis but
+does not restore unconstrained \(\mathcal{O}(n)\) addressable memory;
+hybrids that keep a few attention layers (Chapter~\ref{ch:hybrids})
+exist partly to cover this blind spot.
+
+\keyidea{Mamba is a linear-time, constant-memory sequence model. It is
+genuinely different from a transformer, not a faster transformer. Its
+benchmarks favour it on smooth signals and tasks with locally-relevant
+context, and it loses to transformers on tasks that require associative
+recall over arbitrary positions.}
+
+\section{Where this fits in the bigger picture}
+
+State-space models give us the bottom-left of the 2$\times$2 frame in
+Chapter~\ref{ch:quadrant}: linear-scaling, content-blind in the sense
+that the state is a fixed-size summary regardless of what it has seen.
+Their honest trade-off is the one we will see again and again: cheap, but
+\emph{lossy}, in a way that depends on the task.

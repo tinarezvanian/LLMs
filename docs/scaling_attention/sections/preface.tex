@@ -57,14 +57,6 @@ mandatory. The main text reads on its own.\sidenote{Like this. If a sentence
 in the body could use a sanity-check, a derivation, or a pointer to a paper,
 look right.}
 
-\newthought{A note on the amber boxes.} The book is a draft. Many places
-where a worked example, code listing, comparison table, or extended sidebar
-\emph{would} be useful are marked with an amber \textsc{To fill} box like
-the one that used to sit below this paragraph. Each box had a stable ID
-(\texttt{FILL-XX-NN}), a brief, sources, and a target length; contributors
-replace the whole \verb|\fillme| block with finished prose. What follows is
-the executive summary that stub asked for.
-
 \paragraph{tl;dr (read this if you read nothing else).}
 Language models are next-token predictors; training fits their parameters so
 that real text looks likely under that factorisation. Transformers implement
@@ -81,26 +73,3 @@ on the bottom-right cell â€” linear cost \emph{and} content-dependent routing â€
 with public benchmarks that deserve scrutiny like any vendor-reported numbers.
 This book is about why long context was expensive, how engineers cope today,
 and where the architecture might go next.
-
-\paragraph{Workflow for filling stubs.}
-The recipe for any future LLM picking off a \texttt{FILL-XX-NN}:
-
-\begin{enumerate}
-\item Run \texttt{bash scripts/list\_fill\_stubs.sh} from the repository
-root to print a checklist of every open stub with its ID, title, file, and
-line number.
-\item Pick one. Read the surrounding chapter so you understand what was
-already said and what \emph{not} to repeat.
-\item Read the named sources in \texttt{research/notes.md} or the
-referenced primary papers.
-\item Replace the entire \verb|\fillme{...}{...}{...}{...}{...}| invocation
-with the finished prose / table / listing / figure. Hit the target length
-to within roughly \(\pm 30\%\); much shorter usually means you skipped
-something.
-\item Cite using the \texttt{\textbackslash citep\{key\}} or
-\texttt{\textbackslash citet\{key\}} keys already defined in
-\texttt{sections/references.tex}; add a new \verb|\bibitem[Author(Year)]{key}|
-entry if the source isn't there.
-\item Recompile (\texttt{./compile.sh}) and confirm no \texttt{Citation
-undefined} or \texttt{Reference undefined} warnings appear in the log.
-\end{enumerate}

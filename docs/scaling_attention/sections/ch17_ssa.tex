@@ -30,7 +30,7 @@ keys, sort, and keep the top \(k\). That is \(\bigO(n)\) per query and
 
 The non-trivial bit is finding the top \(k\) without doing the all-pairs
 dot product first. This is the same problem as approximate nearest
-neighbour search, and like ANN it is solved by some combination of:
+neighbour (ANN) search, and like ANN it is solved by some combination of:
 \begin{itemize}
 \item \textbf{Indexing the keys.} Build a structure (LSH, IVF, HNSW,
 learned routing tree) that, given a query, returns a small candidate set
@@ -43,8 +43,55 @@ the chosen clusters.
 predicts which keys are likely to be relevant, without computing the
 actual dot products.
 \end{itemize}
-\citet{subq2026ssa} describe their selection as content-dependent and
-hardware-friendly, but the specific algorithm is proprietary.
+
+The ANN literature is the obvious bag of tricks to lift from. Three
+families dominate practice: \emph{LSH} hashes nearby points to the same
+bucket with high probability but trades recall for hash tables that must
+be rebuilt when keys move every layer; \emph{IVF / k-means partitioning}
+assigns each key to a Voronoi cell so queries probe only a few cells but
+needs a good coarse codebook and suffers when the key distribution
+shifts; \emph{HNSW graphs} offer excellent recall–latency trade-offs on
+static corpora but are painful to maintain when every training step
+rewrites all keys. Inside a transformer ``the index'' is not a static
+vector store the way FAISS is — it is the entire prefix of the current
+sequence, changing every token — so differentiable routing, on-the-fly
+clustering, or hardware-aware tile selection generally beat off-the-shelf
+ANN libraries copied verbatim from retrieval stacks. \citet{subq2026ssa}
+describe their selection as content-dependent and hardware-friendly, but
+the specific algorithm is proprietary.
+
+The toy version of one such selector — bucketed LSH — looks like this:
+
+\begin{lstlisting}[caption={\textbf{Illustrative only}---LSH bucketing is one toy selector; SubQ's production SSA router is proprietary and not LSH-specific.}]
+import torch
+import torch.nn.functional as F
+
+def sparse_attn_lsh_toy(Q, K, V, R, max_bucket=256):
+    # Q,K,V have shape (n, d); R has shape (d, b) random projection bits
+    n, d = Q.shape
+    buckets = {}
+    for i in range(n):
+        bits = ((R.T @ K[i]) > 0).int()
+        idx = int((bits * (2 ** torch.arange(bits.numel(), device=bits.device))).sum())
+        key = idx % max_bucket
+        buckets.setdefault(key, []).append(i)
+    out = torch.empty_like(Q)
+    for i in range(n):
+        bits = ((R.T @ Q[i]) > 0).int()
+        idx = int((bits * (2 ** torch.arange(bits.numel(), device=bits.device))).sum())
+        key = idx % max_bucket
+        cand = buckets.get(key, list(range(n)))[: min(64, n)]
+        scores = (Q[i:i+1] @ K[cand].T) / (d ** 0.5)
+        attn = F.softmax(scores, dim=-1)
+        out[i] = attn @ V[cand]
+    return out
+\end{lstlisting}
+
+\noindent
+\textbf{This listing is a teaching toy only.} Subquadratic's deployed
+SSA selection is not public; real systems may use learned routers,
+IVF/HNSW indices, hybrid reranking, or hardware-aware structures rather
+than vanilla LSH.
 
 \section{What this buys you, on paper}
 
@@ -103,50 +150,3 @@ plus a few full-attention layers; complementary to SSA, not competitive.
 practically reach: linear-cost \emph{and} content-dependent. If the
 claim holds at frontier scale, it is a genuine architectural advance,
 not an implementation trick.}
-
-\begin{lstlisting}[caption={\textbf{Illustrative only}---LSH bucketing is one toy selector; SubQ's production SSA router is proprietary and not LSH-specific.}]
-import torch
-import torch.nn.functional as F
-
-def sparse_attn_lsh_toy(Q, K, V, R, max_bucket=256):
-    # Q,K,V have shape (n, d); R has shape (d, b) random projection bits
-    n, d = Q.shape
-    buckets = {}
-    for i in range(n):
-        bits = ((R.T @ K[i]) > 0).int()
-        idx = int((bits * (2 ** torch.arange(bits.numel(), device=bits.device))).sum())
-        key = idx % max_bucket
-        buckets.setdefault(key, []).append(i)
-    out = torch.empty_like(Q)
-    for i in range(n):
-        bits = ((R.T @ Q[i]) > 0).int()
-        idx = int((bits * (2 ** torch.arange(bits.numel(), device=bits.device))).sum())
-        key = idx % max_bucket
-        cand = buckets.get(key, list(range(n)))[: min(64, n)]
-        scores = (Q[i:i+1] @ K[cand].T) / (d ** 0.5)
-        attn = F.softmax(scores, dim=-1)
-        out[i] = attn @ V[cand]
-    return out
-\end{lstlisting}
-
-\noindent
-\textbf{This listing is a teaching toy only.} Subquadratic's deployed SSA
-selection is not public; real systems may use learned routers, IVF/HNSW
-indices, hybrid reranking, or hardware-aware structures rather than vanilla LSH.
-
-\paragraph{Selection as approximate nearest neighbour.}
-Given a query embedding \(q_t\) and a set of key embeddings \(\{k_s\}\), sparse
-attention must answer ``which few \(s\) should participate in the softmax?''---
-structurally the same problem as approximate nearest neighbour (ANN) search in
-metric space.
-Three ANN families dominate practice: \emph{LSH} hashes nearby points to the same
-bucket with high probability but trades recall for hash tables that must be
-rebuilt when keys move every layer; \emph{IVF / k-means partitioning} assigns
-each key to a Voronoi cell so queries probe only a few cells but needs a good
-coarse codebook and suffers when the key distribution shifts; \emph{HNSW graphs}
-offer excellent recall--latency trade-offs on static corpora but are painful to
-maintain when every training step rewrites all keys.
-Inside a transformer, ``the index'' is not static vectors in FAISS---it is the
-entire prefix of the current sequence, changing every token---so differentiable
-routing, on-the-fly clustering, or hardware-aware tile selection often beat
-off-the-shelf ANN libraries copied verbatim from retrieval stacks.

@@ -28,6 +28,22 @@ tokens, etc.) attend to and are attended-to by everyone. Cost: \(\bigO(n
 \cdot w)\) per layer for window size \(w\), plus a \(\bigO(n)\) global
 slice — both linear in \(n\).
 
+\paragraph{Effective receptive field of stacked sliding windows.}
+If each layer only mixes tokens within a causal radius of roughly \(w\)
+positions, then — ignoring residual shortcuts — information from token
+\(t\) reaches \(t + L(w-1)\) after \(L\) layers in the worst case along
+the causal chain.\sidenote{Residual connections provide shortcuts so this
+geometric bound is optimistic for \emph{representation} quality; it is
+still the right scaling intuition for how far local attention ``smears''
+content.} For Mistral-7B-style stacks (\(L = 32\), \(w = 4096\)), a
+back-of-the-envelope reach is \(\mathcal{O}(L w) \approx 1.3\times 10^{5}\)
+tokens — far beyond a single layer's window, yet still not true global
+attention. The word ``effective'' matters: every hop passes LayerNorm,
+nonlinearities, and other heads, so distant mass is attenuated even when
+a linear path exists on paper. That is why production models pair sliding
+windows with a few global or attention-heavy layers
+(Chapter~\ref{ch:hybrids}).
+
 \paragraph{BigBird.} \citet{zaheer2020bigbird} combine local + global +
 random attention. The randomness is the trick: a small amount of random
 long-range attention plus enough hops makes the attention graph
@@ -117,25 +133,8 @@ this book's last chapter — that bet is on \emph{content-dependent}
 sparsity (Chapter~\ref{ch:ssa}) — but it is the baseline against which
 content-dependent sparsity has to justify itself.
 
-\keyidea{Fixed-pattern sparse attention buys \(\bigO(n)\) by deciding the
-sparsity pattern in advance, based only on position. Routing is content-
-blind. The asymptote is gorgeous; the failure mode is missing the one
-sentence in a million-token document that actually matters.}
-
-\paragraph{Effective receptive field of stacked sliding windows.}
-If each layer only mixes tokens within a causal radius of roughly \(w\)
-positions (window length), then---ignoring residual shortcuts---information
-from \(t\) reaches \(t + L(w-1)\) after \(L\) layers in the worst case along
-the causal chain.\sidenote{Residual connections provide shortcuts so this
-geometric bound is optimistic for \emph{representation} quality; it is still
-the right scaling intuition for how far local attention ``smears'' content.}
-For Mistral-7B-style stacks (\(L = 32\), \(w = 4096\)), a back-of-the-envelope
-reach is \(\mathcal{O}(L w) \approx 1.3\times 10^{5}\) tokens---far beyond a
-single layer's window, yet still not true global attention.
-The word ``effective'' matters: every hop passes LayerNorm, nonlinearities, and
-other heads, so distant mass is attenuated even when a linear path exists on
-paper. That is why production models pair sliding windows with a few global or
-attention-heavy layers (Chapter~\ref{ch:hybrids}).
+The win in code is that the score matrix is never materialised at full
+\(n \times n\) size:
 
 \begin{lstlisting}[caption={Causal sliding-window attention without a full \(n\times n\) score matrix (illustrative \texttt{for} loops).}]
 import math
@@ -151,7 +150,6 @@ def sliding_window_attention(q, k, v, causal=True, window=512):
         s_hi = t + 1
         scores = (q[t:t+1] @ k[s_lo:s_hi].T) / math.sqrt(dh)  # [1, span]
         if causal:
-            # already causal because s_hi = t+1
             pass
         attn = F.softmax(scores, dim=-1)
         out[t] = attn @ v[s_lo:s_hi]
@@ -159,7 +157,12 @@ def sliding_window_attention(q, k, v, causal=True, window=512):
 \end{lstlisting}
 
 \noindent
-This is \(\mathcal{O}(n w)\) time and \(\mathcal{O}(w)\) temporary score width
-per step---never materialising an \(n\times n\) matrix. Production stacks use
-\texttt{flash-attn}'s fused sliding-window kernels (and related block-sparse
-paths) so the inner loop lives on GPU warps rather than in Python.
+The body is \(\mathcal{O}(n w)\) time with an \(\mathcal{O}(w)\) temporary
+score width per step. Production stacks use \texttt{flash-attn}'s fused
+sliding-window kernels (and related block-sparse paths) so the inner loop
+lives on GPU warps rather than in Python.
+
+\keyidea{Fixed-pattern sparse attention buys \(\bigO(n)\) by deciding the
+sparsity pattern in advance, based only on position. Routing is content-
+blind. The asymptote is gorgeous; the failure mode is missing the one
+sentence in a million-token document that actually matters.}

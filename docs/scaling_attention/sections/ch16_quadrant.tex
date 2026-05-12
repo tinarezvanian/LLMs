@@ -78,9 +78,16 @@ worse than dense attention; nobody builds these.
 \paragraph{Top-right (content-dependent, quadratic).} The classic
 transformer. FlashAttention, MQA, GQA, paged caches, RoPE/YaRN — every
 mitigation in Part~IV — lives here. The asymptote is \(n^2\); the
-constants are spectacular by 2026 standards. DeepSeek's recently published
-DSA \citep{deepseek2024dsa} is also content-dependent but applies sparsity
-at training-time-decided sparsity patterns, blurring the line.
+constants are spectacular by 2026 standards. DeepSeek's recently
+published DSA \citep{deepseek2024dsa} sits on the boundary: each query
+scores a learned \emph{subset} of keys, restoring some of dense
+attention's content-dependence while cutting \emph{average} FLOPs.
+Because the router can still admit many pairs in adversarial patterns —
+and because GPU kernels often densify irregular sparsity — worst-case
+behaviour stays much closer to quadratic than the clean
+\(\mathcal{O}(n)\) story of fixed windows or convolutions, which is why
+DSA lands in the upper half of the map rather than in the
+bottom-right.
 
 \paragraph{Bottom-left (position-fixed, linear).} The two big sub-families
 of Part~V live here: fixed-pattern sparse (Chapter~\ref{ch:sparse}) and
@@ -96,22 +103,6 @@ limiting the number of (query, key) pairs you actually score to be
 \emph{linear} in \(n\). This requires a non-trivial selection mechanism:
 given a query, find the small set of keys that matter, in $\bigO(\log n)$
 or $\bigO(n)$ work, without doing the full $n \times n$ dot product first.
-
-\keyidea{The interesting frontier in long-context architectures is the
-bottom-right quadrant: content-dependent routing at linear cost. Every
-major architecture in Part~V occupies a different quadrant; SSA / SubQ
-explicitly aims for the bottom-right.}
-
-\paragraph{Where DeepSeek Sparse Attention sits.}
-DeepSeek's DSA \citep{deepseek2024dsa} routes tokens through learned sparse patterns
-so each query scores a \emph{subset} of keys, restoring some content-dependence of
-full attention while cutting \emph{average} FLOPs.
-Because the router can still admit many pairs in adversarial patterns---and
-because GPU kernels often densify irregular sparsity---worst-case behaviour can
-remain much closer to quadratic than the clean \(\mathcal{O}(n)\) story of fixed
-windows or convolutions.
-On the Chapter~\ref{ch:quadrant} map, DSA sits in the upper half: data-driven
-routing without the guaranteed-linear guarantee of a bottom-right SSA ideal.
 
 \begin{figure}[htbp]
 \centering
@@ -142,3 +133,8 @@ routing without the guaranteed-linear guarantee of a bottom-right SSA ideal.
 attention separates upward; an \(n\log n\) selector sits between.}
 \label{fig:cost-curves}
 \end{figure}
+
+\keyidea{The interesting frontier in long-context architectures is the
+bottom-right quadrant: content-dependent routing at linear cost. Every
+major architecture in Part~V occupies a different quadrant; SSA / SubQ
+explicitly aims for the bottom-right.}

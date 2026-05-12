@@ -14,21 +14,27 @@ mapped it.
 
 \section{Diffusion language models}
 
-Discrete diffusion models \citep{lou2024discrete} apply the
-denoising-diffusion machinery (which has dominated image generation since
-2022) to text. Instead of predicting the next token autoregressively,
-they iteratively refine a draft of the entire output, all positions in
-parallel.
+Discrete diffusion treats generation as an iterative \emph{denoising}
+process \citep{hoogeboom2021multinomial,lou2024discrete}: a forward
+corruption (mask tokens, replace with uniform noise, or jump between
+states) destroys the string, and a learned reverse kernel restores
+plausible text. The same denoising-diffusion machinery has dominated
+image generation since 2022; the discrete-token version is younger but
+follows the same recipe.
 
 \paragraph{Why this could matter.} The autoregressive loop is the
 dominant cost of LLM inference: generating 1000 tokens takes 1000
-sequential forward passes. A diffusion LM that produces a fluent draft
-in 20 refinement steps is potentially 50$\times$ faster at the same
-quality.
+sequential forward passes. Diffusion steps can be parallelised or
+scheduled adaptively, and a fluent draft produced in 20 refinement steps
+is potentially 50$\times$ faster at the same quality.
 
-\paragraph{Why it hasn't won yet.} Quality. Discrete diffusion language
-models in 2026 are competitive with mid-size autoregressive transformers
-but not with frontier models. The gap may close with scale; nobody is
+\paragraph{Why it hasn't won yet.} Quality, mostly. Discrete diffusion
+language models in 2026 (the ``Mercury / Inception''-style demos) are
+competitive with mid-size autoregressive transformers but not with
+frontier models, and the supporting ecosystem (tool use, streaming UX,
+KV-style caching) lags the autoregressive stack. Likelihood evaluation
+is also less straightforward than next-token negative log-likelihood.
+The gap may close with scale and with better schedulers; nobody is
 sure.
 
 \section{JEPA and the world-model camp}
@@ -36,17 +42,26 @@ sure.
 Yann LeCun's Joint Embedding Predictive Architectures
 \citep{lecun2022jepa} argue that LLMs train on the wrong objective: they
 predict surface symbols (tokens) instead of latent abstractions. A JEPA
-predicts the embedding of the future, not the future itself, and uses
-that embedding-prediction task as the basis for representation learning.
+trains an encoder \(f\) to map views of data into a latent space where a
+small predictor \(g\) can forecast \emph{representations} of masked
+regions from representations of visible context — without reconstructing
+pixels or tokens directly. Image-JEPA \citep{assran2023ijepa} and V-JEPA
+\citep{bardes2024vjepa} showed this objective learns semantically
+meaningful image and video representations for downstream tasks while
+ignoring high-frequency noise that contrastive losses struggle to filter
+out.
 
 \paragraph{The bet.} If you can train a world model that predicts
-\emph{abstract} state rather than concrete tokens, you should get a model
-that plans and reasons better. Whether you can train such a world model
-purely on text — without the multimodal grounding LeCun has emphasised —
-is contested.
+\emph{abstract} state rather than concrete tokens, you should get a
+model that plans and reasons better. The open research question for text
+is whether latent prediction can replace next-token cross-entropy
+without losing the easy compositional semantics of autoregressive
+transformers, especially without the multimodal grounding LeCun has
+emphasised.
 
-\paragraph{Status.} Early. JEPA is a research direction, not a deployed
-product, as of mid-2026.
+\paragraph{Status.} Early. As of mid-2026 the commercial stack remains
+token-autoregressive, but JEPA-style objectives are a credible research
+path beyond ``attention only''.
 
 \section{Programmatic / neuro-symbolic systems}
 
@@ -84,32 +99,3 @@ decade. There is no law that says it has to stay there. The honest
 position — for engineers, not marketers — is to bet on whichever
 architecture serves the customer cheapest at the quality the customer
 needs, and to keep reading the papers.}
-
-\paragraph{Diffusion language models (for transformer natives).}
-Discrete diffusion treats generation as an iterative \emph{denoising} process: a
-forward corruption (mask tokens, replace with uniform noise, or jump between
-states) destroys the string, and a learned reverse kernel restores plausible text
-\citep{hoogeboom2021multinomial,lou2024discrete}.
-Unlike autoregressive left-to-right models, many diffusion steps can be
-parallelised or scheduled adaptively, which is attractive for latency when the
-number of steps is small.
-The trade-off is training difficulty: the reverse process must approximate a
-highly multi-modal denoising distribution, and likelihood evaluation is less
-straightforward than next-token negative log-likelihood.
-By 2025--2026 several ``Mercury / Inception-style'' demos showed that discrete
-diffusion can reach deployable speeds on GPUs for chat-shaped workloads, but the
-ecosystem (tool use, streaming UX, KV-style caching) still lags autoregressive
-stacks---watch this space as objectives and schedulers mature.
-
-\paragraph{What JEPA predicts.}
-JEPA \citep{lecun2022jepa} trains an encoder \(f\) to map views of data into a
-latent space where a small predictor \(g\) can forecast \emph{representations}
-of masked regions from representations of visible context---without reconstructing
-pixels or tokens directly.
-Image-JEPA \citep{assran2023ijepa} and V-JEPA \citep{bardes2024vjepa} showed this
-objective learns semantically meaningful video representations for downstream
-tasks while ignoring high-frequency noise the way contrastive losses struggle to.
-For text, the open research question is whether latent prediction can replace
-next-token CE without losing the easy compositional semantics of autoregressive
-Transformers; as of 2026 the commercial stack remains token-autoregressive, but
-JEPA-style objectives are a credible research path beyond ``attention only.''

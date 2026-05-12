@@ -13,7 +13,26 @@ fast \emph{and} accurate \emph{and} differentiable. We have plenty of
 algorithms that hit two of those: ANN indexes are fast and accurate but
 not differentiable; learned routers are differentiable and fast but lose
 accuracy; hierarchical clustering is differentiable and accurate but slow
-to update during training.
+to update during training. A useful taxonomy of the design space:
+
+\begin{itemize}
+\item \textbf{Data-independent hashing} (LSH, random projections): cheap
+and free of differentiation, but buckets may miss true nearest neighbours
+unless the bit width is large — hard when keys change every layer.
+\item \textbf{Data-dependent clustering} (k-means / IVF codebooks):
+amortises routing lookups, but centroids must track moving keys and
+degrade under distribution shift.
+\item \textbf{Learned routers} (small MLPs, gating scores): flexible and
+trainable end-to-end, but risk collapsing diversity if routing
+saturates (see also DeepSeek-style sparsity \citep{deepseek2024dsa}).
+\item \textbf{Hierarchical cluster-then-attend}: a coarse stage prunes
+most keys, a fine stage reranks candidates; good recall but two-pass
+latency.
+\item \textbf{Hybrid retrieve-and-rerank}: an ANN index proposes
+candidates and dense dot-products rerank the top-\(m\); closest to
+production retrieval stacks, still needs careful batching inside
+autoregressive decoding.
+\end{itemize}
 
 The open question is whether SSA-style mechanisms can keep their
 selection function quality at the 1B-parameter / 1T-token scale where the
@@ -54,26 +73,9 @@ SSA, Mamba-hybrids, or some still-unnamed architecture is genuinely
 unsettled. Whoever wins the inference economics question wins the
 agentic-applications business.
 
-\keyidea{The next five years of LLM research are about inference, not
-training. Whoever can serve frontier-quality 1M-token context cheaply
-wins the agent platform business.}
-
-\begin{itemize}
-\item \textbf{Data-independent hashing} (LSH, random projections): cheap and
-differentiable-free, but buckets may miss true nearest neighbours unless bit
-width is large---hard when keys change every layer.
-\item \textbf{Data-dependent clustering} (k-means / IVF codebooks): amortises
-routing lookups, but centroids must track moving keys and degrade under
-distribution shift.
-\item \textbf{Learned routers} (small MLPs, gating scores): flexible and
-trainable end-to-end, but risk collapsing diversity if routing saturates (see
-also DeepSeek-style sparsity \citep{deepseek2024dsa}).
-\item \textbf{Hierarchical cluster-then-attend}: coarse stage prunes most keys,
-fine stage reranks candidates; good recall but two-pass latency.
-\item \textbf{Hybrid retrieve-and-rerank}: ANN index proposes candidates, dense
-dot-products rerank top-\(m\); closest to production retrieval stacks, still
-needs careful batching inside autoregressive decoding.
-\end{itemize}
+A back-of-the-envelope ranking helps ground the discussion. The absolute
+dollars are not knowable in print, but the relative ratios under
+identical accounting rules are:
 
 \begin{table}[htbp]
 \centering
@@ -89,12 +91,12 @@ SSA / SubQ-style routing & \(\$\,1\)--\(\$\,4\) & Uses vendor-reported \(\sim 50
 \bottomrule
 \end{tabular}
 \caption{Order-of-magnitude USD per million input tokens at \(n=10^{6}\),
-assuming mixed B200/H100 fleets, utilisation \(\approx 0.2\)--\(0.4\), and
-blended rent of a few USD per GPU-hour---meaningful only for comparing ratios
-between rows.}
+assuming mixed B200/H100 fleets, utilisation \(\approx 0.2\)--\(0.4\),
+and blended rent of a few USD per GPU-hour. Meaningful only for comparing
+ratios between rows.}
 \label{tab:dollar-per-m}
 \end{table}
 
-\noindent
-Absolute dollars are not knowable in print; the point of the table is relative
-ranking under identical accounting rules.
+\keyidea{The next five years of LLM research are about inference, not
+training. Whoever can serve frontier-quality 1M-token context cheaply
+wins the agent platform business.}

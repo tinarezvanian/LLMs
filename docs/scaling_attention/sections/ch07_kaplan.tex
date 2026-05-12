@@ -99,6 +99,40 @@ sweep and found that the optimal allocation shifts the other way:
 parameters and tokens should grow \emph{together}, with a token-to-parameter
 ratio of roughly 20.
 
+\paragraph{An illustrative extrapolation.}
+The compact toy form
+\begin{equation}
+  L(N) \;\approx\; L(N_{0})\,\left(\frac{N_{0}}{N}\right)^{\alpha_{N}},
+  \quad \alpha_{N} = 0.076,
+\end{equation}
+anchored to GPT-3 (\(N_{0} \approx 1.75\times 10^{11}\) parameters) with a reported
+WebText cross-entropy near \(1.7\)~nats,\sidenote{Actual frontier runs blend many
+datasets and recipes; treat \(L(N_{0})\) as an order-of-one anchor only.}
+makes the geometry concrete. Plug in an illustrative ``GPT-4-scale'' dense
+budget of \(N \approx 1.7\times 10^{12}\) (1.7T) parameters: the ratio
+\((N_{0}/N)^{0.076} \approx 0.10^{0.076} \approx 0.84\), so
+\(L(N) \approx 1.7 \times 0.84 \approx 1.4\)~nats. That is not a dramatic drop
+for a \(10\times\) parameter increase, which is exactly why the exponent
+matters more than the headline parameter count. The story is \emph{illustrative
+only}: \citet{hoffmann2022training} moved the optimum toward many more tokens
+per parameter, real frontier systems are often mixture-of-experts, and public
+loss numbers for later models are not comparable one-to-one to WebText nats.
+The structural point is that a smooth power law can make extrapolation look
+like deterministic forecasting while hiding the fact that data and routing —
+not \(N\) alone — dominate production behaviour.
+
+\paragraph{Emergent abilities: claims and corrections.}
+A related debate sits one layer above the loss curves. \citet{wei2022emergent}
+catalogued sharp jumps on benchmarks once models crossed scale thresholds:
+tasks look ``impossible'' until they suddenly aren't.
+\citet{schaeffer2023emergentmirage} argued that many of those jumps disappear
+under smoother metrics or continuous skill measurements, so perceived
+emergence tracks metric discontinuity more than mysterious phase transitions.
+The honest synthesis is middle-ground: loss curves are smooth while downstream
+pass/fail metrics sit on thresholds, so nonlinear capability can surface
+without contradicting smooth optimisation dynamics — especially when
+evaluation is binarised.
+
 We cover Chinchilla in the next chapter. For now, take Kaplan as the paper
 that established \emph{that} scaling laws exist and \emph{what shape} they
 have. The numbers got refined; the framework is permanent.
@@ -106,37 +140,3 @@ have. The numbers got refined; the framework is permanent.
 \keyidea{Loss is a power law in parameters, in data, and in compute. The
 straight lines are why scaling up is a strategy. The exponents tell you
 how steeply.}
-
-\paragraph{Illustrative Kaplan extrapolation (with caveats).}
-Kaplan-style scaling posits that cross-entropy improves predictably with model
-size; one compact toy form is
-\begin{equation}
-  L(N) \;\approx\; L(N_{0})\,\left(\frac{N_{0}}{N}\right)^{\alpha_{N}},
-  \quad \alpha_{N} = 0.076,
-\end{equation}
-anchored to GPT-3 (\(N_{0} \approx 1.75\times 10^{11}\) parameters) with a reported
-WebText cross-entropy near \(1.7\)~nats.\sidenote{Actual frontier runs blend many
-datasets and recipes; treat \(L(N_{0})\) as an order-of-one anchor only.}
-Plugging an illustrative ``GPT-4-scale'' dense budget \(N \approx 1.7\times
-10^{12}\) (1.7T) gives
-\((N_{0}/N)^{0.076} \approx 0.10^{0.076} \approx 0.84\), so
-\(L(N) \approx 1.7 \times 0.84 \approx 1.4\)~nats---not a dramatic drop for a
-\(10\times\) parameter increase, which is why the exponent matters more than
-headline parameter counts.
-This story is \emph{illustrative only}: \citet{hoffmann2022training} moved the
-optimum toward many more tokens per parameter, real systems are often
-mixture-of-experts, and public loss numbers for later models are not
-comparable one-to-one to WebText nats. The point is structural: a smooth
-power law can make extrapolation look like deterministic forecasting while hiding that
-data and routing—not \(N\) alone—dominate production behaviour.
-
-\paragraph{Emergent abilities: claims and corrections.}
-\citet{wei2022emergent} catalogued sharp jumps on benchmarks once models crossed
-scale thresholds—tasks look ``impossible'' until they suddenly aren't.
-\citet{schaeffer2023emergentmirage} argued many jumps disappear under smoother
-metrics or continuous skill measurements: perceived emergence tracks metric
-discontinuity more than mysterious phase transitions.
-The honest synthesis for scaling-law discourse is middle-ground: loss curves are
-smooth while downstream passes/failures sit on thresholds; nonlinear capability
-can surface without contradicting smooth optimisation dynamics---especially when
-evaluation is binarised.

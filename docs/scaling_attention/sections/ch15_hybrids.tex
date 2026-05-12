@@ -20,33 +20,20 @@ layers; the cost is dominated by the many linear ones.
 \section{Three representatives}
 
 \paragraph{Jamba} \citep{lieber2024jamba}. Interleaves Mamba blocks with
-attention blocks (and adds mixture-of-experts on top of both). Reports
-3$\times$ throughput at long context vs.\ a same-size transformer with
-matched quality. Arguably the first hybrid taken seriously at frontier
-scale.
-
-\paragraph{SAMBA} \citep{ren2024samba}. A simpler hybrid: Mamba +
-sliding-window attention + an MLP, repeated. Trained with effectively
-unlimited context windows; very strong on long-document benchmarks.
-
-\paragraph{Griffin} \citep{de2024griffin}. Mixes gated linear recurrences
-(a linear-attention variant) with local attention. Aimed at being a
-drop-in replacement for transformers in the small-to-mid-size regime.
-
-\section{The honest read}
-
-Hybrids are the dominant pragmatic answer for ``cheap-ish long context
-without giving up frontier quality'' in 2026. The picture they paint is
-that you cannot, today, completely delete attention from a frontier-quality
-language model — but you can confine it to a small fraction of layers and
-let cheaper sequence mixers do everything else.
-
-This is the setup that Subquadratic's bet builds on. The next part is
-about that bet.
-
-\keyidea{Hybrids work because attention's value is concentrated in a few
-layers per stack, not spread evenly. Replace the cheap layers with
-linear-time mixers; keep attention for the genuinely hard work.}
+attention blocks and adds a mixture-of-experts feed-forward on top of
+both, aiming for the best of three worlds: Mamba layers deliver
+throughput and long convolutions of memory, attention layers restore
+associative recall and ``look anywhere'' routing, and MoE widens
+parameter capacity without paying a full FFN's FLOPs every token. Public
+checkpoints report \(\mathcal{O}(10^{1})\)B active parameters with larger
+total (MoE) capacity and competitive RULER long-context scores relative
+to same-era dense Mixtral-class baselines; exact headline numbers drift
+with releases, so treat tables in the paper as authoritative. Ablations
+in \citet{lieber2024jamba} emphasise that \emph{where} attention is
+placed matters: removing the periodic attention layers hurts tasks that
+need sudden jumps in the sequence, while removing Mamba layers hurts
+throughput and very long convolutional structure. Arguably the first
+hybrid taken seriously at frontier scale.
 
 \begin{figure}[htbp]
 \centering
@@ -67,20 +54,13 @@ with periodic full attention for content-dependent routing \citep{lieber2024jamb
 \label{fig:jamba-stack}
 \end{figure}
 
-\paragraph{Jamba in one case study.}
-Jamba \citep{lieber2024jamba} interleaves Mamba SSM blocks with standard
-multi-head attention and a mixture-of-experts feed-forward, aiming for the best
-of three worlds: Mamba layers deliver throughput and long convolutions of memory,
-attention layers restore associative recall and ``look anywhere'' routing, and
-MoE widens parameter capacity without paying full FFN FLOPs every token.
-Public checkpoints report \(\mathcal{O}(10^{1})\)B active parameters with larger
-total (MoE) capacity and competitive RULER long-context scores relative to
-same-era dense Mixtral-class baselines; exact headline numbers drift with releases,
-so treat tables in the paper as authoritative.
-Ablations in \citet{lieber2024jamba} emphasise that \emph{where} attention is
-placed matters: removing the periodic attention layers hurts tasks that need
-sudden jumps in the sequence, while removing Mamba layers hurts throughput and
-very long convolutional structure.
+\paragraph{SAMBA} \citep{ren2024samba}. A simpler hybrid: Mamba +
+sliding-window attention + an MLP, repeated. Trained with effectively
+unlimited context windows; very strong on long-document benchmarks.
+
+\paragraph{Griffin} \citep{de2024griffin}. Mixes gated linear recurrences
+(a linear-attention variant) with local attention. Aimed at being a
+drop-in replacement for transformers in the small-to-mid-size regime.
 
 \begin{table}[htbp]
 \centering
@@ -93,10 +73,28 @@ Layer pattern & Mamba / Attn / Mamba / MoE repeat & Mamba + SWA attention & Line
 Hidden mixer & Mamba SSM + dense Attn & Mamba + sliding-window Attn & Gated linear + short Conv/Attn \\
 Public scale (order) & 52B total / \(\sim\)12B active (MoE) & 7B-class demos & 7B--14B-class recipes \\
 Context / eval & Long-context RULER-style suites & Long seq.\ via SWA window & Recurrent + local windows \\
-Throughput story & Few attention layers \(\Rightarrow\) higher tok/s & Windowed attention \(\Rightarrow\) linear-ish & Recurrent core \(\Rightarrow\) small KV \\
+Throughput story\textsuperscript{\dag} & Few attention layers \(\Rightarrow\) higher tok/s & Windowed attention \(\Rightarrow\) linear-ish & Recurrent core \(\Rightarrow\) small KV \\
 Status & Research + open weights (AI21) & Research (Microsoft) & Research (DeepMind) \\
 \bottomrule
 \end{tabular}
-\caption{Headline comparison; numeric throughput claims vary by hardware and batch---see original papers for reproducible configs.}
+\caption{Headline comparison of three hybrid families.
+\textsuperscript{\dag}The throughput row is qualitative — vendor-reported
+or paper-reported claims that depend heavily on hardware and batch; see
+the original papers for reproducible configs.}
 \label{tab:hybrid-compare}
 \end{table}
+
+\section{The honest read}
+
+Hybrids are the dominant pragmatic answer for ``cheap-ish long context
+without giving up frontier quality'' in 2026. The picture they paint is
+that you cannot, today, completely delete attention from a frontier-quality
+language model — but you can confine it to a small fraction of layers and
+let cheaper sequence mixers do everything else.
+
+This is the setup that Subquadratic's bet builds on. The next part is
+about that bet.
+
+\keyidea{Hybrids work because attention's value is concentrated in a few
+layers per stack, not spread evenly. Replace the cheap layers with
+linear-time mixers; keep attention for the genuinely hard work.}

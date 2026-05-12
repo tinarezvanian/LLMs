@@ -88,6 +88,40 @@ of requests, the right cost function isn't training compute — it is
 training compute plus the integral of inference cost over the model's
 lifetime. That argues strongly for over-training a smaller model.}
 
+\paragraph{Worked example: Chinchilla budget for a 100B model.}
+Take \(N = 10^{11}\) (100B). The recipe gives \(D \approx 20 N
+= 2\times 10^{12}\) tokens — two trillion tokens seen during
+training. Equation~\eqref{eq:flops} then yields
+\[
+  C \;\approx\; 6 \cdot (10^{11}) \cdot (2\times 10^{12})
+  \;=\; 1.2\times 10^{24}\ \text{FLOPs}.
+\]
+At an assumed sustained \(500\)~TFLOP/s per H100 on mixed-precision
+transformer workloads (\(5\times 10^{14}\) FLOP/s), one device delivers
+about \(1.8\times 10^{18}\) FLOPs per hour, so \(C\) corresponds to
+roughly \(6.7\times 10^{5}\) GPU-hours — order \(10^{6}\) device-hours
+before counting failed runs, checkpoint restarts, and evaluation. At a
+stylised \$3 per GPU-hour, that training phase alone is multiple millions
+of dollars in \emph{rental} cost; published frontier budgets aggregate
+hardware, power, networking, and iteration overhead well beyond this toy
+multiply.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{@{}lr@{}}
+\toprule
+Quantity & Value \\
+\midrule
+Tokens \(D = 20N\) & \(2\times 10^{12}\) \\
+Training FLOPs \(C \approx 6ND\) & \(1.2\times 10^{24}\) \\
+Single-GPU-hours @ \(500\)~TFLOP/s & \(\approx 6.7\times 10^{5}\) \\
+Stylised rental @ \$3/hr & \(\mathcal{O}(\$\,\mathrm{millions})\) \\
+\bottomrule
+\end{tabular}
+\caption{Illustrative Chinchilla-optimal budget for a 100B-parameter dense LM.}
+\label{tab:chinchilla-100b}
+\end{table}
+
 \section{The headline result}
 
 The dramatic single experiment in the Chinchilla paper: a 70B model trained
@@ -111,6 +145,21 @@ fit a power law. But the moment you ask the model to actually read a long
 document at inference time, the costs from Chapter~\ref{ch:why-quadratic}
 hit, and they are not in the scaling laws at all.
 
+\paragraph{``Inference-Chinchilla'' --- deployment-bound training.}
+Textbook Chinchilla fixes \((N, D)\) given a fixed \emph{training} compute
+envelope. \citet{sardana2024beyond} observe that for many shipped products
+serving — not training — dominates lifetime spend: train once, answer
+billions of queries. Imagine a deployment with \(10^{10}\) requests, each
+carrying \(10^{3}\) input tokens — \(10^{13}\) tokens of inference traffic
+versus \(2\times 10^{12}\) training tokens above. Even tiny per-token
+savings from a slightly smaller, slightly-longer-trained model compound
+across those \(10^{10}\) calls; past a breakpoint, extra training data on
+the smaller checkpoint buys cheaper inference forever. The arithmetic is
+qualitative — exact crossover depends on quality constraints, hardware
+margins, and routing — but it explains why deployment-first teams
+``over-train'' relative to the textbook 20:1 ratio when long-context
+attention costs (Parts IV–V) dominate serving bills.
+
 That gap is what Chapter~\ref{ch:what-scaling-omits} is about, and what
 the rest of this book is fundamentally a response to.
 
@@ -118,54 +167,3 @@ the rest of this book is fundamentally a response to.
 fed more tokens than Kaplan recommended. It does not say anything about
 how to spend inference compute on long contexts. The latter is the entire
 problem this book exists to discuss.}
-
-\paragraph{Worked example: Chinchilla tokens for a 100B model.}
-The Chinchilla recipe recommends \(D \approx 20 N\) tokens for \(N\) non-embedding
-parameters. Taking \(N = 10^{11}\) (100B) gives \(D \approx 2\times 10^{12}\)
-tokens---two trillion tokens seen during training.
-Equation~\ref{eq:flops} yields
-\[
-  C \;\approx\; 6 \cdot (10^{11}) \cdot (2\times 10^{12})
-  \;=\; 1.2\times 10^{24}\ \text{FLOPs}.
-\]
-At an assumed sustained \(500\)~TFLOP/s per H100 on mixed-precision transformer
-workloads (\(5\times 10^{14}\) FLOP/s), one device delivers
-\(5\times 10^{14}\times 3600 \approx 1.8\times 10^{18}\) FLOPs per hour, so
-\(C\) corresponds to roughly \(1.2\times 10^{24} / 1.8\times 10^{18} \approx
-6.7\times 10^{5}\) GPU-hours---order \(10^{6}\) device-hours before counting
-failed runs, checkpoint restarts, and evaluation.
-At a stylised \(\$\,3\) per GPU-hour, that training phase alone is multiple
-millions of dollars in \emph{rental} cost; frontier runs additionally amortise
-clusters across thousands of GPUs and engineer-years. Published frontier budgets
-(e.g.\ nine-figure estimates discussed alongside GPT-4-class systems) aggregate
-hardware, power, networking, and iteration overhead beyond this toy multiply.
-
-\begin{table}[htbp]
-\centering
-\begin{tabular}{@{}lr@{}}
-\toprule
-Quantity & Value \\
-\midrule
-Tokens \(D = 20N\) & \(2\times 10^{12}\) \\
-Training FLOPs \(C \approx 6ND\) & \(1.2\times 10^{24}\) \\
-Single-GPU-hours @ \(500\)~TFLOP/s & \(\approx 6.7\times 10^{5}\) \\
-Stylised rental @ \(\$\,3/\mathrm{hr}\) & \(\mathcal{O}(\$\,\mathrm{millions})\) \\
-\bottomrule
-\end{tabular}
-\caption{Illustrative Chinchilla-optimal budget for a 100B-parameter dense LM.}
-\label{tab:chinchilla-100b}
-\end{table}
-
-\paragraph{``Inference-Chinchilla'' (deployment-bound training).}
-Chinchilla fixes \((N,D)\) given a \emph{training} compute envelope.
-\citet{sardana2024beyond} observe that serving dominates lifetime spend for many
-products: train once, answer billions of queries.
-Imagine \(10^{10}\) requests each carrying \(10^{3}\) input tokens---\(10^{13}\)
-decode tokens at inference versus \(2\times 10^{12}\) training tokens above.
-Even tiny per-token savings from a slightly smaller, slightly longer-trained model
-compound across those \(10^{10}\) calls; past a breakpoint, extra training data on
-the smaller checkpoint buys cheaper inference forever.
-The arithmetic is qualitative---exact crossover depends on quality constraints,
-hardware margins, and routing---but it explains why deployment-first teams may
-``over-train'' relative to textbook Chinchilla when \(N^{2}\) attention at long
-context dominates serving bills (Part~IV--V).

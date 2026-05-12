@@ -258,7 +258,9 @@ media/
 texcache/
 .tex_cache/
 
-# LaTeX build artifacts (science companion PDF — sources only in git; run pdflatex locally)
+# LaTeX build artifacts (science companion). The compiled PDF (main.pdf) IS
+# tracked so the rendered book is browsable on GitHub; only intermediate
+# build files are ignored.
 docs/scaling_attention/*.aux
 docs/scaling_attention/*.log
 docs/scaling_attention/*.out
@@ -266,5 +268,4 @@ docs/scaling_attention/*.toc
 docs/scaling_attention/*.synctex.gz
 docs/scaling_attention/*.fdb_latexmk
 docs/scaling_attention/*.fls
-docs/scaling_attention/main.pdf
 

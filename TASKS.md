@@ -178,6 +178,75 @@ Runbook: [scripts/runbook_edit_and_ship.md](scripts/runbook_edit_and_ship.md). D
 
 ---
 
+## Phase 9 — LaTeX companion book (`docs/scaling_attention/`)
+
+> Parallel workstream to the video. The book is the long-form version of the deep-dive script and ships as a single PDF embedded in the application.
+
+**Current state (2026-05-11):** 128 pages, ~487 KB, builds clean with `xelatex` (two passes), zero `\fillme` stubs, zero undefined citations or references. Title page credits **Tina Rezvanian**. PDF is tracked in git at [`docs/scaling_attention/main.pdf`](docs/scaling_attention/main.pdf).
+
+### Build (do this every time you edit any `.tex`)
+
+```bash
+cd docs/scaling_attention
+xelatex -interaction=nonstopmode -halt-on-error main.tex
+xelatex -interaction=nonstopmode -halt-on-error main.tex   # second pass for refs
+# Or: ./compile.sh which does both.
+```
+
+A clean run prints `Output written on main.pdf (128 pages).` twice and produces zero `Citation ... undefined` / `Reference ... undefined` lines in `main.log`.
+
+### File map
+
+| Path | Role |
+|------|------|
+| [`main.tex`](docs/scaling_attention/main.tex) | Six-part shell (Background → Transformer → Scaling → O(n²) mitigations → Subquadratic alternatives → 2×2 frame + SSA + post-attention) |
+| [`preamble.tex`](docs/scaling_attention/preamble.tex) | `tufte-book` + Alegreya Sans + math macros + `\subtitle{}` + custom `\maketitle` + `\keyidea{}` |
+| [`sections/preface.tex`](docs/scaling_attention/sections/preface.tex) | "How to read this book" |
+| [`sections/copyright.tex`](docs/scaling_attention/sections/copyright.tex) | Colophon |
+| [`sections/ch01_*.tex`](docs/scaling_attention/sections/) … `ch20_*.tex` | 20 chapter files, ~100–250 lines each |
+| [`sections/appendix_a_shapes.tex`](docs/scaling_attention/sections/appendix_a_shapes.tex) | Tensor shape cheat sheet (uses `\section*`) |
+| [`sections/appendix_b_glossary.tex`](docs/scaling_attention/sections/appendix_b_glossary.tex) | A–Z glossary (one big `description` list, no `\section`) |
+| [`sections/appendix_c_reading.tex`](docs/scaling_attention/sections/appendix_c_reading.tex) | Annotated reading list (uses `\section*`) |
+| [`sections/references.tex`](docs/scaling_attention/sections/references.tex) | Numeric `\bibitem` bibliography. Add a new entry here whenever you introduce a new `\citet{key}` / `\citep{key}`. |
+
+### Hard rules for any LLM editing this book
+
+These exist because past passes broke them and produced visible damage. Do not repeat:
+
+1. **Never append new content after a chapter's `\keyidea{...}` block.** The `\keyidea` is the chapter's closing punch line; anything below it reads as a "trailing appendix" and breaks the narrative arc. New worked examples / sidebars / tables / figures / listings go into the most natural body section *above* `\keyidea`.
+2. **Before adding a paragraph, `Grep` the chapter for the same topic.** Past passes added duplicate "Jamba", "PagedAttention", "RoPE", "Diffusion", and "JEPA" paragraphs because they didn't check that those sections already existed. The fix is to merge useful new detail into the existing section, not to create a parallel one.
+3. **`\fillme` stubs no longer exist.** Don't reintroduce the macro, don't reintroduce the "Workflow for filling stubs" paragraph in the preface, don't reference `scripts/list_fill_stubs.sh`. The book is past that phase.
+4. **Use the macros already defined in `preamble.tex`** rather than rolling new ones:
+
+    | Macro | Purpose |
+    |-------|---------|
+    | `\bigO`, `\R`, `\E`, `\T` | `\mathcal{O}`, `\mathbb{R}`, `\mathbb{E}`, transpose |
+    | `\softmax`, `\Attn` | Operator names |
+    | `\heads`, `\dmodel`, `\dhead` | Standard transformer dimensions (`H`, `d_model`, `d_head`) |
+    | `\code{...}`, `\term{...}` | Inline code, first use of a term |
+    | `\subtitle{...}` | Title-page subtitle (set in `main.tex`) |
+    | `\keyidea{...}` | Closing punch box (one per chapter) |
+
+5. **Every new `\citep` / `\citet` needs a matching `\bibitem` in [`sections/references.tex`](docs/scaling_attention/sections/references.tex).** Verify with `grep "Citation .* undefined" main.log` after the second pass.
+6. **Tables with placeholder cells get deleted, not shipped.** `tab:ruler-third-party` was removed for exactly this reason — `(vendor sheet)` / `not available` is worse than no table. Either back every cell with a citation or drop the table.
+7. **Mark speculative claims explicitly.** Qualitative throughput rows or vendor-reported numbers should carry a `\dag` / `\textsuperscript{*}` and a footnote in the caption — see `tab:hybrid-compare` for the template.
+8. **Math escapes:** `##` confuses `\paragraph{}` (it reads as a parameter); write WordPiece's `##` as `\#\#`. Dollar signs inside prose need `\$`. Don't write `$\nmillion` — there is no `\nmillion` macro.
+9. **`text_equation()` is a Manim helper, not a LaTeX command.** Inside `.tex` files use real LaTeX (`\begin{equation}...\end{equation}` or inline `\(...\)`).
+10. **Two-pass build.** Anything touching cross-references, `\citet`, `\ref`, or the TOC needs `xelatex` run **twice**. CI is just you running it twice.
+
+### Pending tasks
+
+- [ ] **TASK 9.1** Tina (human) reads every chapter end-to-end after the editorial pass and flags any join point where a moved paragraph reads awkwardly. **Done when** Tina signs off.
+  - **Doer:** human. LLMs cannot judge prose flow as well as the author can.
+- [ ] **TASK 9.2** Source-check pass: for every `\citet{key}` in chapters 7–20, confirm the cited paper actually supports the claim in the surrounding sentence. Cross-reference against [`research/notes.md`](research/notes.md). Add missing primary sources to `sections/references.tex` if needed.
+  - **Done when** every numeric or empirical claim traces to a `\bibitem` and a `notes.md` line.
+- [ ] **TASK 9.3** Tighten remaining overfull `\hbox` warnings (about 8 of them at last build, mostly tables and a couple of `lstlisting` lines slightly past the body width). Use `\small` / `\scriptsize`, shrink `\tabcolsep`, or wrap long captions. Do **not** widen the text body.
+  - **Done when** `grep "Overfull \\\\hbox" main.log | wc -l` reports 0 (or the ones that remain are < 5pt cosmetic).
+- [ ] **TASK 9.4** Add a one-line "How to cite this book" block at the top of [`docs/scaling_attention/README.md`](docs/scaling_attention/README.md) once the application is submitted, so anyone landing on the repo from the cover letter can cite cleanly.
+- [ ] **TASK 9.5** (Optional) Build a print-ready 6×9 inch variant for a real bookbinder. Adjust `\geometry{}` in `preamble.tex` and re-run. Skip unless Tina decides to hand a physical copy to anyone.
+
+---
+
 ## Done definition (whole sprint)
 
 - [ ] Teaser uploaded to YouTube + embedded in X tweet 1
@@ -197,3 +266,7 @@ Runbook: [scripts/runbook_edit_and_ship.md](scripts/runbook_edit_and_ship.md). D
 - All on-screen formulas use `text_equation()` (Unicode `Text`) rather than `equation()` (LaTeX) so deep-dive renders without TeX. Switch back to `equation()` only after `make setup-latex`.
 - All on-screen text goes through the helpers in `vid/theme.py` (`body`, `caption`, `mono`, `title`, `heading`, `text_equation`); bare `Text("...")` is banned (Gotcha 11).
 - Aspect ratio set: **16:9 + 1:1 + 9:16**. See [DESIGN.md §3, §7](DESIGN.md).
+- **LaTeX book — never append after `\keyidea{}`.** Every chapter ends on `\keyidea{}`; new content goes into the body sections above it. Past LLMs broke this and it required a full editorial pass to fix (see Phase 9). Don't repeat.
+- **LaTeX book — `\fillme` is gone.** The macro is still defined in `preamble.tex` for back-compat but there are zero call sites. Don't reintroduce stubs; if you don't know what to write, ask in the issue rather than ship a placeholder.
+- **LaTeX book — title page goes through `\subtitle{...}`.** `\title{}` is the book title, `\subtitle{}` is the tagline, `\author{}` is `Tina Rezvanian`. Don't repurpose `\author{}` as a subtitle (the previous template did, and it broke attribution everywhere).
+- **Cursor IDE adds `Co-authored-by: Cursor <cursoragent@cursor.com>` to commits by default.** GitHub renders that as `cursoragent` co-committing next to the author. Toggle off in **Cursor Settings → Agent → Attribution**. If a trailer slips through, strip with `git filter-branch -f --msg-filter 'sed -e "/^Co-[Aa]uthored-by: Cursor/d"' -- --all`, clean `refs/original/`, and force-push with `--force-with-lease`.

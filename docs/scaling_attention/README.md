@@ -8,16 +8,18 @@ quadrant frame for SSA / SubQ and what could come next (diffusion LMs, JEPA).
 
 ## Template
 
-This directory uses the **Algorithmic Adventures** layout
-(`Algorithmic_Adventures/main.tex` + `preamble.tex`) but switches the body
-face to **Alegreya Sans** per the project brief.
+This directory is a `tufte-book` (XeLaTeX) project with the body face set to
+**Alegreya Sans** per the project brief.
 
 - **`preamble.tex`** — `tufte-book` shell with:
   - `\PassOptionsToPackage{numbers,sort&compress}{natbib}` (before `\documentclass`)
   - `\setmainfont[Path=./fonts/]{Alegreya Sans}` (Regular / Bold / Italic /
     BoldItalic), with `\AlegreyaLight` and `\AlegreyaDisplay` newfontfamily
     aliases for body running text and chapter titles.
-  - Math macros (`\bigO`, `\softmax`, `\Attn`, etc.).
+  - Math macros (`\bigO`, `\softmax`, `\Attn`, `\heads`, `\dmodel`, `\dhead`).
+  - Title-page additions: `\subtitle{...}` macro and a custom `\maketitle`
+    that renders title → subtitle → author → date.
+  - `\keyidea{...}` punch-box used at the close of every chapter.
 - **`main.tex`** — six-part book shell: Background → Transformer → Scaling
   laws → Living with O(n²) → Subquadratic alternatives → 2x2 frame + SSA +
   what's next.
@@ -62,60 +64,32 @@ fully resolve TOC + cross-references).
 | `fonts/EBGaramond-*.ttf` | Optional fallback |
 | `compile.sh` | Two-pass XeLaTeX |
 
-## To-fill stubs (for future LLM passes)
+## Current state
 
-The book is a draft. Roughly 60 places where a worked example, code listing,
-sidebar, comparison table, or case study would help are marked with a
-`\fillme{ID}{TITLE}{BRIEF}{SOURCES}{TARGET}` macro. They render as visible
-amber boxes in the PDF so they don't get forgotten, and they are
-machine-greppable from the command line.
+- **128 pages**, ~487 KB, builds clean with `xelatex` (two passes).
+- **Zero `\fillme` stubs** remaining. Don't reintroduce them.
+- **Zero undefined citations or references.**
+- Title page credits **Tina Rezvanian**; subtitle uses the `\subtitle{}` macro defined in `preamble.tex`.
+- Compiled PDF [`main.pdf`](main.pdf) is tracked in git.
 
-### List every open stub
+## Hard rules for any LLM editing this book
 
-```bash
-# Plain checklist, all 60 stubs with file:line
-bash scripts/list_fill_stubs.sh
+These exist because past passes broke them. See [`TASKS.md` §Phase 9](../../TASKS.md#phase-9--latex-companion-book-docsscaling_attention) for the full backlog and explanation; the abridged version:
 
-# Markdown task list, paste-able into an issue
-bash scripts/list_fill_stubs.sh --markdown
-
-# Just the totals
-bash scripts/list_fill_stubs.sh --count
-```
-
-### Recipe for a future LLM picking off a stub
-
-1. Run `bash scripts/list_fill_stubs.sh`. Pick one ID.
-2. Open the file at the reported line. Read the surrounding chapter so you
-   understand what was already said and what *not* to repeat.
-3. Read the sources named in the stub's `Sources.` field — usually a
-   primary paper plus the relevant section of `research/notes.md`.
-4. Replace the entire `\fillme{...}{...}{...}{...}{...}` invocation with
-   the finished prose / table / listing / figure.
-5. Hit the target length to within ±30%. Much shorter usually means you
-   skipped something the brief asked for.
-6. Cite using `\citep{key}` / `\citet{key}` keys already in
-   `sections/references.tex`. Add a `\bibitem[Author(Year)]{key}` entry
-   if the source isn't there.
-7. Recompile (`./compile.sh`) and confirm there are no `Citation undefined`
-   or `Reference undefined` warnings in `main.log`.
-
-### Stub categories
-
-- **Worked examples** (numerical) — most chapters have one or two.
-- **Code listings** — Python or PyTorch; `language=Python` in `lstlisting`.
-- **Sidebars** — half-page deeper dives on topics the body waves at.
-- **Case studies** — one full page each on Jamba (and similar).
-- **Comparison tables** — `tabular`, usually 3--5 rows.
-- **Appendices** (A: shape cheat sheet, B: glossary, C: reading list) — these
-  are entirely composed of stubs that should each be filled before the book
-  is considered done.
+1. **Never append new content after a chapter's `\keyidea{...}` block.** New worked examples / sidebars / tables / figures / listings go into the most natural body section *above* `\keyidea`.
+2. **Before adding a paragraph, `grep` the chapter for the same topic.** Past LLMs added duplicate Jamba / PagedAttention / RoPE / Diffusion / JEPA paragraphs because they didn't check. Merge into the existing section, don't create a parallel one.
+3. **`\fillme` is gone.** The macro is still defined in `preamble.tex` for back-compat but every call site has been replaced. Don't bring stubs back.
+4. **Use the macros already defined in [`preamble.tex`](preamble.tex)**: `\bigO`, `\R`, `\E`, `\T`, `\softmax`, `\Attn`, `\heads`, `\dmodel`, `\dhead`, `\code{}`, `\term{}`, `\subtitle{}`, `\keyidea{}`. Don't roll new ones.
+5. **Every new `\citep` / `\citet` needs a matching `\bibitem`** in [`sections/references.tex`](sections/references.tex).
+6. **Tables with placeholder cells get deleted, not shipped.** `tab:ruler-third-party` was removed for this reason. Back every cell with a source or drop the table.
+7. **Mark vendor-reported / speculative claims explicitly** with `\dag` / `\textsuperscript{*}` and a caption footnote — see `tab:hybrid-compare` for the template.
+8. **Always run `xelatex` twice** for cross-references and citations.
 
 ## Provenance
 
-- Layout / class macros: **Algorithmic Adventures** (Ehsan Shah-Hosseini).
-- Scientific content: **`LLMs/research/notes.md`** plus the primary sources
-  cited in `sections/references.tex` (Vaswani 2017, Kaplan 2020,
-  Hoffmann 2022, Dao 2022, Gu & Dao 2023, Subquadratic 2026 SSA technical
-  post, etc.).
+- Scientific content: [`research/notes.md`](../../research/notes.md) plus
+  the primary sources cited in
+  [`sections/references.tex`](sections/references.tex) (Vaswani 2017,
+  Kaplan 2020, Hoffmann 2022, Dao 2022, Gu & Dao 2023, Subquadratic 2026
+  SSA technical post, etc.).
 - Body face: **Alegreya Sans** by Juan Pablo del Peral, SIL OFL.

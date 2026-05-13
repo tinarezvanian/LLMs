@@ -1,4 +1,4 @@
-\chapter{What comes after attention}
+\section{What comes after attention}
 \label{ch:post-attention}
 
 \newthought{Sparse attention} of any flavour is still attention. The
@@ -9,10 +9,10 @@ the right computational primitive at all?}
 
 This is speculative. None of the alternatives below has a frontier-quality
 deployment yet. The point of including them is to remind the reader that
-the post-transformer landscape might extend well past where this book has
+the post-attention research agenda might extend well past where this book has
 mapped it.
 
-\section{Diffusion language models}
+\subsection{Diffusion language models}
 
 Discrete diffusion treats generation as an iterative \emph{denoising}
 process \citep{hoogeboom2021multinomial,lou2024discrete}: a forward
@@ -37,14 +37,14 @@ is also less straightforward than next-token negative log-likelihood.
 The gap may close with scale and with better schedulers; nobody is
 sure.
 
-\section{JEPA and the world-model camp}
+\subsection{JEPA and the world-model camp}
 
 Yann LeCun's Joint Embedding Predictive Architectures
 \citep{lecun2022jepa} argue that LLMs train on the wrong objective: they
 predict surface symbols (tokens) instead of latent abstractions. A JEPA
 trains an encoder \(f\) to map views of data into a latent space where a
 small predictor \(g\) can forecast \emph{representations} of masked
-regions from representations of visible context — without reconstructing
+regions from representations of visible context; without reconstructing
 pixels or tokens directly. Image-JEPA \citep{assran2023ijepa} and V-JEPA
 \citep{bardes2024vjepa} showed this objective learns semantically
 meaningful image and video representations for downstream tasks while
@@ -63,7 +63,7 @@ emphasised.
 token-autoregressive, but JEPA-style objectives are a credible research
 path beyond ``attention only''.
 
-\section{Programmatic / neuro-symbolic systems}
+\subsection{Programmatic / neuro-symbolic systems}
 
 A different bet: instead of making models bigger, make them \emph{call
 out} to deterministic computation (search engines, code interpreters,
@@ -73,7 +73,7 @@ the open question is how much of the LLM's parametric knowledge can
 eventually be moved to external tools, and whether that lets the LLM
 itself be much smaller.
 
-\section{Energy-based and continuous-state models}
+\subsection{Energy-based and continuous-state models}
 
 A small but persistent line of work pursues sequence models that maintain
 a continuous, low-dimensional state and update it via energy
@@ -81,7 +81,7 @@ minimisation rather than autoregression. The connection to control
 theory and physics-informed models is strong; the connection to
 production NLP is, so far, weak.
 
-\section{Honest closing}
+\subsection{Honest closing}
 
 A book like this is by definition out of date the moment it ships. The
 $\bigO(n^2)$ wall is real, the engineering response is mature, and the
@@ -96,6 +96,6 @@ obvious. We are squarely in that part right now.
 
 \keyidea{Attention has been the centre of language modelling for a
 decade. There is no law that says it has to stay there. The honest
-position — for engineers, not marketers — is to bet on whichever
+position; for engineers, not marketers; is to bet on whichever
 architecture serves the customer cheapest at the quality the customer
 needs, and to keep reading the papers.}

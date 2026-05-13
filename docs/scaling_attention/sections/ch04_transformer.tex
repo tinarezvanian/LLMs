@@ -1,16 +1,16 @@
-\chapter{The transformer recipe}
+\section{The transformer recipe}
 \label{ch:transformer}
 
-\newthought{This chapter} walks through a standard decoder-only transformer
-block end to end, the way you would actually code it. The next chapter zooms
+\newthought{This section} walks through a standard decoder-only transformer
+block end to end, the way you would actually code it. The next section zooms
 into the attention sub-layer; the chapter after that derives why that
 sub-layer is the cost driver.
 
-\section{The block, in one picture}
+\subsection{The block, in one picture}
 
 A decoder-only transformer is a stack of \(L\) identical blocks. Each block
-takes a tensor of shape \([n, d]\) — \(n\) tokens, each represented by a
-vector of \(\dmodel = d\) dimensions — and returns a tensor of the same
+takes a tensor of shape \([n, d]\); \(n\) tokens, each represented by a
+vector of \(\dmodel = d\) dimensions; and returns a tensor of the same
 shape. Inside the block, two sub-layers do the work:
 
 \begin{enumerate}
@@ -28,9 +28,9 @@ Each sub-layer is wrapped in a \term{residual connection} and a
   y &\;\leftarrow\; z + \text{MLP}(\text{LN}(z)).
   \label{eq:block}
 \end{align}
-That is a complete block.\sidenote{Two flavours: \emph{post-LN} (the
-original 2017 paper) puts the LN \emph{after} the residual sum;
-\emph{pre-LN} (now standard) puts it \emph{before}, as written here.
+That is a complete block.\sidenote{Two flavours: \emph{post-layer-norm (post-LN)} (the
+original 2017 paper) puts layer normalisation (LN) \emph{after} the residual sum;
+\emph{pre-layer-norm (pre-LN)} (now standard) puts LN \emph{before}, as written here.
 Pre-LN trains more stably at depth.} The whole model wraps token embeddings
 + positional information as input, runs \(L\) of these blocks, applies a
 final LN, and projects to logits over the vocabulary.
@@ -67,23 +67,23 @@ all the actual work happens.}
 \label{fig:block}
 \end{figure}
 
-\section{The pieces, named}
+\subsection{The pieces, named}
 
 \paragraph{Embeddings.} Token ids \(\to\) vectors of dimension \(d\) via the
-table from Chapter~\ref{ch:tokens}.
+table from Section~\ref{ch:tokens}.
 
-\paragraph{Positional information.} Attention is permutation-invariant — if
+\paragraph{Positional information.} Attention is permutation-invariant; if
 you shuffle the tokens, the output is the same. Real language is not. The
 fix is to add positional information to the embeddings.\sidenote{Three
-families have dominated. (i) Learned absolute positions (BERT, GPT-2):
+families have dominated. (i) Learned absolute positions (BERT: Bidirectional Encoder Representations from Transformers; GPT-2: second-generation Generative Pre-trained Transformer):
 add a learned vector per index. (ii) Sinusoidal (Vaswani 2017): use
 hand-crafted sine waves at geometric frequencies. (iii) RoPE (rotary
 position embeddings, \citealp{su2021rope}): apply a position-dependent
-rotation inside the attention's Q and K, which is the de-facto modern
+rotation inside the attention's queries \(Q\) and keys \(K\), which is the de-facto modern
 choice (Llama, Mistral, Gemma). RoPE composes cleanly with extrapolation
-tricks like YaRN \citep{peng2023yarn}.}
+tricks like YaRN (Yet another RoPE extensioN) \citep{peng2023yarn}.}
 
-\paragraph{Self-attention.} The hero of Chapter~\ref{ch:self-attention}.
+\paragraph{Self-attention.} The hero of Section~\ref{ch:self-attention}.
 Lets every token's representation be a weighted average of every other
 token's value, where the weights are computed from the dot product of the
 current token's \emph{query} with the others' \emph{keys}.
@@ -95,10 +95,10 @@ each position:
 \end{equation}
 with hidden dimension \(d_{\text{ff}}\), typically \(4d\) (so 16,384 for
 \(d = 4{,}096\)). \(\sigma\) is GeLU, SwiGLU, or similar. This is where
-most of the parameters live — the FFN is roughly \(8 d^2\) parameters per
+most of the parameters live. The FFN is roughly \(8 d^2\) parameters per
 layer, vs. \(4 d^2\) for attention's projection matrices.\sidenote{For a
-7B model with \(d=4096\), \(L=32\): attention \(\approx 32 \cdot 4 d^2
-\approx 2.1\)B params, FFN \(\approx 32 \cdot 8 d^2 \approx 4.3\)B params,
+7-billion-parameter model with \(d=4096\), \(L=32\) layers: attention \(\approx 32 \cdot 4 d^2
+\approx 2.1\)B params, feed-forward network (FFN) \(\approx 32 \cdot 8 d^2 \approx 4.3\)B params,
 plus embeddings and norms. The FFN dominates the parameter count even
 though attention dominates the asymptotic compute.}
 
@@ -109,7 +109,7 @@ hidden vector to have zero mean and unit variance (LN) or just unit norm
 \paragraph{Output projection.} A linear layer of shape \([d, V]\) followed
 by a softmax (equation~\ref{eq:softmax}) to produce next-token probabilities.
 
-\section{Why the transformer beat the LSTM}
+\subsection{Why the transformer beat the LSTM}
 
 Three reasons matter.
 
@@ -126,7 +126,7 @@ identical blocks with no special handling. RNNs above ${\sim}4$ layers were
 notoriously hard to train.
 \end{enumerate}
 
-\section{What it cost}
+\subsection{What it cost}
 
 The transformer pays for those three wins with one bill: every layer's
 attention sub-block computes an \(n \times n\) matrix of pairwise
@@ -134,12 +134,13 @@ similarities between tokens. Compute scales as \(n^2\). Memory for the
 attention matrix scales as \(n^2\). The KV cache used at generation time
 scales as \(n\) per layer, but with multiplicatively large constants.
 
-For \(n\) of a few thousand — the regime of GPT-2 and GPT-3 — this was fine.
-For \(n\) of one million — what 2026's agentic workloads want — it is the
-defining problem of the field. Chapter~\ref{ch:why-quadratic} derives the
-\(n^2\) cost carefully; Chapters~\ref{ch:flashattention}--\ref{ch:kv-cache} document the engineering response;
-Chapters~\ref{ch:sparse}--\ref{ch:hybrids} cover the architectures that try to escape it.
+For \(n\) of a few thousand; the regime of GPT-2 and GPT-3. This was fine.
+For \(n\) of one million; what 2026's agentic workloads want. It is the
+defining problem of the field. Section~\ref{ch:why-quadratic} derives the
+\(n^2\) cost carefully; Sections~\ref{ch:flashattention}--\ref{ch:kv-cache} document the engineering response;
+Sections~\ref{ch:sparse}--\ref{ch:hybrids} cover the architectures that try to escape it.
 
+\iffalse
 \begin{lstlisting}[caption={Pre-LN decoder block matching Figure~\ref{fig:block} and equation~\ref{eq:block}.}]
 import math
 import torch
@@ -189,6 +190,7 @@ class TransformerBlock(nn.Module):
         x = x + h
         return x
 \end{lstlisting}
+\fi
 
 \noindent
 \texttt{LayerNorm} precedes each sub-layer; the residual adds skip connections
@@ -197,8 +199,9 @@ around attention and around the two-layer FFN, matching equation~\ref{eq:block}.
 \(QK^{\mathsf T}\) softmax map described in prose; the causal mask encodes
 decoder-only masking over sequence length \(T\).
 
-\begin{table}[htbp]
-\centering
+\begin{table*}[htbp]
+% Left-flush, not \centering, so the table sits at the inner margin.
+\noindent
 \small
 \begin{tabular}{@{}lrr@{}}
 \toprule
@@ -223,7 +226,7 @@ Total (rounded) & & \(\mathbf{\approx 8.03\text{B}}\) \\
 \(d_{\text{ff}}=14{,}336\), \(V=128{,}256\), SwiGLU MLP, separate embedding and
 LM head matrices.}
 \label{tab:llama8b-params}
-\end{table}
+\end{table*}
 
 \noindent
 The largest slices are the SwiGLU triple (\(\approx 176\)M parameters per layer)

@@ -1,15 +1,15 @@
-\chapter{What a language model actually does}
+\section{What a language model actually does}
 \label{ch:what-lm}
 
 \newthought{A language model} is a function that takes a sequence of symbols
 and returns a probability distribution over what symbol could come next. That
-is the entire idea. Everything in this book — embeddings, attention, scaling
-laws, KV caches, subquadratic alternatives — is engineering on top of that
+is the entire idea. Everything in this book (embeddings, attention, scaling
+laws, KV caches, subquadratic alternatives) is engineering on top of that
 one definition.
 
-\section{The one equation you need}
+\subsection{The one equation you need}
 
-Let \(x_1, x_2, \ldots, x_n\) be a sequence of \term{tokens} (Chapter~\ref{ch:tokens}
+Let \(x_1, x_2, \ldots, x_n\) be a sequence of \term{tokens} (Section~\ref{ch:tokens}
 defines that word precisely; for now, think ``approximately a word''). A
 language model is a parameterised distribution
 \begin{equation}
@@ -20,9 +20,9 @@ language model is a parameterised distribution
 \end{equation}
 The right-hand side is the chain rule of probability.\sidenote{This is the
 \emph{autoregressive} factorisation. Predict each token given the prefix; multiply
-the per-token probabilities to get the joint. Almost every modern LLM is
+the per-token probabilities to get the joint. Almost every modern large language model (LLM) is
 trained this way.} The model's job is to learn the conditional
-\(p_\theta(x_t \mid x_{<t})\) — the probability of the \emph{next} token given
+\(p_\theta(x_t \mid x_{<t})\). The probability of the \emph{next} token given
 everything that came before.
 
 Training is just maximum-likelihood estimation: pick parameters \(\theta\) that
@@ -35,7 +35,7 @@ unless someone says otherwise.}
 machine to a corpus by maximum likelihood. Almost everything else is plumbing
 that makes the machine fast and accurate.}
 
-\section{Why that humble idea is so powerful}
+\subsection{Why that humble idea is so powerful}
 
 A model that can predict ``the cat sat on the \rule{1cm}{0.4pt}'' has, in
 order to do so, picked up a startling amount of structure. To put a high
@@ -54,26 +54,26 @@ None of that was hand-coded. It is a side effect of the maximum-likelihood
 objective on enough text. \emph{Generation} is then the same model run
 forwards: sample a token from the distribution, append it, and repeat. That
 loop is the entire reason ChatGPT works.\sidenote{The other half is
-instruction tuning and reinforcement learning from human feedback, which we
+instruction tuning and reinforcement learning from human feedback (RLHF), which we
 will not cover. The pretraining objective in
 equation~\eqref{eq:chain-rule} is what builds the latent capability; RLHF
 shapes the surface behaviour.}
 
-\section{What the input \emph{actually} looks like}
+\subsection{What the input \emph{actually} looks like}
 
 Equation~\eqref{eq:chain-rule} talks about tokens as if they were given. They
-are not — there is no canonical way to chop text into tokens, and the choice
-matters. We unpack that in Chapter~\ref{ch:tokens}. For now: imagine each
+are not. There is no canonical way to chop text into tokens, and the choice
+matters. We unpack that in Section~\ref{ch:tokens}. For now: imagine each
 \(x_t\) as one element of a finite \emph{vocabulary} of size~\(V\), so the
 model's output at each step is a vector of \(V\) probabilities that sum
 to~one.\sidenote{Typical \(V\) is between \(30{,}000\) and \(200{,}000\) for a
-modern LLM. GPT-2 used 50,257; Llama 3 uses 128,000. Larger vocabularies
+modern large language model (LLM). GPT-2 used 50,257; Llama 3 uses 128,000. Larger vocabularies
 shorten the average input but make the output projection more expensive.}
 
-\section{What the output \emph{actually} looks like}
+\subsection{What the output \emph{actually} looks like}
 
-The model produces a vector \(z_t \in \R^{V}\) of \term{logits} — pre-softmax
-scores — and turns them into a probability distribution by
+The model produces a vector \(z_t \in \R^{V}\) of \term{logits} (pre-softmax
+scores) and turns them into a probability distribution by
 \begin{equation}
   p_\theta(x_t = v \mid x_{<t})
   \;=\;
@@ -90,30 +90,46 @@ makes the model deterministic-looking. Higher \(\tau\) makes it surprising,
 sometimes unhelpfully so. Most product systems use \(\tau\) between
 \(0.2\) and \(1.0\) and combine it with top-\(p\)~\(\approx\)~\(0.9\).}
 
-\section{Why we care about \emph{how} \(p_\theta\) is computed}
+\subsection{Why we care about \emph{how} \(p_\theta\) is computed}
 
 The chain-rule view in equation~\eqref{eq:chain-rule} is architecture-free. It
 does not say whether \(p_\theta(x_t \mid x_{<t})\) should be computed by a
 hash table, an n-gram count, an LSTM, or a transformer. Those are
 engineering choices, and they have very different cost profiles in compute
-and in memory. The rest of this book is about that choice — how the field
+and in memory. The rest of this book is about that choice: how the field
 arrived at the transformer, how that choice scales, and what is being
 proposed in 2026 to replace it.
 
 In particular, the cost of computing \(p_\theta(x_t \mid x_{<t})\) is not a
 fixed constant per token. It depends on \emph{how much context} \(x_{<t}\) the
 model is asked to attend to. For an n-gram model the cost is constant
-(Chapter~\ref{ch:pre-transformer}). For an RNN it is also roughly constant
+(Section~\ref{ch:pre-transformer}). For an RNN it is also roughly constant
 per token, but information from far back is lost (also
-Chapter~\ref{ch:pre-transformer}). For a dense transformer it grows
-\emph{quadratically} with context length (Chapter~\ref{ch:why-quadratic}).
+Section~\ref{ch:pre-transformer}). For a dense transformer it grows
+\emph{quadratically} with context length (Section~\ref{ch:why-quadratic}).
 That last fact is what the second half of the book is about.
 
-\section{Worked example: cross-entropy on a toy vocabulary}
+\subsection{Worked example: cross-entropy on a toy vocabulary}
+
+This subsection is a \emph{warm-up}: we fix one tiny string and three toy
+probability assignments (uniform, a frequency table, and a degenerate bigram
+that memorises the string). The point is to see, in numbers, how
+equation~\eqref{eq:chain-rule} turns into a product of per-token probabilities,
+why \(-\log p(\text{whole string})\) is called the (total) cross-entropy in
+\emph{nats}, and why the third model looks perfect on the training string but
+would fail on any new text. Nothing here is a neural network yet; it is just
+probability bookkeeping you will reuse when reading loss curves later.
 
 Take \(V = \{a,b,c,d\}\) and the five-token sequence \(x =\) \texttt{a b a c d}.
-Count symbols for an empirical unigram: \(a{:}2, b{:}1, c{:}1, d{:}1\) out of
-five draws, so \(\hat p(a)=\frac{2}{5}\), \(\hat p(b)=\hat p(c)=\hat p(d)=\frac{1}{5}\).
+A \emph{unigram} model ignores order and guesses the next token using only how
+often each symbol appeared in this same string. Here the counts are
+\(a{:}2, b{:}1, c{:}1, d{:}1\) out of five positions, so the estimated
+probabilities are \(\hat p(a)=\frac{2}{5}\), \(\hat p(b)=\hat p(c)=\hat p(d)=\frac{1}{5}\).
+
+The table below gives the joint probability \(p(\texttt{a b a c d})\) under each
+model (multiply the five per-token factors from left to right), its negative
+natural logarithm in nats, and the same total divided by five tokens so you can
+read it as an average per-token score.
 
 \begin{center}
 \begin{tabular}{lccc}
@@ -139,21 +155,22 @@ Model & \(p(\texttt{a b a c d})\) & \(-\log p\) (nats) & per-token CE \\
 For (iii) we stored enough parameters to memorise the single training string:
 after seeing \texttt{a}, the next token is always \texttt{b}; after \texttt{b},
 always \texttt{a}; and so on. The likelihood is maximised trivially on this one
-example — and would be catastrophic on any held-out text where those bigrams
+example, and would be catastrophic on any held-out text where those bigrams
 never appeared.\sidenote{This is the cartoon version of \emph{overfitting}: the
 flexible model nails the training loss but does not compress structure that
-generalises. Real LMs smooth counts or use neural masses instead of tables,
+generalises. Real language models (LMs) smooth counts or use neural masses instead of tables,
 precisely to avoid this collapse.}
 
 \textbf{Nats vs bits.} ``Cross-entropy'' is reported in either \emph{nats}
 (natural logarithm, this table) or \emph{bits} (base-2 logarithm). One nat equals
 \(\log_2 e \approx 1.443\) bits; divide nats by \(\log 2\) to convert.
 
-\section{A minimal next-token sampler (pure Python)}
+\subsection{A minimal next-token sampler (pure Python)}
 
 The softmax in equation~\eqref{eq:softmax} is the only non-linearity you need
 to implement decoding strategies against any oracle that returns logits.
 
+\iffalse
 \begin{lstlisting}[caption={Greedy, temperature, top-$k$, and nucleus sampling share one softmax routine.}]
 import math
 import random
@@ -190,7 +207,7 @@ def decode_temperature(logits_fn, prompt_ids, tau=0.8, max_new=32):
     return out
 
 def decode_top_k(logits_fn, prompt_ids, k=40, max_new=32):
-    """Truncate mass to the k largest logits — stable workhorse in APIs."""
+    """Truncate mass to the k largest logits; stable workhorse in APIs."""
     out = list(prompt_ids)
     for _ in range(max_new):
         z = logits_fn(out)
@@ -226,6 +243,7 @@ def decode_top_p(logits_fn, prompt_ids, p_mass=0.9, max_new=32):
                 break
     return out
 \end{lstlisting}
+\fi
 
 \noindent
 These functions intentionally omit batched tensor code so the control flow

@@ -77,30 +77,95 @@
 \usepgfplotslibrary{polar}
 \usepackage{tikz}
 \usetikzlibrary{matrix, calc, decorations.pathmorphing, positioning, arrows.meta}
-\usepackage{booktabs, multirow, siunitx, xspace, fancyvrb}
+\usepackage{booktabs, multirow, siunitx, xspace, fancyvrb, tabularx}
 \usepackage[svgnames]{xcolor}
 \usepackage{listings}
 
 % --- Hyperlinks (load after most packages, before bookmark fixups) ---
 \usepackage{hyperref}
+% Modest, on-brand link colours.  Cross-references render as a muted teal so
+% they read as ``clickable'' but do not fight the body text on paper.
+\definecolor{linkInternal}{HTML}{1F4E5F}
+\definecolor{linkCitation}{HTML}{6F2A6F}
+\definecolor{linkExternal}{HTML}{1F4E5F}
 \hypersetup{
   colorlinks = true,
-  linkcolor  = DarkSlateGray,
-  citecolor  = DarkSlateGray,
-  urlcolor   = DarkSlateGray,
+  linkcolor  = linkInternal,
+  citecolor  = linkCitation,
+  urlcolor   = linkExternal,
+  linktoc    = all,
+  pdfborder  = {0 0 0},
 }
 \urlstyle{same}
 
+% `cleveref` rewrites `\cref{foo}` and `\Cref{foo}` to ``Section 2.3'',
+% ``Chapter 1'', ``Table 3.2'' etc. automatically; `\ref{foo}` still works
+% as before. Loaded *after* hyperref per its docs.
+\usepackage[capitalise,nameinlink]{cleveref}
+\crefname{section}{section}{sections}
+\Crefname{section}{Section}{Sections}
+\crefname{subsection}{section}{sections}
+\Crefname{subsection}{Section}{Sections}
+\crefname{chapter}{chapter}{chapters}
+\Crefname{chapter}{Chapter}{Chapters}
+\crefname{table}{table}{tables}
+\Crefname{table}{Table}{Tables}
+\crefname{figure}{figure}{figures}
+\Crefname{figure}{Figure}{Figures}
+\crefname{equation}{equation}{equations}
+\Crefname{equation}{Equation}{Equations}
+
 % `thebibliography` (book.cls) opens with `\chapter*{\bibname}`; default
-% `\bibname` is ``Bibliography''. `main.tex` also used `\chapter*{References}`,
-% which produced two headings. We keep the outer chapter in `main.tex` and
-% strip the inner duplicate here (tufte-book inherits `book.cls`):
+% `\bibname` is ``Bibliography''. `main.tex` also adds `\chapter*{References}`,
+% which produces two back-matter headings. The `\patchcmd` route is fragile
+% (silently fails if the token stream doesn't match exactly), so just
+% redefine the environment to start the list directly. The body of
+% `thebibliography` below is copied verbatim from `book.cls` minus the
+% opening `\chapter*{\bibname}` and `\@mkboth{...}{...}`.
 \makeatletter
-\AtBeginDocument{%
-  \patchcmd{\thebibliography}%
-    {\chapter*{\bibname}\@mkboth{\MakeUppercase\bibname}{\MakeUppercase\bibname}}%
-    {}{}{}%
-}%
+\renewenvironment{thebibliography}[1]
+     {\list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy
+      \clubpenalty4000
+      \@clubpenalty \clubpenalty
+      \widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+\makeatother
+
+% --- Tufte fullwidth-float caption fix ---------------------------------
+% `tufte-book`'s `\@tufte@float@fullwidth` typesets the caption inside a
+% `\smash{}` (so the caption box claims zero vertical height) and floats it
+% to the right of the table.  The next paragraph then collides with the
+% caption.  Re-define the macro: drop the `\smash`, add a `\medskip` of
+% breathing room before the caption, and *still* place the caption text
+% in the right margin column for the asymmetric Tufte layout.
+\makeatletter
+\renewcommand{\@tufte@float@fullwidth}[3][0pt]{%
+  \ifthenelse{\equal{\floatalignment}{b}}%
+    {%
+      \ifthenelse{\NOT\boolean{@tufte@symmetric}\OR\boolean{@tufte@float@recto}}%
+        {\hfill\raisebox{#1}{\usebox{#3}}\par\medskip\usebox{#2}%
+         \@tufte@float@debug{Caption position: [above right, no smash]}}%
+        {\raisebox{#1}{\usebox{#3}}\hfill\par\medskip\usebox{#2}%
+         \@tufte@float@debug{Caption position: [above left, no smash]}}%
+    }{%
+      \ifthenelse{\NOT\boolean{@tufte@symmetric}\OR\boolean{@tufte@float@recto}}%
+        {\usebox{#2}\par\medskip\hfill\raisebox{#1}{\usebox{#3}}%
+         \@tufte@float@debug{Caption position: [below right, no smash]}}%
+        {\usebox{#2}\par\medskip\raisebox{#1}{\usebox{#3}}\hfill%
+         \@tufte@float@debug{Caption position: [below left, no smash]}}%
+    }%
+}
 \makeatother
 
 % Justification + spacing

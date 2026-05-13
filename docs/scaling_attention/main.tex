@@ -1,11 +1,12 @@
 % Deep-dive companion to the SubQ Manim demo.
 % Builds in XeLaTeX. Layout = tufte-book; body face = Alegreya Sans.
-% Chapters run in one continuous sequence (no \part divisions).
+% Chapters run in one continuous sequence (no \part divisions). The opening
+% arc (former Chs.~1--5) is \input{sections/ch01_05_foundation}.
 
 \input{preamble}
 
-\title{From n-grams to Subquadratic Attention}
-\subtitle{A deep-dive primer on language models, scaling laws, and the post-transformer landscape}
+\title{Past the Quadratic Wall}
+\subtitle{A primer on long-context language models, the quadratic-cost ceiling on attention, and the subquadratic alternatives}
 \author{Tina Rezvanian}
 \date{\today}
 
@@ -25,40 +26,38 @@
 
 \mainmatter
 
-\input{sections/ch01_what_lm_does}
-\input{sections/ch02_tokens}
-\input{sections/ch03_pre_transformer}
-
-\input{sections/ch04_transformer}
-\input{sections/ch05_self_attention}
-\input{sections/ch06_quadratic}
-
-\input{sections/ch07_kaplan}
-\input{sections/ch08_chinchilla}
-\input{sections/ch09_what_scaling_omits}
-
-\input{sections/ch10_flashattention}
-\input{sections/ch11_kv_cache}
-
-\input{sections/ch12_fixed_sparse}
-\input{sections/ch13_state_space_mamba}
-\input{sections/ch14_linattn_conv}
-\input{sections/ch15_hybrids}
-
-\input{sections/ch16_quadrant}
-\input{sections/ch17_ssa}
-\input{sections/ch18_benchmarks}
-
-\input{sections/ch19_open_questions}
-\input{sections/ch20_post_attention}
+\input{sections/ch01_05_foundation}
+\input{sections/part2_attention_cost}
+\input{sections/part3_engineering_alternatives}
+\input{sections/part4_subq_outlook}
 
 \appendix
+% tufte-book's \titleformat for \chapter only renders \thechapter as the
+% chapter label (so an appendix would print just ``A''). Override here so
+% the on-page chapter heading reads ``Appendix~A: <title>''. We keep
+% \thechapter as just the letter so the TOC's \numberline slot, \ref{...},
+% and page headers are unaffected.
+\makeatletter
+\titleformat{\chapter}%
+  [display]%
+  {\relax\ifthenelse{\NOT\boolean{@tufte@symmetric}}{\begin{fullwidth}}{}}%
+  {\itshape\huge Appendix~\thechapter}%
+  {0pt}%
+  {\huge\rmfamily\itshape}%
+  [\ifthenelse{\NOT\boolean{@tufte@symmetric}}{\end{fullwidth}}{}]
+\makeatother
 \input{sections/appendix_a_shapes}
 \input{sections/appendix_b_glossary}
 \input{sections/appendix_c_reading}
 
 \backmatter
 
+% References live in `sections/references.tex` as a `thebibliography`
+% environment.  `book.cls` (which `tufte-book` inherits) opens that
+% environment with `\chapter*{\bibname}` (default = ``Bibliography'').
+% We strip that inner heading via `\patchcmd` in `preamble.tex` and use
+% this single explicit chapter so References + Bibliography are one
+% unified back-matter section.
 \chapter*{References}
 \addcontentsline{toc}{chapter}{References}
 \input{sections/references}

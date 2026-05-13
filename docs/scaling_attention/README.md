@@ -1,4 +1,4 @@
-# From n-grams to Subquadratic Attention (LaTeX, XeLaTeX + tufte-book)
+# Past the Quadratic Wall (LaTeX, XeLaTeX + tufte-book)
 
 A book-length companion to the SubQ Manim demo. Builds from first principles
 (what an LM is, tokens, n-grams, RNN/LSTM) through the transformer, scaling

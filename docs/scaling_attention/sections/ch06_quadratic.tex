@@ -1,12 +1,12 @@
-\chapter{Why dense attention is unavoidably $\bigO(n^2)$}
+\section{Why dense attention is unavoidably $\bigO(n^2)$}
 \label{ch:why-quadratic}
 
-\newthought{Self-attention} from Chapter~\ref{ch:self-attention} forms an
+\newthought{Self-attention} from Section~\ref{ch:self-attention} forms an
 \(n \times n\) matrix per head per layer. This chapter is the careful
 accounting of what that costs in compute, in memory, and in dollars at the
 context lengths people actually want.
 
-\section{The compute count}
+\subsection{The compute count}
 
 For one attention head with \(n\) tokens and head dimension \(\dhead\):
 
@@ -22,21 +22,21 @@ Summing across \(\heads\) heads and \(L\) layers, the dominant term is
 \(\bigO(L \cdot \heads \cdot n^2 \cdot \dhead) = \bigO(L \cdot n^2 \cdot d)\).
 
 \keyidea{Attention's compute scales as \(\bigO(n^2 d)\) per layer. Doubling
-\(n\) does not double the work — it \emph{quadruples} it. Going from 32K to
+\(n\) does not double the work. It \emph{quadruples} it. Going from 32K to
 1M tokens (a factor of \(\sim 32\)) makes attention \(\sim 1024\)$\times$
 more expensive per layer.}
 
-\section{The memory count}
+\subsection{The memory count}
 
 Two kinds of memory bills come due.
 
 \paragraph{Activation memory during a forward pass.} The attention matrix
 \(A\) has \(n^2\) entries per head per layer. For \(n = 10^6\), one head,
-fp16: \(2 \cdot 10^{12}\) bytes \(= 2\) TB.\sidenote{Per layer. Per head.
-Even with bf16 or fp8 we are still in the multi-gigabyte range per head per
-layer at \(n = 10^6\). This is why FlashAttention, which never
-\emph{materialises} \(A\) in main memory, was such a big deal —
-Chapter~\ref{ch:flashattention}.}
+fp16: \(2 \cdot 10^{12}\) bytes \(= 2\) TB.\sidenote{Per layer. Per head; fp16 means 16-bit half-precision floating point.
+Even with 16-bit brain floating point (bf16) or 8-bit floating point (fp8) we are still in the multi-gigabyte range per head per
+layer at \(n = 10^6\). This is why FlashAttention (fused attention without materialising the full score matrix in device memory), which never
+\emph{materialises} \(A\) in main memory, was such a big deal.
+Section~\ref{ch:flashattention}.}
 
 \paragraph{KV cache memory at inference.} During autoregressive generation,
 to answer ``what comes after token \(t\)'' the model needs the keys and
@@ -48,19 +48,19 @@ every step, so they are cached. The cache size grows linearly in \(t\):
 where \(s\) is the bytes per scalar (2 for fp16). For a 7B-class model with
 \(L=32\), \(\heads=32\), \(\dhead=128\), fp16: ${\sim}524{,}288$ bytes
 \(\approx\) 0.5 MB \emph{per token}.\sidenote{The arithmetic: \(2 \cdot 32
-\cdot 32 \cdot 128 \cdot 2 = 524{,}288\). One H100 has 80 GB of HBM. Divide:
+\cdot 32 \cdot 128 \cdot 2 = 524{,}288\) bytes for keys and values (KV) in 16-bit half-precision (fp16) per token. One NVIDIA H100 graphics processing unit (GPU) has 80~GB of high-bandwidth memory (HBM). Divide:
 ${\sim}160{,}000$ tokens before the KV cache fills the entire card.
-Frontier 70B-class models are roughly 2--4$\times$ worse per token.}
+Frontier 70-billion-parameter-class models are roughly 2--4$\times$ worse per token.}
 
 \paragraph{1M tokens hits the wall.} 0.5 MB/token \(\times\) \(10^6\) tokens =
 524 GB of KV cache. The biggest single GPU available in 2026 is roughly
 192 GB. A 1M-token transformer cannot keep its own working memory on a single
 device, full stop. This is the engineering motivation for everything in
-Chapters~\ref{ch:flashattention}--\ref{ch:kv-cache} (FlashAttention, MQA, GQA, paged caches) and the architectural
-motivation for everything in Chapters~\ref{ch:sparse}--\ref{ch:hybrids} (state-space models, sparse attention,
+Sections~\ref{ch:flashattention}--\ref{ch:kv-cache} (FlashAttention, MQA, GQA, paged caches) and the architectural
+motivation for everything in Sections~\ref{ch:sparse}--\ref{ch:hybrids} (state-space models, sparse attention,
 hybrids).
 
-\section{Translated into dollars}
+\subsection{Translated into dollars}
 
 Run a \(70\)B model with dense attention at \(n = 10^6\) on a cluster of
 H100s. Even with FlashAttention-3 reducing constants, an order-of-magnitude
@@ -77,7 +77,7 @@ business model.
 with a 1M token context window'', it is ``how do we make a 1M token context
 \emph{cheap enough to serve to actual users at scale}''.}
 
-\section{Why this isn't the dimensions' fault}
+\subsection{Why this isn't the dimensions' fault}
 
 Notice what we did \emph{not} count as quadratic: anything in \(d\). The
 hidden dimension \(d\) shows up linearly. The vocabulary \(V\) shows up
@@ -87,15 +87,15 @@ up linearly. \emph{Only} sequence length \(n\) is quadratic.
 That asymmetry is structural. Each token has to look at every other token
 because attention is, by definition, an all-pairs operation. If you want to
 remove the \(n^2\), you have to change \emph{which pairs} get scored. That
-is the topic of Chapters~\ref{ch:sparse}--\ref{ch:hybrids}.
+is the topic of Sections~\ref{ch:sparse}--\ref{ch:hybrids}.
 
-\section{Bridge to scaling laws}
+\subsection{Bridge to scaling laws}
 
 Before we discuss how to fix the \(n^2\), we have to address a different
 question: even at \emph{short} context, how does the loss of a transformer
 behave as we make it bigger? The 2020 paper that answered that question
-\citep{kaplan2020scaling} is the reason any of this matters at all — it
-turned LM training from research into engineering. Chapters~\ref{ch:kaplan}--\ref{ch:what-scaling-omits} are about that
+\citep{kaplan2020scaling} is the reason any of this matters at all; it
+turned LM training from research into engineering. Sections~\ref{ch:kaplan}--\ref{ch:what-scaling-omits} are about that
 paper and its 2022 correction.
 
 \begin{lstlisting}[caption={KV-cache footprint (\textsc{fp16}); multiply by batch size if distinct sequences each carry their own cache.}]
@@ -111,8 +111,9 @@ def kv_cache_bytes_mqa(n, L, d_head, dtype_bytes=2):
     return kv_cache_bytes_gqa(n, L, 1, d_head, dtype_bytes)
 \end{lstlisting}
 
-\begin{table}[htbp]
-\centering
+\begin{table*}[htbp]
+% Left-flush, not \centering, so the table sits at the inner margin.
+\noindent
 \small
 \begin{tabular}{@{}lrrr@{}}
 \toprule
@@ -131,7 +132,7 @@ H100? \textsc{mha} and \textsc{gqa} do so at \(n{=}10^{6}\) (\(488\,\mathrm{GiB}
 \(122\,\mathrm{GiB}\)); \textsc{mqa} still fits at \(n{=}10^{6}\) and only approaches
 \(\sim\!150\,\mathrm{GiB}\) at \(n{=}10^{7}\).}
 \label{tab:kv-calculator}
-\end{table}
+\end{table*}
 
 \noindent
 The closed-form expressions above agree with the three \texttt{kv\_cache\_bytes\_*} helpers (modulo rounding to table digits).
@@ -154,5 +155,5 @@ Scaling to \(n = 10^{6}\) grows the quadratic term by \(\approx (10^{6}/1.3\time
 GPU territory unless batching, clustering, or sparse/subquadratic layers intervene.
 Using illustrative on-demand pricing of \(\$\,3\) per GPU-hour (exact vendor quotes vary),
 even fractions of a GPU-hour per multi-million-token prefill quickly imply dollars to tens
-of dollars \emph{per query class} at long context, which is why Chapters~\ref{ch:sparse}--\ref{ch:hybrids} treat
+of dollars \emph{per query class} at long context, which is why Sections~\ref{ch:sparse}--\ref{ch:hybrids} treat
 \(n^{2}\) as an architectural problem, not only an implementation one.

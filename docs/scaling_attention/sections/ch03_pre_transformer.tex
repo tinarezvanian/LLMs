@@ -1,20 +1,20 @@
-\chapter{The pre-transformer era}
+\section{The pre-transformer era}
 \label{ch:pre-transformer}
 
 \newthought{The transformer is a 2017 paper.} Language modelling has been a
 serious research topic for at least 70 years before that. Most of the
-intuitions in modern LLMs — the chain-rule decomposition, the importance of
-context, the trade-off between fixed and unbounded memory — are not new. They
+intuitions in modern LLMs. The chain-rule decomposition, the importance of
+context, the trade-off between fixed and unbounded memory; are not new. They
 have been re-discovered, with increasing computational firepower, several
 times.
 
-This chapter is a tour of what came before the transformer, framed in the
+This section is a tour of what came before the transformer, framed in the
 language we will use in the rest of the book. It is short, but it matters:
-many of the ``new'' subquadratic architectures in Chapters~\ref{ch:sparse}--\ref{ch:hybrids} are direct
+many of the ``new'' subquadratic architectures in Sections~\ref{ch:sparse}--\ref{ch:hybrids} are direct
 descendants of pre-transformer ideas that the field stopped using because
 GPUs got big enough to brute-force the problem.
 
-\section{n-gram models — counting your way to fluency}
+\subsection{n-gram models: counting your way to fluency}
 
 The first practical language models were just \emph{count tables}. Pick a
 window size \(k\) (usually 3 to 5). For every \(k\)-tuple of tokens you ever
@@ -27,7 +27,7 @@ saw in a training corpus, store
   \label{eq:ngram}
 \end{equation}
 That is the entire model.\sidenote{In practice you smooth the counts so
-unseen tuples get a tiny non-zero probability — Kneser-Ney smoothing
+unseen tuples get a tiny non-zero probability; Kneser-Ney smoothing
 \citep{kneser1995smoothing} was the dominant technique for two decades.}
 
 \paragraph{Strengths.} O(1) compute per token. Embarrassingly parallel to
@@ -42,10 +42,10 @@ literally cannot use information from more than \(k - 1\) tokens back, even
 in principle. The state space grows as \(V^k\), so going from 5-grams to
 10-grams blows up by twelve orders of magnitude.
 
-That hard bound — \emph{context up to \(k\) tokens, period} — is the original
+That hard bound (\emph{context up to \(k\) tokens, period}) is the original
 sin every architecture since has been trying to escape.
 
-\section{Recurrent neural networks (RNNs)}
+\subsection{Recurrent neural networks (RNNs)}
 
 A recurrent network throws the count table out and replaces it with a single
 hidden vector \(h_t \in \R^{d}\) that is updated step by step:
@@ -58,7 +58,7 @@ hidden vector \(h_t \in \R^{d}\) that is updated step by step:
 Now the model can in principle use \emph{all} prior tokens, because each
 \(h_t\) is a function of the entire prefix.\sidenote{The clean derivation
 goes back to \citep{elman1990finding}; \citep{mikolov2010rnnlm} put it on
-the LM map for modern NLP.} Compute per token is \(\bigO(d^2)\), independent
+the language-modeling map for modern natural language processing (NLP).} Compute per token is \(\bigO(d^2)\), independent
 of \(t\), which is a beautiful property. We will return to that.
 
 \paragraph{The vanishing gradient problem.} The catch is that ``in
@@ -68,7 +68,7 @@ non-linearity, the gradients vanish (or, worse, explode) within roughly
 20 steps. Vanilla RNNs effectively have a context of about that length, and
 nobody could train them stably enough to do better.
 
-\section{LSTMs and GRUs — the gated decade}
+\subsection{LSTMs and GRUs: the gated decade}
 
 The fix that worked is \emph{gating}. A long short-term memory cell
 \citep{hochreiter1997lstm} replaces the simple update in
@@ -85,12 +85,12 @@ The cell state \(c_t\) flows along an additive path, so its gradient does
 not vanish; the gates decide what to write, what to keep, and what to read.
 \citet{cho2014gru} simplified this to the GRU, which has fewer parameters and
 behaves similarly in practice.\sidenote{If you have ever wondered why
-\emph{Mamba} (Chapter~\ref{ch:ssm}) keeps using the words ``selective'',
-``state'', and ``gate'' — it is because Mamba is the same idea, polished
+\emph{Mamba} (Section~\ref{ch:ssm}) keeps using the words ``selective'',
+``state'', and ``gate''. It is because Mamba is the same idea, polished
 and re-discovered with hardware-aware tricks.}
 
 LSTMs ran the world from roughly 2014 to 2017. Google Translate, Siri's
-on-device speech, the original Alexa wake-word detector — all LSTM under
+on-device speech, the original Alexa wake-word detector. All LSTM under
 the hood.
 
 \paragraph{Why LSTMs eventually lost.} Two reasons.
@@ -107,14 +107,14 @@ this exact trade-off come back as a feature of state-space models, where it
 is sometimes a virtue.
 \end{enumerate}
 
-\section{Encoder-decoder, sequence-to-sequence, and the original ``attention''}
+\subsection{Encoder-decoder, sequence-to-sequence, and the original ``attention''}
 
 In 2014, two papers \citep{sutskever2014seq2seq, cho2014gru} proposed
 \term{sequence-to-sequence} models for machine translation: an encoder LSTM
 reads the source sentence into a fixed-size vector, a decoder LSTM generates
 the target one token at a time, conditioned on that vector.
 
-This worked for short sentences and fell over for long ones — the bottleneck
+This worked for short sentences and fell over for long ones; the bottleneck
 of compressing an entire paragraph into one vector was too tight.
 
 The fix is the original meaning of the word \term{attention}.
@@ -136,7 +136,7 @@ descendant of the Bahdanau attention bolted onto an LSTM in 2014. The
 transformer's contribution is to delete the LSTM and use \emph{only}
 attention.}
 
-\section{The 2017 turn}
+\subsection{The 2017 turn}
 
 What \citet{vaswani2017attention} pointed out is that you can build a
 sequence model out of attention alone. No recurrence, no convolution.
@@ -156,11 +156,12 @@ The price is a quadratic dependence on sequence length. That price is what
 the rest of the book is about.
 
 The 2017 paper was about machine translation, but within four years the same
-recipe — scaled up by three orders of magnitude — was producing GPT-3, a
+recipe, scaled up by three orders of magnitude, was producing GPT-3, a
 language model that could do arithmetic, write code, and pass standardised
-exams. The transformer ate the field. Chapters~\ref{ch:transformer}--\ref{ch:why-quadratic} are the careful explanation
+exams. The transformer ate the field. Sections~\ref{ch:transformer}--\ref{ch:why-quadratic} are the careful explanation
 of why.
 
+\iffalse
 \begin{lstlisting}[caption={Vanilla RNN over time (matches equation~\ref{eq:rnn}, one step at a time).}]
 import torch
 
@@ -177,19 +178,21 @@ def rnn_forward(e, W_h, W_x, b_h, W_o, b_o, h0=None):
         logits_steps.append(h @ W_o + b_o)          # [B, V] softmax-ready logits
     return torch.stack(logits_steps, dim=0), h
 \end{lstlisting}
+\fi
 
 \noindent
 This is faithful to the math but forces a Python loop over \(T\): the GPU
 cannot fuse the time axis, which is why seq2seq training on LSTMs never
 matched transformer throughput once attention could be parallelised across
-positions (Chapter~\ref{ch:transformer}).
+positions (Section~\ref{ch:transformer}).
 
+\iffalse
 \begin{lstlisting}[caption={One LSTM step with explicit gates (same layout as the equations above).}]
 import torch
 
 def lstm_cell(h_prev, c_prev, e_t, W_i, W_f, W_o, W_c, b_i, b_f, b_o, b_c):
     # h_prev: [B, h]; c_prev: [B, h]; e_t: [B, d]; each W_* : [d + h, h]
-    x = torch.cat([h_prev, e_t], dim=1)           # [B, d+h] — concat for one linear
+    x = torch.cat([h_prev, e_t], dim=1)           # [B, d+h]; concat for one linear
     i = torch.sigmoid(x @ W_i + b_i)              # input gate
     f = torch.sigmoid(x @ W_f + b_f)            # forget gate
     o = torch.sigmoid(x @ W_o + b_o)            # output gate
@@ -198,6 +201,7 @@ def lstm_cell(h_prev, c_prev, e_t, W_i, W_f, W_o, W_c, b_i, b_f, b_o, b_c):
     h = o * torch.tanh(c)                         # hidden output
     return h, c
 \end{lstlisting}
+\fi
 
 \noindent
 Mapping to the prose derivation: \texttt{f} is forget, \texttt{i} is input,
@@ -217,7 +221,7 @@ multiplies that by \(L\).
 For comparison, a transformer block at hidden width \(d\) carries attention
 plus feed-forward weights scaling as \(\bigO(d^{2})\) with a much larger
 coefficient (multiple matrices of size \(d \times d\) plus the FFN upswing to
-\(4d^{2}\)-ish in the usual \(\mathrm{GeLU}\) configuration). Chapter~\ref{ch:transformer}
+\(4d^{2}\)-ish in the usual \(\mathrm{GeLU}\) configuration). Section~\ref{ch:transformer}
 works the accounting for a full block; the qualitative point here is that a
 \emph{single} LSTM cell is compact, but depth-\(L\) recurrence cannot escape
 sequential steps at runtime, whereas a transformer layer pays more parameters

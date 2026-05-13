@@ -1,11 +1,11 @@
-\chapter{Self-attention from scratch}
+\section{Self-attention from scratch}
 \label{ch:self-attention}
 
-\newthought{If the transformer block} in Chapter~\ref{ch:transformer} has a
+\newthought{If the transformer block} in Section~\ref{ch:transformer} has a
 single piece worth understanding cell-by-cell, it is the self-attention
-sub-layer. This chapter writes it out, with all the matrix shapes.
+sub-layer. This section writes it out, with all the matrix shapes.
 
-\section{The setup}
+\subsection{The setup}
 
 Take the input to one block: a tensor \(X \in \R^{n \times d}\), where \(n\)
 is the number of tokens and \(d = \dmodel\) is the hidden dimension. Each row
@@ -14,7 +14,7 @@ is the number of tokens and \(d = \dmodel\) is the hidden dimension. Each row
 We are going to produce an output of the same shape: a new representation
 for each token that has incorporated information from earlier tokens.
 
-\section{Queries, keys, and values}
+\subsection{Queries, keys, and values}
 
 Project the input into three different spaces:
 \begin{equation}
@@ -30,7 +30,7 @@ read?''. The attention weight from token \(t\) to token \(s\) is high when
 \(t\)'s query and \(s\)'s key align; the value \(v_s\) is what gets copied
 into \(t\)'s next representation.}
 
-\section{The attention matrix}
+\subsection{The attention matrix}
 
 Form pairwise scores via dot product, scale by \(\sqrt{\dhead}\) so the
 softmax does not saturate, and softmax row-wise:
@@ -40,14 +40,14 @@ softmax does not saturate, and softmax row-wise:
   \label{eq:attn-mat}
 \end{equation}
 \(A_{t,s}\) is ``how much should token \(t\) attend to token \(s\)''. The
-softmax is taken over rows, so each row sums to one — every token spreads
+softmax is taken over rows, so each row sums to one. Every token spreads
 its attention budget over all other tokens.\sidenote{The scaling
 \(1 / \sqrt{\dhead}\) is not a cosmetic choice. Without it, dot products
 grow with \(\sqrt{\dhead}\) in expectation, the softmax saturates, and
 gradients vanish. \citet{vaswani2017attention} document this in their
 section 3.2.1.}
 
-\section{The output}
+\subsection{The output}
 
 Use \(A\) as a row-stochastic matrix to mix values:
 \begin{equation}
@@ -60,7 +60,7 @@ weighted by how much token \(t\) wanted to attend to token \(s\).
 one more matrix multiply (\(AV\)). The three steps look small. The middle
 matrix \(A\) is \(n \times n\). That is the entire story of this book.}
 
-\section{Multi-head attention}
+\subsection{Multi-head attention}
 
 The single-head version has limited capacity: every position attends to every
 other through a single dot-product space of dimension \(\dhead\). In
@@ -74,24 +74,24 @@ feature axis and apply a final output projection \(W_O \in \R^{d \times d}\):
 \begin{equation}
   \text{MHA}(X) \;=\; [H_1, H_2, \ldots, H_\heads]\, W_O \;\in\; \R^{n \times d}.
 \end{equation}
-Different heads can specialise — one might track syntax, another co-reference,
+Different heads can specialise; one might track syntax, another co-reference,
 another long-range topical similarity. The cost adds linearly in \(\heads\)
 because each head shrinks \(\dhead\) proportionally.\sidenote{Concretely, for
 \(d = 4096\) and \(\heads = 32\), each head has \(\dhead = 128\). This is
 a common choice; \(\dhead\) between 64 and 128 has been the sweet spot since
-GPT-3.}
+OpenAI's GPT-3 (third-generation Generative Pre-trained Transformer).}
 
-\section{The causal mask}
+\subsection{The causal mask}
 
 For an \emph{autoregressive} language model, token \(t\) is not allowed to
-look at tokens \(> t\) — that would be cheating during training (the model
+look at tokens \(> t\). That would be cheating during training (the model
 could just copy the next token from the input). The fix is the
 \term{causal mask}: before the softmax, set every entry above the diagonal
 of \(QK\T\) to \(-\infty\). The softmax of \(-\infty\) is zero, so
 \(A_{t,s} = 0\) whenever \(s > t\). The lower triangular structure is
 what the entire generation loop depends on.
 
-\section{Why self-attention is genuinely different from an LSTM}
+\subsection{Why self-attention is genuinely different from an LSTM}
 
 In an LSTM, information from token \(s\) reaches token \(t\) (with \(s \ll t\))
 through a chain of \(t - s\) updates of the hidden state. Each update can
@@ -104,10 +104,10 @@ in the sequence does not, by itself, attenuate the signal.
 \keyidea{A transformer can ``copy'' a fact from token 1 into token 1000 in
 a single attention layer. An LSTM has to relay it through 999 hidden-state
 updates. This is why transformers are so much better at long-range
-dependencies — and why the resulting compute bill is paid in an \(n \times n\)
+dependencies, and why the resulting compute bill is paid in an \(n \times n\)
 matrix.}
 
-\section{The shapes, summarised}
+\subsection{The shapes, summarised}
 
 For a transformer with \(n\) tokens, \(\dmodel = d\), \(\heads\) heads, and
 \(\dhead = d / \heads\):
@@ -134,6 +134,7 @@ layer. For \(n = 10^6\) and 32 heads and 32 layers, that is
 byte per cell that is a petabyte of intermediate state. The next chapter
 spells out the consequences.
 
+\iffalse
 \begin{lstlisting}[caption={Single-head scaled dot-product attention (equation~\ref{eq:attn-mat}), causal LM variant.}]
 import math
 import torch
@@ -154,6 +155,7 @@ def sdpa_single_head(x, W_q, W_k, W_v, causal=True):
     attn = F.softmax(scores, dim=-1)         # row-wise; rows sum to 1
     return attn @ v                           # [n, d_head]
 \end{lstlisting}
+\fi
 
 \noindent
 This is exactly ``\(QK^{\mathsf T}\), mask, softmax, multiply by \(V\)'' with
@@ -164,8 +166,8 @@ axes.
 Interpretability work on small transformers shows heads are not interchangeable:
 many behave like fixed positional routes or shallow circuits rather than
 generic similarity.\sidenote{See \emph{e.g.}\ ``What Does BERT Look At?''
-\citep{clark2019whatbert} for encoder self-attention and Olsson et al.\ on
-\emph{induction heads} in small LMs.} A canonical decoder example is an
+\citep{clark2019whatbert} for encoder self-attention (BERT: Bidirectional Encoder Representations from Transformers) and Olsson et al.\ on
+\emph{induction heads} in small language models (LMs).} A canonical decoder example is an
 \emph{induction head}: when the context repeats a pattern \texttt{A B \ldots\
 A}, this head attends from the second \texttt{A} back to \texttt{B} so the
 model can predict the token that followed the first \texttt{A} --- supporting

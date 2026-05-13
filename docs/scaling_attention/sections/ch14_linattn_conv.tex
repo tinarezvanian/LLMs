@@ -1,11 +1,11 @@
-\chapter{Linear attention and long convolutions}
+\section{Linear attention and long convolutions}
 \label{ch:linattn}
 
 \newthought{Two more lines of attack} on the \(n^2\) cost don't go through
 either fixed-pattern sparsity or state-space recurrence. They take the
 attention equation and reformulate it.
 
-\section{Linear attention via kernel feature maps}
+\subsection{Linear attention via kernel feature maps}
 
 Standard attention computes
 \begin{equation}
@@ -13,7 +13,7 @@ Standard attention computes
                                 {\sum_{s' \le t} \exp(q_t \cdot k_{s'} / \sqrt{\dhead})}\, v_s.
 \end{equation}
 The \(\exp\) of a dot product is the kernel that makes everything
-quadratic — each \(q_t\) has to be paired with every \(k_s\). What if we
+quadratic. Each \(q_t\) has to be paired with every \(k_s\). What if we
 replace it with a kernel \(\phi(q) \cdot \phi(k)\) for some explicit
 feature map \(\phi : \R^{\dhead} \to \R^{m}\)?
 
@@ -43,7 +43,7 @@ recurrence trick as above. FAVOR+ reduces variance versus naive random
 Fourier features and comes with finite-sample guarantees, which is rare
 among ``fast attention'' heuristics. In language modelling at scale,
 however, the estimator still under-matches the exact softmax kernel on
-associative recall and long-range copying — which is why Performers and
+associative recall and long-range copying, which is why Performers and
 related kernel linearisations remain niche compared with hybrids that
 keep a few dense attention layers.
 
@@ -83,9 +83,9 @@ amount, especially on associative-recall tasks.
 \citep{sun2023retnet}, GLA, and the Mamba-2 family all use
 linear-attention machinery with gating to recover some of the lost
 expressivity. They have become a standard ingredient in hybrids
-(Chapter~\ref{ch:hybrids}).
+(Section~\ref{ch:hybrids}).
 
-\section{Long convolutions and Hyena}
+\subsection{Long convolutions and Hyena}
 
 The other reformulation is to drop attention's all-pairs structure and
 replace it with a \emph{very long, learned convolutional kernel}.
@@ -100,7 +100,7 @@ limitation of standard CNN-based language models from the 2010s.
 
 \paragraph{Trade-offs.}
 \begin{itemize}
-\item \textbf{Asymptote.} \(\bigO(n \log n)\) — better than transformers,
+\item \textbf{Asymptote.} \(\bigO(n \log n)\); better than transformers,
 worse than pure linear-attention, but the FFT constants are friendly.
 \item \textbf{Routing is again content-light.} The kernel is a function of
 position (and, in Hyena, a gate function of the input), but it does not

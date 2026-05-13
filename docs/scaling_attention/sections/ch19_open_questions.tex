@@ -1,14 +1,14 @@
-\chapter{Open questions}
+\section{Open questions}
 \label{ch:open}
 
 \newthought{No-one has won} the long-context architecture argument. This
 chapter is a short, opinionated list of the questions whose answers will
 decide it over the next few years.
 
-\section{Selection algorithms at frontier scale}
+\subsection{Selection algorithms at frontier scale}
 
 For content-dependent sparse attention to live in the bottom-right
-quadrant of Chapter~\ref{ch:quadrant}, the selection function has to be
+quadrant of Section~\ref{ch:quadrant}, the selection function has to be
 fast \emph{and} accurate \emph{and} differentiable. We have plenty of
 algorithms that hit two of those: ANN indexes are fast and accurate but
 not differentiable; learned routers are differentiable and fast but lose
@@ -18,7 +18,7 @@ to update during training. A useful taxonomy of the design space:
 \begin{itemize}
 \item \textbf{Data-independent hashing} (LSH, random projections): cheap
 and free of differentiation, but buckets may miss true nearest neighbours
-unless the bit width is large — hard when keys change every layer.
+unless the bit width is large; hard when keys change every layer.
 \item \textbf{Data-dependent clustering} (k-means / IVF codebooks):
 amortises routing lookups, but centroids must track moving keys and
 degrade under distribution shift.
@@ -39,7 +39,7 @@ selection function quality at the 1B-parameter / 1T-token scale where the
 real customers live. SubQ's published results suggest yes; independent
 reproduction is the next move.
 
-\section{Training infrastructure for the bottom-right quadrant}
+\subsection{Training infrastructure for the bottom-right quadrant}
 
 A standard transformer trains in a well-understood, GPU-friendly way:
 matrix multiplies dominate, FlashAttention handles the rest, communication
@@ -53,17 +53,17 @@ mixed precision and tensor parallelism, is genuinely an open engineering
 problem. The architectural papers tend to be quiet on this; the
 implementations that work are mostly proprietary.
 
-\section{Evaluation that survives Goodhart}
+\subsection{Evaluation that survives Goodhart}
 
 Every benchmark in the long-context space has been gamed within months
-of release.\sidenote{Original needle-in-a-haystack tests were trivial
-once everyone trained on synthetic NIAH data; the move to RULER and now
-MRCR v2 is the response. Each new benchmark eventually stops
+of release.\sidenote{Original needle-in-a-haystack (NIAH) tests were trivial
+once everyone trained on synthetic NIAH-style data; the move to RULER (multi-task synthetic long-context suite, \citealt{hsieh2024ruler}) and now
+MRCR v2 (multi-document reasoning and retrieval benchmark, \citealt{chen2025mrcr}) is the response. Each new benchmark eventually stops
 discriminating, and a harder one has to be built.} The community's
 ability to come up with new benchmarks faster than vendors can train to
 them is the only thing keeping this honest. Expect MRCR v3, v4, etc.
 
-\section{Inference economics, not training economics}
+\subsection{Inference economics, not training economics}
 
 Frontier model training has consumed the field's budget for five years.
 The question that decides 2027--2030 is whether anyone can serve a
@@ -77,25 +77,27 @@ A back-of-the-envelope ranking helps ground the discussion. The absolute
 dollars are not knowable in print, but the relative ratios under
 identical accounting rules are:
 
-\begin{table}[htbp]
-\centering
+\begin{table*}[htbp]
+% Left-flush, not \centering, so the table sits at the inner margin.
+\noindent
 \footnotesize
-\begin{tabular}{@{}lcc@{}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{@{} >{\raggedright\arraybackslash}p{4.6cm} >{\raggedright\arraybackslash}p{3.2cm} >{\raggedright\arraybackslash}X @{}}
 \toprule
 Architecture (same 70B-active class) & \$/M input @ 1M ctx (illustrative) & Notes \\
 \midrule
 Dense + FA-2 & \(\$\,30\)--\(\$\,60\) & Quadratic prefill + full KV dominate. \\
 GQA + sliding window & \(\$\,8\)--\(\$\,20\) & Linear-ish layers shrink active pairs; KV still \(\mathcal{O}(n)\). \\
 Hybrid Mamba--Attn (Jamba-class) & \(\$\,5\)--\(\$\,12\) & Few attention layers cut peak FLOPs; some full KV blocks remain. \\
-SSA / SubQ-style routing & \(\$\,1\)--\(\$\,4\) & Uses vendor-reported \(\sim 50\times\) prefill win vs.\ FA-2 at 1M as anchor \citep{subq2026ssa}; real cost depends on SLO. \\
+SSA / SubQ-style routing & \(\$\,1\)--\(\$\,4\) & Uses vendor-reported \(\sim 50\times\) prefill win vs.\ FA-2 at 1M as anchor \citep{subq2026ssa}. Real cost depends on SLO. \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Order-of-magnitude USD per million input tokens at \(n=10^{6}\),
 assuming mixed B200/H100 fleets, utilisation \(\approx 0.2\)--\(0.4\),
 and blended rent of a few USD per GPU-hour. Meaningful only for comparing
 ratios between rows.}
 \label{tab:dollar-per-m}
-\end{table}
+\end{table*}
 
 \keyidea{The next five years of LLM research are about inference, not
 training. Whoever can serve frontier-quality 1M-token context cheaply

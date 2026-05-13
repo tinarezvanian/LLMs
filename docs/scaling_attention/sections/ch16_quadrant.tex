@@ -1,4 +1,4 @@
-\chapter{The 2$\times$2 frame}
+\section{The 2$\times$2 frame}
 \label{ch:quadrant}
 
 \newthought{If you have read this far} you have a list of architectures
@@ -11,9 +11,9 @@ they look like a zoo.
 This chapter is the frame. Two axes, four quadrants, every architecture
 gets a pin.
 
-\section{The two axes}
+\subsection{The two axes}
 
-\paragraph{Axis 1 — Routing.} How does the model choose which past
+\paragraph{Axis 1: Routing.} How does the model choose which past
 information to use at each step?
 
 \begin{description}
@@ -31,7 +31,7 @@ selection (\emph{pick top-\(k\)}) is what content-dependent sparse
 attention does.
 \end{description}
 
-\paragraph{Axis 2 — Scaling.} What is the asymptotic compute cost as a
+\paragraph{Axis 2: Scaling.} What is the asymptotic compute cost as a
 function of context length \(n\)?
 
 \begin{description}
@@ -40,7 +40,7 @@ function of context length \(n\)?
 The total compute grows in step with the input.
 \end{description}
 
-\section{The four quadrants}
+\subsection{The four quadrants}
 
 \begin{figure}
 \centering
@@ -65,7 +65,7 @@ The total compute grows in step with the input.
 \end{tikzpicture}
 \caption{The 2$\times$2 frame. Top-right is dense attention and its
 implementation-only optimisations. Bottom-left is the position-fixed
-linear-cost zoo. Bottom-right — content-dependent and linear — is the
+linear-cost zoo. Bottom-right (content-dependent and linear) is the
 quadrant SSA aims at. Top-left is empty because spending \(\bigO(n^2)\)
 on a content-blind mechanism is strictly dominated.}
 \label{fig:quadrant}
@@ -76,22 +76,22 @@ compute without using content to choose which pairs to score is strictly
 worse than dense attention; nobody builds these.
 
 \paragraph{Top-right (content-dependent, quadratic).} The classic
-transformer. FlashAttention, MQA, GQA, paged caches, RoPE/YaRN — every
-mitigation in Chapters~\ref{ch:flashattention}--\ref{ch:kv-cache} — lives here. The asymptote is \(n^2\); the
+transformer: FlashAttention, MQA, GQA, paged caches, RoPE/YaRN, and every
+mitigation in Sections~\ref{ch:flashattention}--\ref{ch:kv-cache}, lives here. The asymptote is \(n^2\); the
 constants are spectacular by 2026 standards. DeepSeek's recently
 published DSA \citep{deepseek2024dsa} sits on the boundary: each query
 scores a learned \emph{subset} of keys, restoring some of dense
 attention's content-dependence while cutting \emph{average} FLOPs.
-Because the router can still admit many pairs in adversarial patterns —
-and because GPU kernels often densify irregular sparsity — worst-case
+Because the router can still admit many pairs in adversarial patterns,
+and because GPU kernels often densify irregular sparsity, worst-case
 behaviour stays much closer to quadratic than the clean
 \(\mathcal{O}(n)\) story of fixed windows or convolutions, which is why
 DSA lands in the upper half of the map rather than in the
 bottom-right.
 
 \paragraph{Bottom-left (position-fixed, linear).} The two big sub-families
-of Chapters~\ref{ch:sparse}--\ref{ch:hybrids} live here: fixed-pattern sparse (Chapter~\ref{ch:sparse}) and
-state-space / convolutional models (Chapters~\ref{ch:ssm}--\ref{ch:linattn}).
+of Sections~\ref{ch:sparse}--\ref{ch:hybrids} live here: fixed-pattern sparse (Section~\ref{ch:sparse}) and
+state-space / convolutional models (Sections~\ref{ch:ssm}--\ref{ch:linattn}).
 They are linear in \(n\) but content-blind: routing is decided by
 position or by a fixed kernel, not by the data. This is the dominant
 flavour of ``efficient'' attention and it has known weak spots on
@@ -136,5 +136,5 @@ attention separates upward; an \(n\log n\) selector sits between.}
 
 \keyidea{The interesting frontier in long-context architectures is the
 bottom-right quadrant: content-dependent routing at linear cost. Every
-major architecture in Chapters~\ref{ch:sparse}--\ref{ch:hybrids} occupies a different quadrant; SSA / SubQ
+major architecture in Sections~\ref{ch:sparse}--\ref{ch:hybrids} occupies a different quadrant; SSA / SubQ
 explicitly aims for the bottom-right.}

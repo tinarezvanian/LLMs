@@ -1,20 +1,20 @@
-\chapter{Subquadratic Sparse Attention}
+\section{Subquadratic Sparse Attention}
 \label{ch:ssa}
 
 \newthought{Subquadratic Sparse Attention (SSA)} is the mechanism behind
 the SubQ company. This chapter explains, with the limited information
 that has been made public as of mid-2026, what it is, why it lives in the
-bottom-right quadrant of Chapter~\ref{ch:quadrant}, and what is honestly
+bottom-right quadrant of Section~\ref{ch:quadrant}, and what is honestly
 known versus what is still proprietary.\sidenote{Primary source for this
-chapter: Subquadratic's technical post \citep{subq2026ssa}, supplemented
+chapter: Subquadratic's (SubQ's) technical post \citep{subq2026ssa}, supplemented
 by the company's blog and demos. Where claims are vendor-reported, that
 is said out loud.}
 
-\section{The mechanism, in one sentence}
+\subsection{The mechanism, in one sentence}
 
 For each query, score it against every key in the past, but only
-\emph{actually compute} a small data-dependent subset of those scores —
-specifically, the ones likely to be largest — and treat the rest as
+\emph{actually compute} a small data-dependent subset of those scores,
+specifically the ones likely to be largest, and treat the rest as
 zero.
 
 That subset is chosen by a learned selection function that does not require
@@ -22,11 +22,11 @@ materialising the full \(n \times n\) attention matrix to know which
 entries matter. The selection function's cost is sublinear or linear in
 \(n\), not quadratic.
 
-\section{Why this isn't trivial}
+\subsection{Why this isn't trivial}
 
 The naive way to ``only score the top-\(k\) keys'' is to score \emph{all}
 keys, sort, and keep the top \(k\). That is \(\bigO(n)\) per query and
-\(\bigO(n^2)\) per layer — exactly what we are trying to avoid.
+\(\bigO(n^2)\) per layer, which is exactly what we are trying to avoid.
 
 The non-trivial bit is finding the top \(k\) without doing the all-pairs
 dot product first. This is the same problem as approximate nearest
@@ -53,14 +53,14 @@ needs a good coarse codebook and suffers when the key distribution
 shifts; \emph{HNSW graphs} offer excellent recall–latency trade-offs on
 static corpora but are painful to maintain when every training step
 rewrites all keys. Inside a transformer ``the index'' is not a static
-vector store the way FAISS is — it is the entire prefix of the current
-sequence, changing every token — so differentiable routing, on-the-fly
+vector store the way FAISS is. It is the entire prefix of the current
+sequence, changing every token; so differentiable routing, on-the-fly
 clustering, or hardware-aware tile selection generally beat off-the-shelf
 ANN libraries copied verbatim from retrieval stacks. \citet{subq2026ssa}
 describe their selection as content-dependent and hardware-friendly, but
 the specific algorithm is proprietary.
 
-The toy version of one such selector — bucketed LSH — looks like this:
+The toy version of one such selector; bucketed LSH; looks like this:
 
 \begin{lstlisting}[caption={\textbf{Illustrative only}---LSH bucketing is one toy selector; SubQ's production SSA router is proprietary and not LSH-specific.}]
 import torch
@@ -89,11 +89,11 @@ def sparse_attn_lsh_toy(Q, K, V, R, max_bucket=256):
 
 \noindent
 \textbf{This listing is a teaching toy only.} Subquadratic's deployed
-SSA selection is not public; real systems may use learned routers,
+SSA selection is not public. Real systems may use learned routers,
 IVF/HNSW indices, hybrid reranking, or hardware-aware structures rather
 than vanilla LSH.
 
-\section{What this buys you, on paper}
+\subsection{What this buys you, on paper}
 
 \begin{itemize}
 \item \textbf{Cost.} If the selection function returns $\bigO(\log n)$ or
@@ -109,7 +109,7 @@ transformer's attention block, allowing existing transformer training and
 inference infrastructure to be reused.
 \end{itemize}
 
-\section{What it costs in correctness}
+\subsection{What it costs in correctness}
 
 The honest version is that any sparse-attention mechanism trades off
 \emph{recall}: the selection function will sometimes miss a key that
@@ -128,21 +128,21 @@ of the main reasons SubQ-style architectures need extensive
 long-context-specific training, not just a long-context evaluation tail
 on top of a standard transformer.
 
-\section{Where SSA sits relative to the alternatives}
+\subsection{Where SSA sits relative to the alternatives}
 
-In the 2$\times$2 frame from Chapter~\ref{ch:quadrant}: bottom-right.
+In the 2$\times$2 frame from Section~\ref{ch:quadrant}: bottom-right.
 Linear-cost (or near-linear-cost), content-dependent routing. Distinct
 from:
 
 \begin{itemize}
-\item Fixed-pattern sparse (Chapter~\ref{ch:sparse}) — same asymptote,
+\item Fixed-pattern sparse (Section~\ref{ch:sparse}); same asymptote,
 position-fixed routing.
-\item State-space models (Chapter~\ref{ch:ssm}) — same asymptote,
+\item State-space models (Section~\ref{ch:ssm}); same asymptote,
 content-dependent dynamics but \emph{lossy compression} of the past into
 a finite state.
-\item Linear attention / Hyena (Chapter~\ref{ch:linattn}) — better-than-
+\item Linear attention / Hyena (Section~\ref{ch:linattn}); better-than-
 quadratic asymptote, but expressivity-limited routing kernels.
-\item Hybrids (Chapter~\ref{ch:hybrids}) — mostly position-fixed mixers
+\item Hybrids (Section~\ref{ch:hybrids}); mostly position-fixed mixers
 plus a few full-attention layers; complementary to SSA, not competitive.
 \end{itemize}
 

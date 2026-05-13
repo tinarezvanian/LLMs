@@ -1,4 +1,4 @@
-\chapter{The KV cache and its band-aids}
+\section{The KV cache and its band-aids}
 \label{ch:kv-cache}
 
 \newthought{FlashAttention} fixes the activation-memory bill of the
@@ -6,14 +6,14 @@
 fix the per-token KV cache that grows during autoregressive generation.
 This chapter is the catalogue of partial fixes for that second bill.
 
-\section{Why caching is necessary}
+\subsection{Why caching is necessary}
 
 Recall the autoregressive loop. To generate token \(t+1\), the model needs
 to attend over tokens \(1, \ldots, t\). To compute attention, it needs
 their keys and values. Recomputing \(K_{1:t}\) and \(V_{1:t}\) from scratch
 at every step would make generation \(\bigO(n^2 d)\) per token, i.e.\
 \(\bigO(n^3)\) for the whole sequence. Caching makes it \(\bigO(n d)\) per
-token, i.e.\ \(\bigO(n^2)\) overall — back to the same asymptote, but with
+token, i.e.\ \(\bigO(n^2)\) overall; back to the same asymptote, but with
 a much friendlier constant.
 
 So at every layer, every head, the model maintains running tensors:
@@ -30,7 +30,7 @@ where \(s\) is bytes per scalar. Earlier we worked the numbers: roughly
 
 Everything that follows is an attempt to reduce that constant.
 
-\section{Multi-Query Attention (MQA)}
+\subsection{Multi-Query Attention (MQA)}
 
 \citet{shazeer2019mqa} proposed the simplest fix. Use \(\heads\) different
 \emph{queries}, but share a \emph{single} key and value tensor across all
@@ -39,12 +39,12 @@ heads:
   Q_h \in \R^{n \times \dhead}, \quad K \in \R^{n \times \dhead}, \quad V \in \R^{n \times \dhead}.
 \end{equation}
 The KV cache shrinks by a factor of \(\heads\). For 32 heads, the per-token
-cache drops from 0.5 MB to ${\sim}16$ KB.\sidenote{Quality typically
-degrades a few percentage points on standard benchmarks; the interpretation
-is that the 32 heads were doing genuinely different work and collapsing
-their keys throws some of that diversity away.}
+cache drops from 0.5 MB to ${\sim}16$ KB.\sidenote{Quality on standard benchmarks typically
+degrades a few percentage points; the interpretation
+is that multi-head attention (MHA) gave each of the 32 heads its own keys and values, and collapsing
+them to multi-query attention (MQA) throws some of that diversity away.}
 
-\section{Grouped-Query Attention (GQA)}
+\subsection{Grouped-Query Attention (GQA)}
 
 \citet{ainslie2023gqa} compromise: split the heads into \(g\) groups, share
 keys and values within each group. \(g = 1\) is MQA; \(g = \heads\) is
@@ -68,8 +68,9 @@ To make those ratios concrete at frontier context lengths, take a Llama-3
 how big the KV cache is for a \emph{single} 1M-token sequence. Bytes
 scale as \(2 L n\, n_{\mathrm{kv}}\, \dhead\) in fp16:
 
-\begin{table}[htbp]
-\centering
+\begin{table*}[htbp]
+% Left-flush, not \centering, so the table sits at the inner margin.
+\noindent
 \small
 \begin{tabular}{@{}lrrr@{}}
 \toprule
@@ -81,19 +82,19 @@ MQA (1 KV head) & \(\approx 38.1\) & \(\le 2\)\textsuperscript{*} & \(\le 5\)\te
 \bottomrule
 \end{tabular}
 \caption{KV cache only, one concurrent request at \(n = 10^{6}\) tokens.
-\textsuperscript{*}Concurrent count is \(\lfloor \mathrm{GPU\ memory} / \mathrm{KV} \rfloor\) ignoring weights, activations, and fragmentation — real serving fits fewer.}
+\textsuperscript{*}Concurrent count is \(\lfloor \mathrm{GPU\ memory} / \mathrm{KV} \rfloor\) ignoring weights, activations, and fragmentation. Real serving fits fewer.}
 \label{tab:kv-70b-1m}
-\end{table}
+\end{table*}
 
 \noindent
 GQA-8 is exactly why production 70B models are servable at 128K--1M on
 \emph{pods} of GPUs rather than on a single device: the KV alone for a
 million-token single-sequence residency already exceeds one H100. MQA
 trades representational freedom for capacity; the Jamba-class hybrids of
-Chapter~\ref{ch:hybrids} attack the same wall by mixing in linear-time
+Section~\ref{ch:hybrids} attack the same wall by mixing in linear-time
 blocks.
 
-\section{Paged KV (vLLM)}
+\subsection{Paged KV (vLLM)}
 
 \citet{kwon2023vllm} treat KV tensors the way an OS treats memory: split
 each sequence's cache into fixed-size \emph{pages} (blocks of tokens) and
@@ -105,7 +106,7 @@ Non-contiguous physical placement avoids the classic ``reserve one giant
 rectangle of memory for the worst-case prompt length'' fragmentation
 problem: different sequences grow by allocating new pages, and short
 sequences do not waste holes sized for someone else's 1M-token tail.
-Parallel sampling from a shared prompt is handled copy-on-write — child
+Parallel sampling from a shared prompt is handled copy-on-write; child
 beams share read-only prompt pages until a branch diverges, then duplicate
 only the suffix pages that differ, exactly analogous to \texttt{fork} +
 COW in Unix kernels.
@@ -115,7 +116,7 @@ concurrent requests on the same GPU without fragmenting memory or
 over-provisioning. It is the standard inference layer for Llama-class
 models in 2026 (vLLM, TGI, TensorRT-LLM).
 
-\section{Sliding window attention (SWA)}
+\subsection{Sliding window attention (SWA)}
 
 Mistral's signature trick \citep{jiang2023mistral7b}. Instead of attending
 to all previous tokens, each token attends only to the last \(w\) (typically
@@ -123,17 +124,17 @@ to all previous tokens, each token attends only to the last \(w\) (typically
 Mistral 7B layered SWA on top of the standard transformer and combined it
 with the trick that successive layers' windows compose, so the
 \emph{effective} receptive field at the top layer is
-\(L \cdot w\).\sidenote{For \(L = 32\), \(w = 4096\), effective receptive
+\(L \cdot w\).\sidenote{For \(L = 32\) transformer layers, \(w = 4096\) sliding-window width, effective receptive
 field is roughly 130K tokens. Less than a true 130K-token attention,
-because the receptive field is convolutional in shape — distant tokens'
-information has to be relayed through intermediate layers — but a
+because the receptive field is convolutional in shape; distant tokens'
+information has to be relayed through intermediate layers; but a
 real-world win.}
 
-The SWA trade-off is precisely the one we will revisit in Chapters~\ref{ch:sparse}--\ref{ch:hybrids}: cheap,
+The SWA trade-off is precisely the one we will revisit in Sections~\ref{ch:sparse}--\ref{ch:hybrids}: cheap,
 but the routing is fixed by position, so the model literally cannot see
 information outside the window without help.
 
-\section{RoPE, YaRN, and position extrapolation}
+\subsection{RoPE, YaRN, and position extrapolation}
 
 Rotary position embeddings (RoPE, \citealp{su2021rope}) encode position by
 rotating the query and key vectors in 2D subspaces by an angle
@@ -144,7 +145,7 @@ naturally with relative attention.
 
 If you train at sequence length \(n_{\text{train}}\) and want to deploy at
 \(n_{\text{infer}} \gg n_{\text{train}}\), naive RoPE breaks because the
-rotations land in unfamiliar regions of the angle space — the
+rotations land in unfamiliar regions of the angle space; the
 high-frequency components of the ladder, which complete many cycles over
 the training horizon, run into \emph{unseen} phases at long \(n\), and
 attention behaves as if it left the training manifold.
@@ -153,14 +154,14 @@ attention behaves as if it left the training manifold.
 kaiokendev, bloc97, and others) borrows the Neural Tangent Kernel
 intuition: shrink effective frequencies so rotations advance more slowly
 at long positions, trading some fine local discrimination for stability.
-\emph{Position interpolation} — linearly rescaling position indices — is
+\emph{Position interpolation}; linearly rescaling position indices; is
 the simplest baseline in the same family. YaRN
 \citep{peng2023yarn} generalises the idea with learned or hand-tuned
 stretching of the frequency ladder (sometimes mixing ``attention sinks''
 and temperature-like scaling) so checkpoints trained at \(L\) tokens
 reach \(2L\), \(8L\), or more with much less perplexity blow-up.
 
-These are not algorithmic changes to attention itself — they are clever
+These are not algorithmic changes to attention itself. They are clever
 position-encoding tweaks that let you stretch the trained model's
 effective range. They do not change the asymptotic cost, and they do
 not, by themselves, recover the lost reasoning quality at extreme \(n\):
@@ -168,7 +169,7 @@ the honest recipe for a new length regime remains to train (or at least
 adapt) there, then evaluate on long benchmarks such as RULER/MRCR rather
 than on PPL alone.
 
-\section{The honest summary}
+\subsection{The honest summary}
 
 Each of MQA, GQA, paged KV, SWA, and RoPE/YaRN is a real win. Together
 they are the reason production transformers can serve 128K--1M token
@@ -178,5 +179,5 @@ or the fundamental fact that the KV cache grows linearly per layer.
 \keyidea{Every mitigation in this chapter is a band-aid on an
 \(\bigO(n^2)\) wound. The patient survives. The disease is still there.
 At sufficiently large \(n\), or sufficiently demanding quality bars, you
-have to change the algorithm — which is what the rest of the book is
+have to change the algorithm, which is what the rest of the book is
 about.}

@@ -1,16 +1,16 @@
-\chapter{State-space models and Mamba}
+\section{State-space models and Mamba}
 \label{ch:ssm}
 
 \newthought{The other major family} of post-transformer architectures
 takes a completely different angle. Rather than make attention sparse, it
 deletes attention entirely and replaces it with a \emph{recurrent} update
 that compresses the past into a fixed-size hidden state. This is, in
-spirit, a return to the LSTM (Chapter~\ref{ch:pre-transformer}). What
+spirit, a return to the LSTM (Section~\ref{ch:pre-transformer}). What
 makes 2023--2026's state-space models more than a nostalgia trip is a
 mathematical reformulation that lets that recurrent computation be
 \emph{trained} as a parallel scan rather than as a sequential loop.
 
-\section{What a state-space model is}
+\subsection{What a state-space model is}
 
 A continuous-time linear state-space model is the differential equation
 \begin{equation}
@@ -31,9 +31,9 @@ where \(\bar A, \bar B\) are derived from \(A, B, \Delta\) via a standard
 zero-order-hold formula. Equation~\eqref{eq:ssm-discrete} looks identical
 to a linear RNN.\sidenote{In fact, if you set \(\bar A\) and \(\bar B\)
 to be arbitrary learnable matrices and add a non-linearity, you get back
-a vanilla RNN. The state-space framing buys two things the RNN didn't
+a vanilla recurrent neural network (RNN). The state-space framing buys two things the RNN didn't
 have: (i) a principled connection to continuous-time signal processing
-that gives you \emph{HiPPO} initialisations that handle long-range
+that gives you \emph{HiPPO} (optimal polynomial-projection memory for the recurrent state; \citealp{gu2020hippo}) initialisations that handle long-range
 dependencies stably, and (ii) the parallel-scan computation form, next.}
 
 \paragraph{HiPPO in plain English.}
@@ -46,7 +46,7 @@ measure (Legendre, Laguerre, \ldots). That is why S4-style layers
 steps when vanilla linear RNNs forget almost everything: the recurrence
 is biased to act like a rolling orthogonal projection of history.
 
-\section{The convolutional view}
+\subsection{The convolutional view}
 
 Unrolling equation~\eqref{eq:ssm-discrete} from \(h_0 = 0\):
 \begin{equation}
@@ -54,8 +54,8 @@ Unrolling equation~\eqref{eq:ssm-discrete} from \(h_0 = 0\):
 \end{equation}
 This is a \emph{convolution} of the input with a kernel
 \(\bar K = (\bar K_0, \bar K_1, \ldots, \bar K_{n-1})\) of length \(n\).
-For \emph{linear} state-space models — where \(\bar A, \bar B, \bar C\) do
-not depend on the data — that kernel is the same for every position. You
+For \emph{linear} state-space models; where \(\bar A, \bar B, \bar C\) do
+not depend on the data. That kernel is the same for every position. You
 can compute the convolution with a fast Fourier transform in
 \(\bigO(n \log n)\), or precompute the kernel and apply it as a single
 matrix-vector multiply.
@@ -64,16 +64,16 @@ S4 \citep{gu2021s4} took this idea seriously, picked an HiPPO-flavoured
 \(A\) that gives the model a long-range memory, and showed it could match
 transformers on long-range benchmarks at much lower cost.
 
-\section{Why S4 wasn't quite enough — the ``selectivity'' missing piece}
+\subsection{Why S4 wasn't quite enough: the ``selectivity'' missing piece}
 
 S4 was beautiful but fell short of transformer quality on language. The
 reason, identified by \citet{gu2023mamba}, is that the dynamics
 \((\bar A, \bar B)\) in equations~\eqref{eq:ssm-discrete} were
-\emph{input-independent} — the model could not change \emph{how it
+\emph{input-independent}. The model could not change \emph{how it
 remembered} based on \emph{what} it was reading. That is the entire
 strength of attention.
 
-\section{Mamba — selective state spaces}
+\subsection{Mamba: selective state spaces}
 
 Mamba's contribution is to make \(\bar A, \bar B, \bar C\) functions of
 the input \(u_t\). Concretely, at every time step the model computes
@@ -86,13 +86,13 @@ and uses these in a per-step update of the form
 \begin{equation}
   h_t \;=\; \bar A_t\, h_{t-1} + \bar B_t\, u_t.
 \end{equation}
-This breaks the convolution view — you can no longer fold a single fixed
+This breaks the convolution view. You can no longer fold a single fixed
 kernel across the sequence. Instead, the authors implement the
 selective recurrence as a hardware-efficient parallel scan that processes
 the sequence in $\bigO(n)$ work but $\bigO(\log n)$ depth on a GPU,
 keeping the state in SRAM throughout.
 
-\begin{lstlisting}[caption={Selective scan \emph{shape} (sequential Python); real Mamba fuses this into a parallel associative scan on GPU \citep{gu2023mamba}.}]
+\begin{lstlisting}[caption={Selective scan \emph{shape} (sequential Python). Real Mamba fuses this into a parallel associative scan on GPU \citep{gu2023mamba}.}]
 import torch
 import torch.nn.functional as F
 
@@ -123,16 +123,16 @@ ballgame.
 Every token's information has to be compressed into a vector of size
 \(N\) (typically a few hundred). The cleanest stress test is associative
 recall: imagine \(K\) random \texttt{key=value} pairs sprinkled through
-a \(T\)-token sequence, then a query token repeating one key — the model
+a \(T\)-token sequence, then a query token repeating one key; the model
 must emit the matching value. A transformer can route the query to the
 correct position in one softmax attention hop. A selective SSM has to
-funnel the entire prefix through a vector \(h_t \in \R^{N}\); once \(K\)
+funnel the entire prefix through a vector \(h_t \in \R^{N}\). Once \(K\)
 exceeds the effective degrees of freedom in that state, collisions and
 averaging erase exact key–value bindings, the regime studied
 systematically by MQAR / ``Zoology'' analyses
 \citep{arora2024zoology}. Mamba improves earlier SSMs on this axis but
 does not restore unconstrained \(\mathcal{O}(n)\) addressable memory;
-hybrids that keep a few attention layers (Chapter~\ref{ch:hybrids})
+hybrids that keep a few attention layers (Section~\ref{ch:hybrids})
 exist partly to cover this blind spot.
 
 \keyidea{Mamba is a linear-time, constant-memory sequence model. It is
@@ -141,10 +141,10 @@ benchmarks favour it on smooth signals and tasks with locally-relevant
 context, and it loses to transformers on tasks that require associative
 recall over arbitrary positions.}
 
-\section{Where this fits in the bigger picture}
+\subsection{Where this fits in the bigger picture}
 
 State-space models give us the bottom-left of the 2$\times$2 frame in
-Chapter~\ref{ch:quadrant}: linear-scaling, content-blind in the sense
+Section~\ref{ch:quadrant}: linear-scaling, content-blind in the sense
 that the state is a fixed-size summary regardless of what it has seen.
 Their honest trade-off is the one we will see again and again: cheap, but
 \emph{lossy}, in a way that depends on the task.

@@ -5,7 +5,7 @@
 This book is a primer for an engineer who has touched a neural network at least
 once and is comfortable with the words \emph{token}, \emph{transformer}, and
 \emph{loss function}, but who would like a complete picture of \emph{why} the
-field looks the way it does in 2026 — why every frontier lab is publishing a
+field looks the way it does in 2026: why every frontier lab is publishing a
 paper about \emph{long context}, why \emph{sparse} and \emph{linear} attention
 keep coming back, and what a startup like Subquadratic is actually claiming
 when it says it has a \emph{subquadratic sparse attention} mechanism.\sidenote{%
@@ -19,64 +19,57 @@ positions every alternative architecture against it, (c) read a benchmark table
 for a long-context language model and not be fooled by it, and (d) hold an
 informed opinion about what could replace attention in five years.
 
-\newthought{The road map.} Twenty numbered chapters in one continuous arc
-(no book-level ``parts''): background, transformer, scaling, engineering
+\newthought{The road map.} Sixteen numbered chapters in one continuous arc
+(no book-level ``parts''): background through self-attention in the opening chapter, then the quadratic-cost story, scaling, engineering
 mitigations, subquadratic alternatives, the 2$\times$2 frame and SSA, then
 open questions.
 
 \begin{itemize}
-\item \textbf{Background (Chapters 1--3).} What an LM is in one equation. Tokens
+\item \textbf{Background.} What an LM is in one equation. Tokens
 (BPE, WordPiece, SentencePiece). And the pre-transformer history that almost
 everyone has forgotten: n-grams, RNNs, LSTMs, GRUs, sequence-to-sequence,
 and Bahdanau attention as a small bolt-on that ate the world.
 
-\item \textbf{The transformer (Chapters 4--6).} The Vaswani recipe in detail.
+\item \textbf{The transformer.} The Vaswani recipe in detail.
 Self-attention from scratch, with the matrix shapes everyone gets wrong.
 Why the cost is exactly \(\bigO(n^2 d)\) per head per layer.
 
-\item \textbf{Scaling laws (Chapters 7--9).} Kaplan's straight line on a log-log
+\item \textbf{Scaling laws.} Kaplan's straight line on a log-log
 plot. Chinchilla's correction. What scaling laws \emph{don't} say about
 inference and context length, which is the entire reason this book exists.
 
-\item \textbf{Living with \(\bigO(n^2)\) (Chapters 10--11).} FlashAttention, KV
+\item \textbf{Living with \(\bigO(n^2)\).} FlashAttention, KV
 caches, multi-query and grouped-query attention, paged caches, sliding
 windows, RoPE/YaRN. Brilliant engineering that does not change the asymptote.
 
-\item \textbf{Subquadratic alternatives (Chapters 12--15).} Fixed-pattern sparse,
+\item \textbf{Subquadratic alternatives.} Fixed-pattern sparse,
 state-space models (Mamba), long convolutions (Hyena), kernel-feature linear
 attention, hybrids (SAMBA, Jamba, Griffin). What each one wins, and what
 each one gives up.
 
-\item \textbf{The 2$\times$2 frame and SubQ (Chapters 16--18).} The single picture
-that makes the whole landscape make sense. Subquadratic Sparse Attention
+\item \textbf{The 2$\times$2 frame and SubQ.} The single picture
+that ties the whole map together. Subquadratic Sparse Attention
 (SSA) as one bet on the bottom-right quadrant. How to read SubQ's published
 benchmarks honestly.
 
-\item \textbf{Open questions and what comes next (Chapters 19--20).} Selection
+\item \textbf{Open questions and what comes next.} Selection
 functions at frontier scale, inference economics, diffusion language models,
 JEPA, and honest speculation.
 \end{itemize}
-
-\newthought{A note on margin notes.} This book is set in the Tufte style, so
-short clarifications, tangents, and citations live in the margin rather than
-in footnotes at the bottom of the page. They are meant to be skimmed, not
-mandatory. The main text reads on its own.\sidenote{Like this. If a sentence
-in the body could use a sanity-check, a derivation, or a pointer to a paper,
-look right.}
 
 \paragraph{tl;dr (read this if you read nothing else).}
 Language models are next-token predictors; training fits their parameters so
 that real text looks likely under that factorisation. Transformers implement
 the conditional \(p(x_t \mid x_{<t})\) with dense self-attention, which scores
-every query against every key — \(\bigO(n^2)\) work per layer in the sequence
-length \(n\). FlashAttention and the KV-cache tricks in Chapters~\ref{ch:flashattention}--\ref{ch:kv-cache} shrink constants
+every query against every key; \(\bigO(n^2)\) work per layer in the sequence
+length \(n\). FlashAttention and the KV-cache tricks in Sections~\ref{ch:flashattention}--\ref{ch:kv-cache} shrink constants
 and memory traffic dramatically, but they do \emph{not} remove the asymptote:
-at million-token contexts the bill breaks budgets anyway. Everything in Chapters~\ref{ch:sparse}--\ref{ch:hybrids}
-is an attempt to change the curve itself — sliding windows, state-space models,
-linear attention, hybrids — each trading away something (usually routing by
+at million-token contexts the bill breaks budgets anyway. Everything in Sections~\ref{ch:sparse}--\ref{ch:hybrids}
+is an attempt to change the curve itself: sliding windows, state-space models,
+linear attention, and hybrids, each trading away something (usually routing by
 position or lossy state). The organising picture is the routing\,\(\times\)\,scaling
-quadrant in Chapter~\ref{ch:quadrant}: Subquadratic Sparse Attention is a bet
-on the bottom-right cell — linear cost \emph{and} content-dependent routing —
+quadrant in Section~\ref{ch:quadrant}. Subquadratic Sparse Attention is a bet
+on the bottom-right cell (linear cost \emph{and} content-dependent routing),
 with public benchmarks that deserve scrutiny like any vendor-reported numbers.
 This book is about why long context was expensive, how engineers cope today,
 and where the architecture might go next.

@@ -1,4 +1,4 @@
-\chapter{Hybrids — having it both ways}
+\section{Hybrids: having it both ways}
 \label{ch:hybrids}
 
 \newthought{Pure architectures} (all-attention transformer; all-Mamba
@@ -8,16 +8,16 @@ production, the empirical winners since 2024 have been
 mixers, getting most of attention's quality at a fraction of attention's
 cost.
 
-\section{Why hybrids work}
+\subsection{Why hybrids work}
 
-The argument is empirical. A small fraction of layers — often just one in
-every \(k\) — appears to be doing the heavy lifting on tasks that require
+The argument is empirical. A small fraction of layers; often just one in
+every \(k\); appears to be doing the heavy lifting on tasks that require
 exact long-range associative recall (looking up a specific fact at a
 specific position). Replace those with attention. Replace the rest with
 something linear. The model's quality is dominated by the few attention
 layers; the cost is dominated by the many linear ones.
 
-\section{Three representatives}
+\subsection{Three representatives}
 
 \paragraph{Jamba} \citep{lieber2024jamba}. Interleaves Mamba blocks with
 attention blocks and adds a mixture-of-experts feed-forward on top of
@@ -62,8 +62,9 @@ unlimited context windows; very strong on long-document benchmarks.
 (a linear-attention variant) with local attention. Aimed at being a
 drop-in replacement for transformers in the small-to-mid-size regime.
 
-\begin{table}[htbp]
-\centering
+\begin{table*}[htbp]
+% Left-flush, not \centering, so the table sits at the inner margin.
+\noindent
 \footnotesize
 \begin{tabular}{@{}lp{0.24\linewidth}p{0.24\linewidth}p{0.24\linewidth}@{}}
 \toprule
@@ -78,18 +79,18 @@ Status & Research + open weights (AI21) & Research (Microsoft) & Research (DeepM
 \bottomrule
 \end{tabular}
 \caption{Headline comparison of three hybrid families.
-\textsuperscript{\dag}The throughput row is qualitative — vendor-reported
+\textsuperscript{\dag}The throughput row is qualitative; vendor-reported
 or paper-reported claims that depend heavily on hardware and batch; see
 the original papers for reproducible configs.}
 \label{tab:hybrid-compare}
-\end{table}
+\end{table*}
 
-\section{The honest read}
+\subsection{The honest read}
 
 Hybrids are the dominant pragmatic answer for ``cheap-ish long context
 without giving up frontier quality'' in 2026. The picture they paint is
 that you cannot, today, completely delete attention from a frontier-quality
-language model — but you can confine it to a small fraction of layers and
+language model; but you can confine it to a small fraction of layers and
 let cheaper sequence mixers do everything else.
 
 This is the setup that Subquadratic's bet builds on. What follows is

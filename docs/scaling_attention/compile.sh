@@ -8,3 +8,8 @@ xelatex -interaction=nonstopmode main.tex
 xelatex -interaction=nonstopmode main.tex
 xelatex -interaction=nonstopmode main.tex
 echo "==> $(pwd)/main.pdf"
+# Optional: CHECK_OVERFULL=1 ./compile.sh  (lists Overfull \\hbox from main.log)
+# Strict gate: CHECK_OVERFULL=1 FAIL_MAX_PT=30 ./compile.sh
+if [[ -n "${CHECK_OVERFULL:-}" ]]; then
+  ./check_overfull.sh
+fi

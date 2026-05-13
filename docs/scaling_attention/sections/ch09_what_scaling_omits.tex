@@ -83,7 +83,7 @@ resident set scales linearly in prompt length per active session
 (Chapter~\ref{ch:kv-cache}). A dense-attention deployment lands in the
 \(10^{8}\)--\(10^{9}\) GPU-hour-per-year class at frontier per-token
 economics; a \(\sim 10\times\) cheaper long-context architecture
-(Part~V: fixed-sparse, state-space, or routed attention) buys headroom by
+(Chapters~\ref{ch:sparse}--\ref{ch:hybrids}: fixed-sparse, state-space, or routed attention) buys headroom by
 cutting the dominant term in \(n\) or in pairs scored. Frontier API
 pricing in 2026 reflects this directly, mixing per-token list rates with
 context-tier surcharges: the meter measures memory and quadratic-ish
@@ -97,7 +97,7 @@ work, not parameter count alone.
 Deployment sketch & Dominant cost driver (long prompt) & Qualitative annual order \\
 \midrule
 Dense attention + full KV on H100-class GPUs & KV \(\propto n\); attention \(\propto n^{2}\) prefill & \(\mathcal{O}(10^{8})\)--\(10^{9}\) GPU-h / yr class \\
-Part~V-style stack (same quality target, subquadratic or smaller state) & Linear / near-linear mixers + smaller KV & \(\sim 10\times\) lower GPU-h / yr (illustrative) \\
+Subquadratic-style stack (same quality target, subquadratic or smaller state) & Linear / near-linear mixers + smaller KV & \(\sim 10\times\) lower GPU-h / yr (illustrative) \\
 \bottomrule
 \end{tabular}
 \caption{Two-row sanity check: long-context agents tax memory and attention far
@@ -135,6 +135,8 @@ and that gap is the entire reason the post-transformer landscape exists.}
 
 \section{Where the rest of the book goes}
 
-Part~IV (next) is Camp 1. Part~V is Camp 2. Part~VI is the 2$\times$2
+The engineering chapters (Chapters~\ref{ch:flashattention}--\ref{ch:kv-cache}) are Camp~1.
+The subquadratic-alternative chapters (Chapters~\ref{ch:sparse}--\ref{ch:hybrids}) are Camp~2.
+Chapters~\ref{ch:quadrant}--\ref{ch:benchmarks} carry the 2$\times$2
 frame that makes the whole landscape make sense, and the careful read of
 SubQ's bet inside it.

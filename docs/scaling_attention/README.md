@@ -20,9 +20,9 @@ This directory is a `tufte-book` (XeLaTeX) project with the body face set to
   - Title-page additions: `\subtitle{...}` macro and a custom `\maketitle`
     that renders title → subtitle → author → date.
   - `\keyidea{...}` punch-box used at the close of every chapter.
-- **`main.tex`** — six-part book shell: Background → Transformer → Scaling
+- **`main.tex`** — continuous chapter sequence (no `\part`): Background → Transformer → Scaling
   laws → Living with O(n²) → Subquadratic alternatives → 2x2 frame + SSA +
-  what's next.
+  what's next, then appendices and references.
 - **`fonts/`** — Alegreya Sans TTFs (vendored from `LLMs/docs/Alegreya_Sans/`,
   SIL Open Font License) and the EB Garamond TTFs left in place as a
   fallback if you want to flip the preamble back.

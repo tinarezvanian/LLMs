@@ -199,7 +199,7 @@ A clean run prints `Output written on main.pdf (128 pages).` twice and produces 
 
 | Path | Role |
 |------|------|
-| [`main.tex`](docs/scaling_attention/main.tex) | Six-part shell (Background → Transformer → Scaling → O(n²) mitigations → Subquadratic alternatives → 2×2 frame + SSA + post-attention) |
+| [`main.tex`](docs/scaling_attention/main.tex) | Continuous `\chapter` sequence (no `\part`): Background → Transformer → Scaling → O(n²) mitigations → Subquadratic alternatives → 2×2 frame + SSA + benchmarks + open questions + post-attention, then appendices |
 | [`preamble.tex`](docs/scaling_attention/preamble.tex) | `tufte-book` + Alegreya Sans + math macros + `\subtitle{}` + custom `\maketitle` + `\keyidea{}` |
 | [`sections/preface.tex`](docs/scaling_attention/sections/preface.tex) | "How to read this book" |
 | [`sections/copyright.tex`](docs/scaling_attention/sections/copyright.tex) | Colophon |

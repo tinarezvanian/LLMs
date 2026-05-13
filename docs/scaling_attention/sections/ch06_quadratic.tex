@@ -56,8 +56,8 @@ Frontier 70B-class models are roughly 2--4$\times$ worse per token.}
 524 GB of KV cache. The biggest single GPU available in 2026 is roughly
 192 GB. A 1M-token transformer cannot keep its own working memory on a single
 device, full stop. This is the engineering motivation for everything in
-Part~IV (FlashAttention, MQA, GQA, paged caches) and the architectural
-motivation for everything in Part~V (state-space models, sparse attention,
+Chapters~\ref{ch:flashattention}--\ref{ch:kv-cache} (FlashAttention, MQA, GQA, paged caches) and the architectural
+motivation for everything in Chapters~\ref{ch:sparse}--\ref{ch:hybrids} (state-space models, sparse attention,
 hybrids).
 
 \section{Translated into dollars}
@@ -87,7 +87,7 @@ up linearly. \emph{Only} sequence length \(n\) is quadratic.
 That asymmetry is structural. Each token has to look at every other token
 because attention is, by definition, an all-pairs operation. If you want to
 remove the \(n^2\), you have to change \emph{which pairs} get scored. That
-is the topic of Part~V.
+is the topic of Chapters~\ref{ch:sparse}--\ref{ch:hybrids}.
 
 \section{Bridge to scaling laws}
 
@@ -95,7 +95,7 @@ Before we discuss how to fix the \(n^2\), we have to address a different
 question: even at \emph{short} context, how does the loss of a transformer
 behave as we make it bigger? The 2020 paper that answered that question
 \citep{kaplan2020scaling} is the reason any of this matters at all — it
-turned LM training from research into engineering. Part~III is about that
+turned LM training from research into engineering. Chapters~\ref{ch:kaplan}--\ref{ch:what-scaling-omits} are about that
 paper and its 2022 correction.
 
 \begin{lstlisting}[caption={KV-cache footprint (\textsc{fp16}); multiply by batch size if distinct sequences each carry their own cache.}]
@@ -154,5 +154,5 @@ Scaling to \(n = 10^{6}\) grows the quadratic term by \(\approx (10^{6}/1.3\time
 GPU territory unless batching, clustering, or sparse/subquadratic layers intervene.
 Using illustrative on-demand pricing of \(\$\,3\) per GPU-hour (exact vendor quotes vary),
 even fractions of a GPU-hour per multi-million-token prefill quickly imply dollars to tens
-of dollars \emph{per query class} at long context, which is why Part~V treats
+of dollars \emph{per query class} at long context, which is why Chapters~\ref{ch:sparse}--\ref{ch:hybrids} treat
 \(n^{2}\) as an architectural problem, not only an implementation one.

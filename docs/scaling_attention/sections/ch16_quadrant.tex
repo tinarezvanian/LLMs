@@ -77,7 +77,7 @@ worse than dense attention; nobody builds these.
 
 \paragraph{Top-right (content-dependent, quadratic).} The classic
 transformer. FlashAttention, MQA, GQA, paged caches, RoPE/YaRN — every
-mitigation in Part~IV — lives here. The asymptote is \(n^2\); the
+mitigation in Chapters~\ref{ch:flashattention}--\ref{ch:kv-cache} — lives here. The asymptote is \(n^2\); the
 constants are spectacular by 2026 standards. DeepSeek's recently
 published DSA \citep{deepseek2024dsa} sits on the boundary: each query
 scores a learned \emph{subset} of keys, restoring some of dense
@@ -90,7 +90,7 @@ DSA lands in the upper half of the map rather than in the
 bottom-right.
 
 \paragraph{Bottom-left (position-fixed, linear).} The two big sub-families
-of Part~V live here: fixed-pattern sparse (Chapter~\ref{ch:sparse}) and
+of Chapters~\ref{ch:sparse}--\ref{ch:hybrids} live here: fixed-pattern sparse (Chapter~\ref{ch:sparse}) and
 state-space / convolutional models (Chapters~\ref{ch:ssm}--\ref{ch:linattn}).
 They are linear in \(n\) but content-blind: routing is decided by
 position or by a fixed kernel, not by the data. This is the dominant
@@ -136,5 +136,5 @@ attention separates upward; an \(n\log n\) selector sits between.}
 
 \keyidea{The interesting frontier in long-context architectures is the
 bottom-right quadrant: content-dependent routing at linear cost. Every
-major architecture in Part~V occupies a different quadrant; SSA / SubQ
+major architecture in Chapters~\ref{ch:sparse}--\ref{ch:hybrids} occupies a different quadrant; SSA / SubQ
 explicitly aims for the bottom-right.}

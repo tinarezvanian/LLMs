@@ -1,7 +1,7 @@
 \chapter{Fixed-pattern sparse attention}
 \label{ch:sparse}
 
-\newthought{Part~IV's punchline} was that no matter how cleverly you
+\newthought{The punchline of Chapters~\ref{ch:flashattention}--\ref{ch:kv-cache}} was that no matter how cleverly you
 implement dense attention, the number of FLOPs is \(\bigO(n^2 d)\) per
 layer because every token has to score against every other token. The
 shortest line of attack is to ask: \emph{do they really?} If most of the

@@ -96,7 +96,7 @@ of plain dense attention. Beating that by 52$\times$ is a real claim.
 Once your implementation is IO-optimal, what is left is the algorithm. If
 the algorithm is \(n^2\), the algorithm has to change. That observation —
 that we have collectively wrung most of the implementation lemon dry — is
-why the architectural alternatives in Part~V get serious attention now,
+why the architectural alternatives in Chapters~\ref{ch:sparse}--\ref{ch:hybrids} get serious attention now,
 when they were curiosities in 2020.
 
 \begin{lstlisting}[caption={FlashAttention-1 idea: tiled streaming softmax so no full \(n\times n\) score matrix materialises in \textsc{hbm}; FA-2/FA-3 refine warp scheduling and Hopper overlaps (paragraph below).}]
@@ -137,4 +137,4 @@ factor on hardware where FA-1 was already close to roofline.
 Honest bottom line: each generation bought roughly a \(1.5\)--\(2\times\) win on
 real benchmarks when kernels were bound by \textsc{hbm} bandwidth or occupancy,
 not a change in \(\Theta(n^{2})\) scaling---that change remains the province of
-Part~V architectures.
+Chapters~\ref{ch:sparse}--\ref{ch:hybrids} architectures.

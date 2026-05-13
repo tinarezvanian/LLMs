@@ -137,8 +137,8 @@ scales as \(n\) per layer, but with multiplicatively large constants.
 For \(n\) of a few thousand — the regime of GPT-2 and GPT-3 — this was fine.
 For \(n\) of one million — what 2026's agentic workloads want — it is the
 defining problem of the field. Chapter~\ref{ch:why-quadratic} derives the
-\(n^2\) cost carefully; Part~IV documents the engineering response;
-Part~V covers the architectures that try to escape it.
+\(n^2\) cost carefully; Chapters~\ref{ch:flashattention}--\ref{ch:kv-cache} document the engineering response;
+Chapters~\ref{ch:sparse}--\ref{ch:hybrids} cover the architectures that try to escape it.
 
 \begin{lstlisting}[caption={Pre-LN decoder block matching Figure~\ref{fig:block} and equation~\ref{eq:block}.}]
 import math

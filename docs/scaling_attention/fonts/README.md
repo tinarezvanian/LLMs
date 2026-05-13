@@ -2,6 +2,9 @@
 
 The book is set in **Alegreya Sans** (Juan Pablo del Peral). The TTFs were
 copied from `LLMs/docs/Alegreya_Sans/`, where the upstream OFL.txt also lives.
+**Manim** (`vid/theme.py`) loads the same `AlegreyaSans-*.ttf` files from
+`docs/Alegreya_Sans/`, this directory, or `assets/branding/fonts/Alegreya_Sans/`
+when present, so on-screen type can match the PDF.
 EB Garamond TTFs are kept as a fallback for anyone wanting to flip the
 preamble back to the original Algorithmic Adventures look.
 

@@ -26,7 +26,7 @@ docs/scaling_attention/        LaTeX companion book (XeLaTeX + tufte-book); see 
 vid/                           Manim Python package (NOTE: directory is `vid/` to avoid clashing with the `manim` PyPI package)
   theme.py                     palette, type sizes, pacing constants, equation()/text_equation() helpers
   lib/mobjects.py              reusable mobjects (AttentionGrid, GPUOutline, KVCacheBar, ScalingCurve, PostTransformerTree, QuadrantMap, SubQWordmark)
-  scenes/teaser/scene_0N_*.py  6 teaser scenes, one Manim Scene class per file
+  scenes/teaser/scene_0N_*.py  core teaser beats `scene_01`–`scene_06`; optional extended book beats `scene_03b`–`scene_03h` between the KV wall and the break (~5 min when rendered)
   scenes/deepdive/scene_0N_*.py 11 deep-dive scenes (some are placeholders with SKIP_RENDER = True for camera/screen segments)
 companion/
   subq-quickstart/             standalone GitHub starter repo to publish separately (MIT)
@@ -40,7 +40,8 @@ companion/
   social/x_thread.md           9-tweet launch thread
   cover_letter.md              cover note for the SubQ application
 assets/branding/               SubQ wordmark sources, palette swatches (.gitkeep'd)
-  fonts/Inter/                 Inter v4 (rsms/inter, SIL OFL) — Regular/Medium/SemiBold/Bold + Inter Display
+  fonts/Inter/                 Inter v4 (rsms/inter, SIL OFL) — fallback sans when Alegreya TTFs are absent
+  fonts/Alegreya_Sans/         optional: same AlegreyaSans-*.ttf as LaTeX; Manim checks here too
   fonts/JetBrainsMono/         JetBrains Mono v2.304 (jb/JetBrainsMono, SIL OFL) — Regular/Medium/Bold
 audio/  video/  demo/  edit/   pipeline dirs (.gitkeep'd) — large media gitignored: VO recordings, on-cam footage, screen capture, DaVinci project
 bin/                           project-local binaries (ffmpeg, micromamba); large files gitignored
@@ -65,7 +66,7 @@ make setup
 make check
 ```
 
-`make check` should print a manim version and an ffmpeg version. If it does, `make teaser` will render all 6 teaser scenes to `edit/renders/teaser/`.
+`make check` should print a manim version and an ffmpeg version. If it does, `make teaser` will render all teaser scenes (core `scene_01`–`scene_06` plus extended `scene_03b`–`scene_03h` when present) to `edit/renders/teaser/`.
 
 ## Decisions and rationale
 
@@ -81,7 +82,7 @@ The directory was originally `manim/` but that collides with the actual `manim` 
 On macOS, `pycairo` and `manimpango` need system `cairo` and `pango`. Homebrew was misconfigured on the build machine (HOMEBREW_CELLAR mis-set, no bottles available). conda-forge ships prebuilt cairo/pango/ffmpeg as conda packages; micromamba is a single 5MB static binary that doesn't need root. This is the standard Manim-on-macOS recipe.
 
 ### 4. Scripts and scenes are 1:1 (numbered)
-`scripts/teaser.md` describes 6 sections, and `vid/scenes/teaser/scene_01_*.py` through `scene_06_*.py` implement them. Same convention for the deep-dive (11 Manim scenes + 2 SKIP_RENDER placeholders for camera/screen footage = 13 total numbered files; the script's "Scene 4 — pivot" doubles as the Chinchilla beat, which used to have its own scene file but was reconciled away — see TASKS.md). Keep this numbering aligned when editing, and update the Makefile's `DEEPDIVE_SCENES` list whenever a scene is renamed.
+`scripts/teaser.md` describes the short VO arc (six sections for `scene_01`–`scene_06`) plus an optional extended cut with `scene_03b`–`scene_03h` aligned to `docs/scaling_attention/`. Same convention for the deep-dive (11 Manim scenes + 2 SKIP_RENDER placeholders for camera/screen footage = 13 total numbered files; the script's "Scene 4 — pivot" doubles as the Chinchilla beat, which used to have its own scene file but was reconciled away — see TASKS.md). Keep this numbering aligned when editing, and update the Makefile's `DEEPDIVE_SCENES` list whenever a scene is renamed.
 
 ### 5. Two scenes in the deep-dive intentionally don't render
 `scene_02_oncam_hook.py` and `scene_13_demo_capture.py` set `SKIP_RENDER = True`. They exist to keep numbering consistent with the script and the DaVinci edit list. The actual content is camera footage (scene 2) and screen capture (scene 13).
@@ -106,7 +107,7 @@ Day 4 of the 10-day sprint. Reasoning: launches plant flags. Even a 75-second pu
 8. **The SubQ Python SDK (`subq` package) is a placeholder.** As of writing, the production package surface isn't documented yet. The starter-repo example scripts assume `from subq import SubQ` with a `client.responses.create(...)` shape, which mirrors the OpenAI SDK convention. **`pip install -r requirements.txt` will fail on this line until SubQ ships the package** — that's expected; the failure is the prompt to update the import once docs exist at https://docs.subq.ai.
 9. **Tina doesn't yet have SubQ beta access.** The live demo at the end of the deep-dive depends on it. If access is denied by Day 8 of the sprint, the demo becomes a "what I'd build the day I get access" mock-up — still valuable but weaker. Apply for the waitlist immediately.
 10. **Three deep-dive scene files were intentionally deleted on 2026-05-09.** `scene_04_chinchilla.py`, `scene_05_attention_grid.py`, `scene_07_flash_attention.py` were duplicates of canonical scenes 04/05/07; their better bits were folded in. Don't restore them from git history without re-reading TASKS.md "Reconcile duplicate scene files".
-11. **Don't call bare `Text("foo")` in scene code.** It bypasses Inter / JetBrains Mono and lands as system sans, which reads inconsistent next to helper-rendered text. Always go through `body()` / `caption()` / `mono()` / `title()` / `heading()` / `text_equation()` from `vid/theme.py` (or pass `font=FONT_SANS` / `FONT_SANS_DISPLAY` / `FONT_MONO` explicitly). The fonts are auto-registered with Pango at theme import; ship a missing TTF and that single label silently falls back — diff scene PNGs against a known-good frame to catch this.
+11. **Don't call bare `Text("foo")` in scene code.** It bypasses the theme sans / JetBrains Mono and lands as system sans, which reads inconsistent next to helper-rendered text. Always go through `body()` / `caption()` / `mono()` / `title()` / `heading()` / `text_equation()` from `vid/theme.py` (or pass `font=FONT_SANS` / `FONT_SANS_DISPLAY` / `FONT_MONO` explicitly). Sans is **Alegreya Sans** when `AlegreyaSans-*.ttf` exists under `docs/Alegreya_Sans/`, `docs/scaling_attention/fonts/`, or `assets/branding/fonts/Alegreya_Sans/`; otherwise **Inter**. The fonts are auto-registered with Pango at theme import; ship a missing TTF and that single label silently falls back — diff scene PNGs against a known-good frame to catch this.
 12. **`docs/scaling_attention/` is LaTeX, not Manim.** On-screen formulas there are real `\(...\)` / `equation` environments, not `text_equation()` from `vid/theme.py` (that helper is Manim-only). When adding chapters or sidebars: never append material after a chapter's closing `\keyidea{...}`; merge into the body section above it; do not resurrect `\fillme` stubs; every `\citet`/`\citep` needs a `\bibitem` in `docs/scaling_attention/sections/references.tex`. Full rules and TASK 9.x backlog: [`TASKS.md`](TASKS.md) Phase 9 + [`docs/scaling_attention/README.md`](docs/scaling_attention/README.md).
 
 ## How to continue the work

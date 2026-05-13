@@ -3,15 +3,14 @@
 Both the teaser and deep-dive import from here so we can iterate the look in one place.
 
 Typography:
-    - Display / body: **Inter** (rsms/inter, SIL OFL). Crisp at 1080p, optimized for
-      screens, tabular numerals — perfect for benchmark callouts.
-    - Code / monospace: **JetBrains Mono** (jb/JetBrainsMono, SIL OFL). Used for
-      anything inside ``mono(...)`` or ``code(...)`` (KV cache equations, terminal
-      readouts, file paths in screen-capture overlays).
+    - Display / body: **Alegreya Sans** when ``AlegreyaSans-*.ttf`` files are present
+      under ``docs/Alegreya_Sans/``, ``docs/scaling_attention/fonts/``, or
+      ``assets/branding/fonts/Alegreya_Sans/`` (same sources as the LaTeX companion).
+    - Code / monospace: **JetBrains Mono** (jb/JetBrainsMono, SIL OFL) from
+      ``assets/branding/fonts/``. Used for ``mono(...)``, ``code(...)``, and
+      ``text_equation(...)``.
 
-Both font families ship inside this repo at ``assets/branding/fonts/`` so renders
-work on a clean checkout without any system font install. ``register_font`` is
-called once at import time.
+``register_font`` is called once at import time for every TTF we ship or discover.
 """
 
 from __future__ import annotations
@@ -50,36 +49,73 @@ PACE_NORMAL = 0.8
 PACE_SLOW = 1.5
 PACE_BEAT = 0.6
 
-FONT_SANS = "Inter"
-FONT_SANS_DISPLAY = "Inter Display"
 FONT_MONO = "JetBrains Mono"
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _FONT_DIR = _REPO_ROOT / "assets" / "branding" / "fonts"
 
+# Same face as docs/scaling_attention (preamble.tex). Pango family name inside the TTFs.
+_ALEGREYA_FAMILY = "Alegreya Sans"
+_ALEGREYA_SEARCH_DIRS = (
+    _REPO_ROOT / "docs" / "Alegreya_Sans",
+    _REPO_ROOT / "docs" / "scaling_attention" / "fonts",
+    _FONT_DIR / "Alegreya_Sans",
+)
+
+
+def _discover_alegreya_ttfs() -> list[Path]:
+    """Return sorted unique paths to Alegreya Sans TTFs if any are vendored."""
+    found: list[Path] = []
+    for d in _ALEGREYA_SEARCH_DIRS:
+        if not d.is_dir():
+            continue
+        found.extend(d.glob("AlegreyaSans*.ttf"))
+        found.extend(d.glob("alegreyasans*.ttf"))
+    seen: set[str] = set()
+    uniq: list[Path] = []
+    for p in sorted(found, key=lambda x: x.name.lower()):
+        key = str(p.resolve())
+        if key not in seen:
+            seen.add(key)
+            uniq.append(p)
+    return uniq
+
+
+_ALEGREYA_TTFS = _discover_alegreya_ttfs()
+if _ALEGREYA_TTFS:
+    FONT_SANS = _ALEGREYA_FAMILY
+    FONT_SANS_DISPLAY = _ALEGREYA_FAMILY
+else:
+    FONT_SANS = "Inter"
+    FONT_SANS_DISPLAY = "Inter Display"
+
+USE_ALEGREYA_SANS = bool(_ALEGREYA_TTFS)
+
 
 def _activate_repo_fonts() -> None:
-    """Register Inter + JetBrains Mono with Pango for the lifetime of this process.
-
-    Manim's ``register_font`` returns a context manager. We hold the contexts
-    open in a module-level ``ExitStack`` and close them on interpreter shutdown
-    so every scene file imported under this process sees the fonts.
-
-    Silently no-ops if a TTF is missing so a partial checkout still renders
-    (Pango will fall back to system sans).
-    """
+    """Register sans (Alegreya or Inter) + JetBrains Mono with Pango for this process."""
     stack = ExitStack()
-    files = [
-        _FONT_DIR / "Inter" / "Inter-Regular.ttf",
-        _FONT_DIR / "Inter" / "Inter-Medium.ttf",
-        _FONT_DIR / "Inter" / "Inter-SemiBold.ttf",
-        _FONT_DIR / "Inter" / "Inter-Bold.ttf",
-        _FONT_DIR / "Inter" / "InterDisplay-SemiBold.ttf",
-        _FONT_DIR / "Inter" / "InterDisplay-Bold.ttf",
-        _FONT_DIR / "JetBrainsMono" / "JetBrainsMono-Regular.ttf",
-        _FONT_DIR / "JetBrainsMono" / "JetBrainsMono-Medium.ttf",
-        _FONT_DIR / "JetBrainsMono" / "JetBrainsMono-Bold.ttf",
-    ]
+    files: list[Path] = []
+    if _ALEGREYA_TTFS:
+        files.extend(_ALEGREYA_TTFS)
+    else:
+        files.extend(
+            [
+                _FONT_DIR / "Inter" / "Inter-Regular.ttf",
+                _FONT_DIR / "Inter" / "Inter-Medium.ttf",
+                _FONT_DIR / "Inter" / "Inter-SemiBold.ttf",
+                _FONT_DIR / "Inter" / "Inter-Bold.ttf",
+                _FONT_DIR / "Inter" / "InterDisplay-SemiBold.ttf",
+                _FONT_DIR / "Inter" / "InterDisplay-Bold.ttf",
+            ]
+        )
+    files.extend(
+        [
+            _FONT_DIR / "JetBrainsMono" / "JetBrainsMono-Regular.ttf",
+            _FONT_DIR / "JetBrainsMono" / "JetBrainsMono-Medium.ttf",
+            _FONT_DIR / "JetBrainsMono" / "JetBrainsMono-Bold.ttf",
+        ]
+    )
     for ttf in files:
         if not ttf.exists():
             continue

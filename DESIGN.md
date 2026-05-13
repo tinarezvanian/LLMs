@@ -21,25 +21,25 @@ The semantic meaning matters: green = the thing we're rooting for, red = the wal
 
 ### Typography
 
-Two families, both shipped in-repo at [`assets/branding/fonts/`](assets/branding/fonts) (SIL OFL). Registered with Pango on import via `vid/theme.py::_activate_repo_fonts()` so renders work on a fresh checkout with no system font install.
+Sans text on screen uses **Alegreya Sans** when `AlegreyaSans-*.ttf` files are present under `docs/Alegreya_Sans/`, `docs/scaling_attention/fonts/`, or `assets/branding/fonts/Alegreya_Sans/` (same files as the LaTeX companion); otherwise it falls back to **Inter** / **Inter Display** from [`assets/branding/fonts/`](assets/branding/fonts). **JetBrains Mono** always ships in-repo for `text_equation()`, `mono()`, and tabular labels. Pango registration happens on import via `vid/theme.py::_activate_repo_fonts()`.
 
-| family             | use                                                       | source             |
-| ------------------ | --------------------------------------------------------- | ------------------ |
-| **Inter**          | body, captions, footnotes, branch labels                  | rsms/inter v4      |
-| **Inter Display**  | titles, headings, SubQ wordmark                            | rsms/inter v4      |
-| **JetBrains Mono** | equations (`text_equation()`), code, KV / GPU labels, n²   | jb/JetBrainsMono v2.304 |
+| family | use | source |
+| ------ | --- | ------ |
+| **Alegreya Sans** (preferred) | body, captions, footnotes, branch labels, titles, headings when TTFs are vendored | huertatipografica/Alegreya-Sans, SIL OFL |
+| **Inter** / **Inter Display** | same roles when Alegreya TTFs are absent | rsms/inter v4 |
+| **JetBrains Mono** | equations (`text_equation()`), code, KV / GPU labels, n² | jb/JetBrainsMono v2.304 |
 
 Sizes pinned in `theme.py`:
 
-- Title: 56pt (Inter Display Bold)
-- Heading: 40pt (Inter Display Bold)
-- Body: 32pt (Inter Regular)
-- Caption: 24pt (Inter Regular muted)
+- Title: 56pt (sans Bold)
+- Heading: 40pt (sans Bold)
+- Body: 32pt (sans Regular)
+- Caption: 24pt (sans Regular muted)
 - Equation: 44pt (JetBrains Mono Bold via `text_equation`; or `MathTex` if LaTeX is installed)
 - Mono / code: 32pt (JetBrains Mono Regular via `mono()` helper)
-- Footnote: 18pt italic muted (Inter Italic)
+- Footnote: 18pt italic muted (sans Italic)
 
-**Why these two:** Inter has tabular numerals and excellent screen rendering at every weight (used by Vercel, Notion, Linear); JetBrains Mono ligatures + slashed zero make `O(n²)`, `1M`, `H100  80 GB` read unambiguously on a phone. Both ship as SIL OFL so we can redistribute the TTFs without per-machine installs.
+**Why:** Alegreya Sans matches the printed primer; JetBrains Mono keeps `O(n²)`, `1M`, `H100  80 GB` unambiguous on a phone. Both are SIL OFL.
 
 **Don't** call `Text("foo")` without specifying `font=` — you'll get system sans and the type will pop visibly inconsistent against scenes that use the helpers. Use `body()` / `caption()` / `mono()` / `text_equation()` / `title()` / `heading()` from `vid/theme.py`.
 

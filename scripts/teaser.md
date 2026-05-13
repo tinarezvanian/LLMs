@@ -1,7 +1,7 @@
-# Teaser script — "The curve that's killing AI" (~75s, ~155 words)
+# Teaser script — "The curve that's killing AI"
 
-> Pure Manim + voiceover. No on-camera. Square 1:1 cut for X / LinkedIn / Discord.
-> Pacing target: 124 wpm — leaves breathing room for the visuals to land.
+> Pure Manim + voiceover. No on-camera. **Short cut:** scenes 01–06 only (~75s, ~155 words) for X / LinkedIn / Discord. **Extended cut:** insert `scene_03b`–`scene_03g` between the KV wall and the break for ~5 minutes of teaching beats (aligned with `docs/scaling_attention/`).
+> Pacing target (short cut): 124 wpm — leaves breathing room for the visuals to land.
 
 ---
 
@@ -34,6 +34,42 @@ VO: "Whole codebases. Whole books. Whole video archives. In one prompt."
 [ANIM: SubQ wordmark, "Full breakdown ↓", handle/link, end card.]
 
 VO: "I broke down the math, the architecture, and built the starter repo. Link below."
+
+---
+
+## Extended teaser (~5 min) — seven Manim beats after the KV wall
+
+These scenes slot **between** `scene_03_wall` and `scene_04_break` (files `scene_03b` … `scene_03h`). They mirror the LaTeX primer (`docs/scaling_attention/`): tokens, the attention tile, scaling laws, Chinchilla, KV mitigations, the routing×scaling frame, then training vs inference. VO is optional for socials; for YouTube / teaching cuts, record over the longer concat (`make teaser && make concat`).
+
+**[1:15 - 1:55]  TOKENS (`scene_03b_tokens`)**  
+[ANIM: V and d callouts; per-token last-layer cost ∝ V·d; footnote that “1M context” is tokens.]  
+VO (suggested): "Before attention even runs, tokens set the bill: a huge vocabulary times a wide hidden state hits you on every output step. And when a vendor says one million context, they mean tokens — not pages."
+
+**[1:55 - 2:35]  ATTENTION TILE (`scene_03c_attention_tile`)**  
+[ANIM: 10×10 causal grid; n² counter; heads×layers reminder.]  
+VO: "Self-attention writes an n-by-n tile every layer. Causal models only need the lower triangle, but it is still order n squared per head — and you stack heads and layers."
+
+**[2:35 - 3:15]  SCALING LAWS (`scene_03d_scaling_loglog`)**  
+[ANIM: log–log scatter + line; L(N) ≈ (N_c/N)^α; bridge line that this does not remove the attention quadratic.]  
+VO: "Kaplan-style scaling laws are why labs bet on bigger budgets: loss falls along a straight line on log–log axes. That is about parameters and data — not a free pass on attention cost."
+
+**[3:15 - 3:55]  CHINCHILLA (`scene_03e_chinchilla_bite`)**  
+[ANIM: D ≈ 20×N; three-line intuition; C ≈ 6·N·D rule-of-thumb.]  
+VO: "Chinchilla said: if you fix compute, grow tokens and parameters together — about twenty tokens per parameter at the optimum. Training FLOPs still scale like N times D."
+
+**[3:55 - 4:35]  KV BAND-AIDS (`scene_03f_kv_band_aids`)**  
+[ANIM: MHA vs GQA vs MQA bar widths; FlashAttention caveat caption.]  
+VO: "Grouped-query and multi-query attention shrink the KV cache by sharing keys and values across heads. FlashAttention is a memory trick for the score matrix — it does not change the big-O of the matmuls."
+
+**[4:35 - 5:10]  QUADRANT (`scene_03g_landscape_quadrant`)**  
+[ANIM: 2×2 routing × scaling frame; highlight bottom-right; honest footnote on benchmarks.]  
+VO: "New architectures argue about two axes: fixed versus content-dependent routing, and quadratic versus linear work. Sparse attention lives in that map — treat vendor numbers as something to verify, not inherit."
+
+**[5:10 - 5:45]  TWO BUDGETS (`scene_03h_wall_twice`)**  
+[ANIM: Training column vs inference column; bridge line on n² at decode.]  
+VO: "Training and serving are two different budgets. Chinchilla is about how many tokens to pair with parameters. Inference is about latency and how many gigabytes of key-value state you carry per request. Neither removes the quadratic attention tile when you decode long contexts."
+
+Then pick up the original **THE BREAK** at `scene_04_break` (~5:45 onward in this extended layout).
 
 ---
 

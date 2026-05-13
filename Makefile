@@ -14,6 +14,13 @@ TEASER_SCENES := \
   vid/scenes/teaser/scene_01_open.py:Scene01Open \
   vid/scenes/teaser/scene_02_curve.py:Scene02Curve \
   vid/scenes/teaser/scene_03_wall.py:Scene03Wall \
+  vid/scenes/teaser/scene_03b_tokens.py:Scene03BTokens \
+  vid/scenes/teaser/scene_03c_attention_tile.py:Scene03CAttentionTile \
+  vid/scenes/teaser/scene_03d_scaling_loglog.py:Scene03DScalingLogLog \
+  vid/scenes/teaser/scene_03e_chinchilla_bite.py:Scene03EChinchillaBite \
+  vid/scenes/teaser/scene_03f_kv_band_aids.py:Scene03FKVBandAids \
+  vid/scenes/teaser/scene_03g_landscape_quadrant.py:Scene03GLandscapeQuadrant \
+  vid/scenes/teaser/scene_03h_wall_twice.py:Scene03HWallTwice \
   vid/scenes/teaser/scene_04_break.py:Scene04Break \
   vid/scenes/teaser/scene_05_payoff.py:Scene05Payoff \
   vid/scenes/teaser/scene_06_cta.py:Scene06CTA

@@ -91,6 +91,18 @@
 }
 \urlstyle{same}
 
+% `thebibliography` (book.cls) opens with `\chapter*{\bibname}`; default
+% `\bibname` is ``Bibliography''. `main.tex` also used `\chapter*{References}`,
+% which produced two headings. We keep the outer chapter in `main.tex` and
+% strip the inner duplicate here (tufte-book inherits `book.cls`):
+\makeatletter
+\AtBeginDocument{%
+  \patchcmd{\thebibliography}%
+    {\chapter*{\bibname}\@mkboth{\MakeUppercase\bibname}{\MakeUppercase\bibname}}%
+    {}{}{}%
+}%
+\makeatother
+
 % Justification + spacing
 \sloppy
 \setlength{\emergencystretch}{3em}
